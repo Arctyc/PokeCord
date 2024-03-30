@@ -23,11 +23,12 @@ namespace PokeCord
     {
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
+        const int maxPokemonId = 1025;
 
         public static async Task Main(string[] args)
         {
             _client = new DiscordSocketClient();
-            //_services = ConfigureServices(_client);
+            _services = ConfigureServices();
             _client.Log += Log;
 
             var token = await ReadToken();
@@ -35,8 +36,6 @@ namespace PokeCord
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
-            // Register the SlashCommandExecuted event handler
-            //_client.SlashCommandExecuted += async (command) => await HandleSlashCommandExecutedAsync(command, _client);
             _client.SlashCommandExecuted += SlashCommandHandler;
 
             _client.Ready += ClientReady;
@@ -60,9 +59,40 @@ namespace PokeCord
             }
         }
 
+        private static IServiceProvider ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            services.AddSingleton<PokeApiClient>(); // Add PokeApiClient as Singleton
+            //services.AddScoped<PokeSelector>(); // Add PokeSelector as Scoped service
+
+            return services.BuildServiceProvider(); // Build and return the service provider
+        }
+
         private static async Task SlashCommandHandler(SocketSlashCommand command)
         {
-            await command.RespondAsync($"You caught a Pokémon!");
+            //var pokeSelector = _services.GetRequiredService<PokeSelector>();
+            PokeSelector pokeSelector = new PokeSelector(maxPokemonId);
+
+            var pokeApiClient = _services.GetRequiredService<PokeApiClient>();
+
+            PokemonData pokemonData = await pokeSelector.GetRandomPokemon(pokeApiClient);
+
+            if (pokemonData != null)
+            {
+                string message = $"You caught a {pokemonData.Name}!";
+                Embed[] embeds = new Embed[]
+                {
+                    new EmbedBuilder()
+                    .WithImageUrl(pokemonData.ImageUrl)
+                    .Build()
+                };
+                await command.RespondAsync(message, embeds);
+            }
+            else
+            {
+                await command.RespondAsync("Error catching a Pokémon :(");
+            }
         }
 
         public static async Task<string> ReadToken()
