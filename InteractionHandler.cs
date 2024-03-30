@@ -21,13 +21,6 @@ namespace PokeCord
             _client = client;
             _commands = commands;
             _services = services;
-        }   
-
-        public async Task InitializeAsync()
-        {
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-
-            _client.InteractionCreated += HandleInteraction;
         }
 
         public async Task HandleInteraction(SocketInteraction arg)

@@ -11,7 +11,7 @@ namespace PokeCord
 {
     public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
-
+ 
         [SlashCommand("catch", "Catch a Pokémon")]
         public async Task Catch()
         {
@@ -19,5 +19,6 @@ namespace PokeCord
             string pokemon = "Pokémon";
             await RespondAsync($"{caller} caught a {pokemon}");
         }
+
     }
 }

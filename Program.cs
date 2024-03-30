@@ -15,6 +15,7 @@ using Discord.WebSocket;
 using PokeApiNet;
 using Newtonsoft.Json;
 using System.Windows.Input;
+using System.Reflection.Metadata;
 
 namespace PokeCord
 {
@@ -25,10 +26,10 @@ namespace PokeCord
 
         static async Task Main(string[] args)
         {
+            _services = ConfigureServices();
             _client = new DiscordSocketClient();
             _client.Log += Log;
-
-            _services = ConfigureServices();
+            _client.Ready += ClientReady;           
 
             await MainASync();
         }
@@ -45,10 +46,33 @@ namespace PokeCord
             await Task.Delay(Timeout.Infinite);
         }
 
+        public static async Task ClientReady()
+        {
+            ulong guildId = 832504327045251082;
+
+            var guild = _client.GetGuild(guildId);
+
+            var guildCommands = new SlashCommandBuilder()
+                .WithName("catch")
+                .WithDescription("Catch a Pokemon");
+
+            try
+            {
+                await guild.CreateApplicationCommandAsync(guildCommands.Build());
+            }
+            catch(ApplicationCommandException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+
         private static IServiceProvider ConfigureServices()
         {
             var map = new ServiceCollection()
-                .AddScoped<InteractionHandler>();
+                .AddSingleton<InteractionService>()
+                .AddSingleton<DiscordSocketClient>()
+                .AddScoped<InteractionHandler>()
+                .AddScoped<InteractionModule>();
 
             return map.BuildServiceProvider();
         }
