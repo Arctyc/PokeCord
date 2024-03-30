@@ -16,14 +16,18 @@ using PokeApiNet;
 using Newtonsoft.Json;
 using System.Windows.Input;
 using System.Reflection.Metadata;
+using System.Collections.Concurrent;
 
 namespace PokeCord
 {
     public class Program
     {
+        const int maxPokemonId = 1025;
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
-        const int maxPokemonId = 1025;
+        private static ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(300); // Set your desired cooldown time
+
 
         public static async Task Main(string[] args)
         {
@@ -31,7 +35,7 @@ namespace PokeCord
             _services = ConfigureServices();
             _client.Log += Log;
 
-            var token = await ReadToken();
+            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
@@ -53,9 +57,9 @@ namespace PokeCord
             {
                 await _client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
             }
-            catch (ApplicationCommandException ex)
+            catch (HttpException ex)
             {
-                Console.WriteLine("Could not create global command");
+                Console.WriteLine("Could not create global command. " + ex.Message);
             }
         }
 
@@ -71,6 +75,43 @@ namespace PokeCord
 
         private static async Task SlashCommandHandler(SocketSlashCommand command)
         {
+            string username = command.User.Username;
+            ulong userId = command.User.Id;
+
+            if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
+            {
+                Console.WriteLine($"{username} dict entry read: key {username} value {lastUsed}");
+                TimeSpan elapsed = DateTime.UtcNow - lastUsed;
+                if (elapsed < _cooldownTime)
+                {
+                    int timeRemaining = (int)_cooldownTime.TotalSeconds - (int)elapsed.TotalSeconds;
+                    var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+                    await command.RespondAsync($"Easy there, Ash Ketchum! I know you wanna Catch 'em all. You can catch another Pokémon <t:{cooldownUnixTime}:R>.");
+                    return;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Could not get value for last command usage by {username} with userID {userId}\n" +
+                    $"New user, or dict read error.");
+            }
+
+            if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
+            {
+                if(_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
+                {
+
+                }
+                else
+                {
+                    Console.WriteLine($"Unable to update dict for {username} with data {userId}:{DateTime.UtcNow}");
+                }
+            }
+
+            Console.WriteLine($"{username} dict entry update attempted: key {username} value {DateTime.UtcNow}");
+
+            Console.WriteLine($"{username} used {command.Data.Name}");
+
             //var pokeSelector = _services.GetRequiredService<PokeSelector>();
             PokeSelector pokeSelector = new PokeSelector(maxPokemonId);
 
@@ -80,7 +121,8 @@ namespace PokeCord
 
             if (pokemonData != null)
             {
-                string message = $"You caught a {pokemonData.Name}!";
+
+                string message = $"{username} caught a {pokemonData.Name}!";
                 Embed[] embeds = new Embed[]
                 {
                     new EmbedBuilder()
@@ -88,30 +130,12 @@ namespace PokeCord
                     .Build()
                 };
                 await command.RespondAsync(message, embeds);
+                Console.WriteLine($"{username} caught a {pokemonData.Name}");
             }
             else
             {
                 await command.RespondAsync("Error catching a Pokémon :(");
-            }
-        }
-
-        public static async Task<string> ReadToken()
-        {
-            string filePath = "PokeCordToken.txt";
-
-            try
-            {
-                string token = await File.ReadAllTextAsync(filePath);
-                if (token == null)
-                {
-                    throw new Exception($"Token is null, check token file at: {filePath}");
-                }
-                return token.Trim();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return null;
+                Console.WriteLine($"{username}'s command failed at " + DateTime.Now.ToString());
             }
         }
 
