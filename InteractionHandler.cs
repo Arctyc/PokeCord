@@ -23,6 +23,11 @@ namespace PokeCord
             _services = services;
         }
 
+        public async Task InitializeAsync()
+        {
+            _client.SlashCommandExecuted += async (command) => await HandleInteraction(command);
+        }
+
         public async Task HandleInteraction(SocketInteraction arg)
         {
             try
