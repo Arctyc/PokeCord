@@ -24,58 +24,45 @@ namespace PokeCord
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
 
-        static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            
             _client = new DiscordSocketClient();
+            //_services = ConfigureServices(_client);
             _client.Log += Log;
-            _client.Ready += ClientReady;
-            _services = ConfigureServices(_client);
 
-            await MainASync();
-        }
-
-        private static async Task MainASync()
-        {
             var token = await ReadToken();
+
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
             // Register the SlashCommandExecuted event handler
-            _client.SlashCommandExecuted += async (command) => await HandleSlashCommandExecutedAsync(command, _client);
+            //_client.SlashCommandExecuted += async (command) => await HandleSlashCommandExecutedAsync(command, _client);
+            _client.SlashCommandExecuted += SlashCommandHandler;
+
+            _client.Ready += ClientReady;
 
             await Task.Delay(Timeout.Infinite);
         }
 
         public static async Task ClientReady()
         {
-            ulong guildId = 832504327045251082;
 
-            var guild = _client.GetGuild(guildId);
-
-            var guildCommands = new SlashCommandBuilder()
+            var globalCommand = new SlashCommandBuilder()
                 .WithName("catch")
-                .WithDescription("Catch a Pokemon");
-
+                .WithDescription("Catch a Pokémon!");
             try
             {
-                await guild.CreateApplicationCommandAsync(guildCommands.Build());
+                await _client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
             }
-            catch(ApplicationCommandException ex)
+            catch (ApplicationCommandException ex)
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Could not create global command");
             }
         }
 
-        private static IServiceProvider ConfigureServices(DiscordSocketClient client)
+        private static async Task SlashCommandHandler(SocketSlashCommand command)
         {
-            var map = new ServiceCollection()
-                .AddSingleton<InteractionService>()
-                .AddSingleton(client)
-                .AddScoped<InteractionHandler>()
-                .AddScoped<InteractionModule>();
-
-            return map.BuildServiceProvider();
+            await command.RespondAsync($"You caught a Pokémon!");
         }
 
         public static async Task<string> ReadToken()
@@ -95,24 +82,6 @@ namespace PokeCord
             {
                 Console.WriteLine(ex.Message);
                 return null;
-            }
-        }
-
-        private static async Task HandleSlashCommandExecutedAsync(SocketSlashCommand command, DiscordSocketClient client)
-        {
-            using (var scope = _services.CreateScope())
-            {
-                var service = scope.ServiceProvider.GetRequiredService<InteractionHandler>();
-
-                try
-                {
-                    await service.HandleInteraction(command);
-                }
-                catch (Exception ex)
-                {
-                    await command.RespondAsync("An error occurred while processing the command.");
-                    Console.WriteLine("Error executing slash command");
-                }
             }
         }
 
