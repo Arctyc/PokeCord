@@ -40,23 +40,17 @@ namespace PokeCord
             var token = await ReadToken();
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
-            await Program.ClientReady();
 
             // Register the SlashCommandExecuted event handler
             _client.SlashCommandExecuted += async (command) => await HandleSlashCommandExecutedAsync(command, _client);
-
-            await RegisterCommands();
 
             await Task.Delay(Timeout.Infinite);
         }
 
         public static async Task ClientReady()
         {
-            Console.WriteLine("PokeCord Ready!");
-        }
-        private static async Task RegisterCommands()
-        {
             ulong guildId = 832504327045251082;
+
             var guild = _client.GetGuild(guildId);
 
             var guildCommands = new SlashCommandBuilder()
@@ -67,7 +61,7 @@ namespace PokeCord
             {
                 await guild.CreateApplicationCommandAsync(guildCommands.Build());
             }
-            catch (ApplicationCommandException ex)
+            catch(ApplicationCommandException ex)
             {
                 Console.WriteLine(ex.ToString());
             }
