@@ -148,6 +148,7 @@ namespace PokeCord
                     {
                         int timeRemaining = (int)_cooldownTime.TotalSeconds - (int)elapsed.TotalSeconds;
                         var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+                        Console.WriteLine($"{username} catch denied. Cooldown: {cooldownUnixTime} seconds");
                         await command.RespondAsync($"Easy there, Ash Ketchum! I know you Gotta Catch 'Em All, " +
                                                    $"but your next Poké Ball will be available <t:{cooldownUnixTime}:R>.");
                         return;
