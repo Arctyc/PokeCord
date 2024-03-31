@@ -26,13 +26,14 @@ namespace PokeCord
         const int maxPokemonId = 1025;
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
+        private static Timer _dailyResetTimer;
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
         private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(300); // Set your desired cooldown time
 
         //Scoreboard data structure
-        private static readonly ConcurrentDictionary<ulong, PlayerData> scoreboard = LoadScoreboard();
+        private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
 
         private const int pokeballMax = 10;
 
@@ -41,6 +42,14 @@ namespace PokeCord
             _client = new DiscordSocketClient();
             _services = ConfigureServices();
             _client.Log += Log;
+
+            scoreboard = await LoadScoreboardAsync();
+
+            // Calculate the time remaining until the next midnight
+            TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
+            _dailyResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
+            // Run once on startup
+            await ResetPokeballs(null);
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
@@ -56,7 +65,7 @@ namespace PokeCord
 
         public static async Task ClientReady()
         {
-            LoadScoreboard();
+            LoadScoreboardAsync();
 
             var catchCommand = new SlashCommandBuilder()
                 .WithName("catch")
@@ -164,7 +173,7 @@ namespace PokeCord
                         playerData.CaughtPokemon.Add(pokemonData);
 
                         // Save the updated scoreboard data
-                        SaveScoreboard();
+                        await SaveScoreboardAsync();
 
                         // Reply in Discord
                         string message = $"{username} caught a {pokemonData.Name} worth {pokemonData.BaseExperience} exp!";
@@ -221,7 +230,27 @@ namespace PokeCord
             }
         }
 
-        private static ConcurrentDictionary<ulong, PlayerData> LoadScoreboard()
+        private static async Task ResetPokeballs(object state)
+        {
+            // Create a temporary copy of scoreboard to avoid conflicts
+            var playerDataList = scoreboard.Values.ToList();
+
+            // Reset Pokeballs for each player in the copy
+            foreach (var playerData in playerDataList)
+            {
+                playerData.Pokeballs = pokeballMax;
+            }
+
+            // Update the actual scoreboard atomically
+            await Task.Run(() => scoreboard = new ConcurrentDictionary<ulong, PlayerData>(playerDataList.ToDictionary(p => p.UserId, p => p)));
+
+            // Save the updated scoreboard
+            await SaveScoreboardAsync();
+
+            Console.WriteLine("Pokeballs have been reset for all players!");
+        }
+
+        private static async Task<ConcurrentDictionary<ulong, PlayerData>> LoadScoreboardAsync()
         {
             // Path to your JSON file (replace with your actual path)
             string filePath = "scoreboard.json";
@@ -229,7 +258,7 @@ namespace PokeCord
             if (!File.Exists(filePath))
             {
                 Console.WriteLine("Scoreboard data file not found. Creating a new one.");
-                SaveScoreboard();
+                await SaveScoreboardAsync();
                 return new ConcurrentDictionary<ulong, PlayerData>();
             }
             else
@@ -250,6 +279,7 @@ namespace PokeCord
             }
         }
 
+        /*
         private static void SaveScoreboard()
         {
             // Path to your JSON file (replace with your actual path)
@@ -262,6 +292,28 @@ namespace PokeCord
 
                 // Write the JSON string to the file
                 File.WriteAllText(filePath, jsonData);
+                Console.WriteLine("Scoreboard data saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                // Handle serialization errors or file access exceptions
+                Console.WriteLine("Error saving scoreboard data: {0}", ex.Message);
+            }
+        }
+        */
+
+        private static async Task SaveScoreboardAsync()
+        {
+            // Path to your JSON file (replace with your actual path)
+            string filePath = "scoreboard.json";
+
+            try
+            {
+                // Serialize the dictionary to JSON string
+                string jsonData = JsonConvert.SerializeObject(scoreboard);
+
+                // Write the JSON string to the file asynchronously
+                await File.WriteAllTextAsync(filePath, jsonData);
                 Console.WriteLine("Scoreboard data saved successfully.");
             }
             catch (Exception ex)
