@@ -12,7 +12,7 @@ namespace PokeCord
         private readonly Random _random;
         private readonly int _maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         private readonly int _shinyRatio = 256; // Chance of catching a shiny
-        const int defaultExperience = 50; // exp to be used in the case that there is no base exp provided
+        private int defaultExperience = new Random().Next(75, 126); // exp to be used in the case that there is no base exp provided
 
         public PokeSelector(int maxPokemonId, int shinyRatio)
         {
