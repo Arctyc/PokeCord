@@ -289,11 +289,12 @@ namespace PokeCord
                 {
                     string leaderName = leaders[i].UserName;
                     int leaderExp = leaders[i].Experience;
-                    string message = $"{i+1}. {leaderName} - {leaderExp} exp.\n";
+                    string message = $"{i+1}. {leaderName} - {leaderExp} exp.";
                     leaderMessages.Add(message);
                 }
                 // Output message to discord
-                await command.RespondAsync(leaderMessages.ToArray().ToString());
+                string leaderboardMessage = string.Join("\n", leaderMessages);
+                await command.RespondAsync(leaderboardMessage);
             }
         }
 
