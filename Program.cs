@@ -280,7 +280,12 @@ namespace PokeCord
                 var leaders = scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
                 // Add a message line for each of the top 10 from 10 to 1
                 List<string> leaderMessages = new List<string>();
-                for (int i = 9; i >= 0; i--)
+                int leaderCount = 9;
+                if (leaders.Count < 10)
+                {
+                    leaderCount = leaders.Count;
+                }
+                for (int i = leaders.Count-1; i >= 0; i--)
                 {
                     string leaderName = leaders[i].UserName;
                     int leaderExp = leaders[i].Experience;
