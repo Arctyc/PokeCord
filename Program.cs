@@ -183,10 +183,10 @@ namespace PokeCord
 
                     if (pokemonData != null)
                     {
-                        Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name}");
+                        Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
 
                         // Update the existing playerData instance
-                        playerData.Experience += (int)pokemonData.BaseExperience;
+                        playerData.Experience += (int)pokemonData.BaseExperience; //BUG: Occasionally null reference error!?
                         playerData.CaughtPokemon.Add(pokemonData);
                         playerData.Pokeballs -= 1;
 

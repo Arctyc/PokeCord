@@ -45,15 +45,17 @@ namespace PokeCord
                 string imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
 
                 int? experience = (int?)pokemon.BaseExperience;
+                if (pokemon.BaseExperience == null)
+                {
+                    Console.WriteLine($"!!! NULL EXPERIENCE DETECTED ON {pokemon.Name} : ID {pokemon.Id}");
+                    experience = 50;
+                }
                 if (shiny)
                 {
                     imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
-                    experience = experience * 4;
-
-                }
-                
-                if (pokemon.BaseExperience == null) { pokemon.BaseExperience = 50; }
-                return new PokemonData { Name = pokemon.Name, ImageUrl = imageUrl, BaseExperience = experience, Timestamp = DateTime.UtcNow, Shiny = shiny };
+                    experience *= 4;
+                }                
+                return new PokemonData { PokedexId = pokemon.Id, Name = pokemon.Name, ImageUrl = imageUrl, BaseExperience = experience, Timestamp = DateTime.UtcNow, Shiny = shiny };
             }
             else
             {
@@ -65,6 +67,7 @@ namespace PokeCord
 
     public class PokemonData // Simple data structure for Pokemon information
     {
+        public int PokedexId { get; set; }
         public bool Shiny {  get; set; }
         public string Name { get; set; }
         public string ImageUrl { get; set; }
