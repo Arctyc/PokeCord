@@ -292,7 +292,7 @@ namespace PokeCord
                 var leaders = scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
                 // Add a message line for each of the top 10 from 10 to 1
                 List<string> leaderMessages = new List<string>();
-                int leaderCount = 9;
+                int leaderCount = 10;
                 if (leaders.Count < 10)
                 {
                     leaderCount = leaders.Count;
@@ -306,7 +306,7 @@ namespace PokeCord
                 }
                 // Output message to discord
                 string leaderboardMessage = string.Join("\n", leaderMessages);
-                await command.RespondAsync($"Top {leaderCount+1} trainers:\n" + leaderboardMessage);
+                await command.RespondAsync($"Top {leaderCount} trainers:\n" + leaderboardMessage);
             }
         }
 
