@@ -76,12 +76,19 @@ namespace PokeCord
             var scoreCommand = new SlashCommandBuilder()
                 .WithName("pokescore")
                 .WithDescription("View your PokeCord score.");
+
+            var leaderboardCommand = new SlashCommandBuilder()
+                .WithName("pokeleaderboard")
+                .WithDescription("See the current top 10 trainers.");
+
             try
             {
                 await _client.CreateGlobalApplicationCommandAsync(catchCommand.Build());
                 Console.WriteLine("Creating catch command...");
                 await _client.CreateGlobalApplicationCommandAsync(scoreCommand.Build());
                 Console.WriteLine("Creating score command...");
+                await _client.CreateGlobalApplicationCommandAsync(leaderboardCommand.Build());
+                Console.WriteLine("Creating leaderboard command...");
             }
             catch (HttpException ex)
             {
@@ -264,6 +271,24 @@ namespace PokeCord
                 {
                     await command.RespondAsync($"No data for {username}.");
                 }
+            }
+
+            // Leaderboard section
+            if (command.CommandName == "pokeleaderboard")
+            {
+                // Get a sorted list of players
+                var leaders = scoreboard.Values.OrderByDescending(p => p.Experience).ToList();
+                // Add a message line for each of the top 10 from 10 to 1
+                List<string> leaderMessages = new List<string>();
+                for (int i = 9; i >= 0; i--)
+                {
+                    string leaderName = leaders[i].UserName;
+                    int leaderExp = leaders[i].Experience;
+                    string message = $"{i+1}. {leaderName} - {leaderExp} exp.\n";
+                    leaderMessages.Add(message);
+                }
+                // Output message to discord
+                await command.RespondAsync(leaderMessages.ToArray().ToString());
             }
         }
 
