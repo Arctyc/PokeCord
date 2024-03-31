@@ -118,7 +118,7 @@ namespace PokeCord
 
         private static async Task SlashCommandHandler(SocketSlashCommand command)
         {
-            string username = command.User.Username;
+            string username = command.User.GlobalName;
             ulong userId = command.User.Id;
             PlayerData originalPlayerData = new PlayerData();
             Console.WriteLine($"{username} used {command.Data.Name}");
