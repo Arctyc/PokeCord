@@ -45,6 +45,7 @@ namespace PokeCord
             {
                 // Assign experience and avoid null with default.
                 int experience = pokemon.BaseExperience ?? defaultExperience;
+                pokemon.Name = Char.ToUpper(pokemon.Name[0]) + pokemon.Name.Substring(1);
 
                 string? imageUrl;
                 if (!shiny)
