@@ -252,7 +252,7 @@ namespace PokeCord
 
                         // Reply in Discord
                         string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
-                                         $"Their best catch was a {(bestPokemon.Shiny ? "SHINY " : "")}" +
+                                         $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
                                          $"{bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
                         Embed[] embeds = new Embed[]
                             {
