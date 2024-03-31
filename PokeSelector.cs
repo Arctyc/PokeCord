@@ -24,8 +24,7 @@ namespace PokeCord
         {
             int randomId = _random.Next(1, _maxPokemonId + 1); // Generate random ID within range
             int shinyCheck = _random.Next(1, _shinyRatio + 1); // Check for a shiny catch
-            //bool shiny = false;
-            bool shiny = true;
+            bool shiny = false;
             if (shinyCheck == _shinyRatio + 1)
             {
                 shiny = true;
@@ -44,7 +43,8 @@ namespace PokeCord
             if (pokemon != null)
             {
                 string imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
-                int experience = (int)pokemon.BaseExperience;
+
+                int? experience = (int?)pokemon.BaseExperience;
                 if (shiny)
                 {
                     imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
@@ -68,7 +68,7 @@ namespace PokeCord
         public bool Shiny {  get; set; }
         public string Name { get; set; }
         public string ImageUrl { get; set; }
-        public int BaseExperience { get; set; }
+        public int? BaseExperience { get; set; }
         public DateTime Timestamp { get; set; }
     }
 }

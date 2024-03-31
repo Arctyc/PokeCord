@@ -49,6 +49,7 @@ namespace PokeCord
             // Calculate the time remaining until the next midnight
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
             _dailyResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
+            Console.WriteLine("Time until Pokeball reset: " +  delay);
             // Run once on startup
             await ResetPokeballs(null);
 
@@ -66,7 +67,7 @@ namespace PokeCord
 
         public static async Task ClientReady()
         {
-            LoadScoreboardAsync();
+            await LoadScoreboardAsync();
 
             var catchCommand = new SlashCommandBuilder()
                 .WithName("catch")
@@ -102,13 +103,16 @@ namespace PokeCord
         {
             string username = command.User.Username;
             ulong userId = command.User.Id;
+            PlayerData originalPlayerData = new PlayerData();
             Console.WriteLine($"{username} used {command.Data.Name}");
 
             // Get the PlayerData instance from the scoreboard
-            PlayerData playerData = null;
-            if (scoreboard.TryGetValue(userId, out playerData))
+            PlayerData playerData = new PlayerData();
+            if (scoreboard.TryGetValue(userId, out originalPlayerData))
             {
                 // PlayerData exists for this userId
+                playerData = originalPlayerData;
+                Console.WriteLine($"PlayerData found for {username} {userId}");
             }
             else
             {
@@ -118,9 +122,18 @@ namespace PokeCord
                     UserId = userId,
                     UserName = username,
                     Experience = 0,
-                    Pokeballs = 10,
+                    Pokeballs = pokeballMax,
                     CaughtPokemon = new List<PokemonData>()
                 };
+                if (scoreboard.TryAdd(userId, playerData))
+                {
+                    originalPlayerData = playerData;
+                    Console.WriteLine($"New PlayerData for {username} added with userId {userId}");
+                }
+                else
+                {
+                    Console.WriteLine($"Unable to add PlayerData for {username} added with userId {userId}");
+                }
             }
 
             // Catch command section
@@ -135,20 +148,21 @@ namespace PokeCord
                     {
                         int timeRemaining = (int)_cooldownTime.TotalSeconds - (int)elapsed.TotalSeconds;
                         var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                        await command.RespondAsync($"Easy there, Ash Ketchum! I know you wanna Catch 'em all. You can catch another Pokémon <t:{cooldownUnixTime}:R>.");
+                        await command.RespondAsync($"Easy there, Ash Ketchum! I know you Gotta Catch 'Em All, " +
+                                                   $"but your next Poké Ball will be available <t:{cooldownUnixTime}:R>.");
                         return;
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"Could not get value for last command usage by {username} with userID {userId}\n" +
-                        $"New user, or dict read error.");
+                    Console.WriteLine($"No last command usage by {username} with userID {userId}");
                 }
                 if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow)) // If unable to add new cooldown for user
                 {
                     //Cooldown exists so update existing cooldown
                     if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
                     {
+                        Console.WriteLine($"Cooldown updated for {username}");
                     }
                     else
                     {
@@ -169,19 +183,27 @@ namespace PokeCord
 
                     if (pokemonData != null)
                     {
+                        Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name}");
+
                         // Update the existing playerData instance
                         playerData.Experience += (int)pokemonData.BaseExperience;
                         playerData.CaughtPokemon.Add(pokemonData);
+                        playerData.Pokeballs -= 1;
 
+                        if (scoreboard.TryUpdate(userId, playerData, originalPlayerData))
+                        {
+                            Console.WriteLine($"Catch written to scoreboard for {username}'s {pokemonData.Name}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
+                        }
                         // Save the updated scoreboard data
                         await SaveScoreboardAsync();
 
                         // Reply in Discord
-                        string message = $"{username} caught a {pokemonData.Name} worth {pokemonData.BaseExperience} exp!";
-                        if (pokemonData.Shiny)
-                        {
-                            message = $"{username} caught a SHINY {pokemonData.Name} worth {pokemonData.BaseExperience} exp!";
-                        }                        
+                        string message = $"{username} caught a {(pokemonData.Shiny ? "SHINY " : "")}" +
+                                         $"{pokemonData.Name} worth {pokemonData.BaseExperience} exp! {playerData.Pokeballs}/{pokeballMax} Poké Balls remaining.";                    
                         Embed[] embeds = new Embed[]
                         {
                             new EmbedBuilder()
@@ -189,7 +211,7 @@ namespace PokeCord
                             .Build()
                         };
                         await command.RespondAsync(message, embeds);
-                        Console.WriteLine($"{username} caught a {pokemonData.Name}");
+                        
                     }
                     else
                     {
@@ -215,27 +237,31 @@ namespace PokeCord
                     int catches = caughtPokemon.Count;
 
                     // Find best catch
-                    PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
-
-                    // Reply in Discord
-                    string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
-                                     $"Their best catch was a {bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
-                    if (bestPokemon.Shiny)
+                    if (playerData.CaughtPokemon.Any())
                     {
-                        message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
-                                  $"Their best catch was a SHINY {bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
-                    }
-                    Embed[] embeds = new Embed[]
-                        {
+                        PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
+
+
+                        // Reply in Discord
+                        string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
+                                         $"Their best catch was a {(bestPokemon.Shiny ? "SHINY " : "")}" +
+                                         $"{bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
+                        Embed[] embeds = new Embed[]
+                            {
                             new EmbedBuilder()
                             .WithImageUrl(bestPokemon.ImageUrl)
                             .Build()
-                        };
-                    await command.RespondAsync(message, embeds);
+                            };
+                        await command.RespondAsync(message, embeds);
+                    }
+                    else
+                    {
+                        await command.RespondAsync($"{username} hasn't caught any Pokémon yet.");
+                    }
                 }
                 else
                 {
-                    await command.RespondAsync($"{username} hasn't caught any Pokémon yet.");
+                    await command.RespondAsync($"No data for {username}.");
                 }
             }
         }
@@ -288,29 +314,6 @@ namespace PokeCord
                 return new ConcurrentDictionary<ulong, PlayerData>();
             }
         }
-
-        /*
-        private static void SaveScoreboard()
-        {
-            // Path to your JSON file (replace with your actual path)
-            string filePath = "scoreboard.json";
-
-            try
-            {
-                // Serialize the dictionary to JSON string
-                string jsonData = JsonConvert.SerializeObject(scoreboard);
-
-                // Write the JSON string to the file
-                File.WriteAllText(filePath, jsonData);
-                Console.WriteLine("Scoreboard data saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Handle serialization errors or file access exceptions
-                Console.WriteLine("Error saving scoreboard data: {0}", ex.Message);
-            }
-        }
-        */
 
         private static async Task SaveScoreboardAsync()
         {
