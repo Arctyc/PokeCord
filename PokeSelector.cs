@@ -10,8 +10,9 @@ namespace PokeCord
     public class PokeSelector
     {
         private readonly Random _random;
-        private readonly int _maxPokemonId = 1025;
-        private readonly int _shinyRatio = 256;
+        private readonly int _maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
+        private readonly int _shinyRatio = 256; // Chance of catching a shiny
+        const int defaultExperience = 50; // exp to be used in the case that there is no base exp provided
 
         public PokeSelector(int maxPokemonId, int shinyRatio)
         {
@@ -42,20 +43,23 @@ namespace PokeCord
 
             if (pokemon != null)
             {
-                string imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
+                // Assign experience and avoid null with default.
+                int experience = pokemon.BaseExperience ?? defaultExperience;
 
-                int? experience = (int?)pokemon.BaseExperience;
-                if (pokemon.BaseExperience == null)
+                string? imageUrl;
+                if (!shiny)
                 {
-                    Console.WriteLine($"!!! NULL EXPERIENCE DETECTED ON {pokemon.Name} : ID {pokemon.Id}");
-                    experience = 50;
+                    // Assign default image
+                    imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
                 }
-                if (shiny)
+                else
                 {
+                    // Assign shiny image
                     imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
                     experience *= 4;
-                }                
-                return new PokemonData { PokedexId = pokemon.Id, Name = pokemon.Name, ImageUrl = imageUrl, BaseExperience = experience, Timestamp = DateTime.UtcNow, Shiny = shiny };
+                }
+                return new PokemonData { PokedexId = pokemon.Id, Name = pokemon.Name, ImageUrl = imageUrl, 
+                                         BaseExperience = experience, Timestamp = DateTime.UtcNow, Shiny = shiny };
             }
             else
             {

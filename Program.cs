@@ -23,8 +23,8 @@ namespace PokeCord
 {
     public class Program
     {
-        const int maxPokemonId = 1025;
-        const int shinyRatio = 256;
+        const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
+        const int shinyRatio = 256; // Chance of catching a shiny
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
         private static Timer _dailyResetTimer;
@@ -36,39 +36,47 @@ namespace PokeCord
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
 
-        private const int pokeballMax = 10;
+        // Maximum catches per day
+        private const int pokeballMax = 50;
 
         public static async Task Main(string[] args)
         {
+            // FETCH ENVIRONMENT VARIABLE TOKEN
+            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+
+            // Set up Discord.NET
             _client = new DiscordSocketClient();
             _services = ConfigureServices();
             _client.Log += Log;
 
+            // Load scoreboard
             scoreboard = await LoadScoreboardAsync();
 
+            // Set up Pokemart
             // Calculate the time remaining until the next midnight
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
             _dailyResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " +  delay);
             // Run once on startup
-            await ResetPokeballs(null);
+            await ResetPokeballs(null);            
 
-            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-
+            // Login to Discord
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
+            // Set up interactions
             _client.SlashCommandExecuted += SlashCommandHandler;
 
+            // Additionall ready settings
             _client.Ready += ClientReady;
 
+            // Keep bot running indefinitely
             await Task.Delay(Timeout.Infinite);
         }
 
         public static async Task ClientReady()
         {
-            await LoadScoreboardAsync();
-
+            // Set up slash commands
             var catchCommand = new SlashCommandBuilder()
                 .WithName("catch")
                 .WithDescription("Catch a Pokémon!");
@@ -79,7 +87,7 @@ namespace PokeCord
 
             var leaderboardCommand = new SlashCommandBuilder()
                 .WithName("pokeleaderboard")
-                .WithDescription("See the current top 10 trainers.");
+                .WithDescription("Show a list of the trainers with the most exp.");
 
             try
             {
@@ -143,13 +151,15 @@ namespace PokeCord
                 }
             }
 
+            //TODO: Update to switch on command.CommandName, split each command into a unique class
+
             // Catch command section
             if (command.CommandName == "catch")
             {
                 // Check cooldown information
                 if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
                 {
-                    Console.WriteLine($"{username} dict entry read: key {username} value {lastUsed}");
+                    Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
                     TimeSpan elapsed = DateTime.UtcNow - lastUsed;
                     if (elapsed < _cooldownTime)
                     {
@@ -165,7 +175,8 @@ namespace PokeCord
                 {
                     Console.WriteLine($"No last command usage by {username} with userID {userId}");
                 }
-                if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow)) // If unable to add new cooldown for user
+                // If unable to add new cooldown for user
+                if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow)) 
                 {
                     //Cooldown exists so update existing cooldown
                     if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
@@ -174,10 +185,10 @@ namespace PokeCord
                     }
                     else
                     {
-                        Console.WriteLine($"Unable to update dict for {username} with data {userId}:{DateTime.UtcNow}");
+                        Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
                     }
                 }
-                Console.WriteLine($"{username} dict entry update attempted: key {username} value {DateTime.UtcNow}");
+                Console.WriteLine($"{username} cooldown entry update attempted: key {username} value {DateTime.UtcNow}");
 
                 // Check for enough Pokeballs
                 if (playerData.Pokeballs > 0)
@@ -229,9 +240,9 @@ namespace PokeCord
                 }
                 else // Not enough pokeballs
                 {
-                    await command.RespondAsync("Sorry, you're out of Poké Balls for today. " +
-                        "The Poké Mart will automatically give you 10 new Poké Balls tomorrow! " +
-                        "Unfortunately, you will not receive a bonus Premier Ball.");
+                    await command.RespondAsync($"Sorry, you're out of Poké Balls for today. " +
+                        $"The Poké Mart will automatically give you {pokeballMax} new Poké Balls tomorrow! " +
+                        $"Unfortunately, you will not receive a bonus Premier Ball.");
                 }
             }
 
@@ -248,7 +259,6 @@ namespace PokeCord
                     if (playerData.CaughtPokemon.Any())
                     {
                         PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
-
 
                         // Reply in Discord
                         string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
@@ -320,7 +330,6 @@ namespace PokeCord
 
         private static async Task<ConcurrentDictionary<ulong, PlayerData>> LoadScoreboardAsync()
         {
-            // Path to your JSON file (replace with your actual path)
             string filePath = "scoreboard.json";
 
             if (!File.Exists(filePath))
@@ -349,7 +358,6 @@ namespace PokeCord
 
         private static async Task SaveScoreboardAsync()
         {
-            // Path to your JSON file (replace with your actual path)
             string filePath = "scoreboard.json";
 
             try
