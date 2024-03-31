@@ -285,7 +285,7 @@ namespace PokeCord
                 {
                     leaderCount = leaders.Count;
                 }
-                for (int i = leaders.Count-1; i >= 0; i--)
+                for (int i = leaderCount-1; i >= 0; i--)
                 {
                     string leaderName = leaders[i].UserName;
                     int leaderExp = leaders[i].Experience;
@@ -294,7 +294,7 @@ namespace PokeCord
                 }
                 // Output message to discord
                 string leaderboardMessage = string.Join("\n", leaderMessages);
-                await command.RespondAsync(leaderboardMessage);
+                await command.RespondAsync($"Top {leaderCount+1} trainers:\n" + leaderboardMessage);
             }
         }
 
