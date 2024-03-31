@@ -11,6 +11,7 @@ namespace PokeCord
         public ulong UserId {  get; set; }
         public string UserName { get; set; }
         public int Experience { get; set; }
+        public int Pokeballs { get; set; }
         public List<PokemonData> CaughtPokemon {  get; set; }
         public PlayerData()
         {

@@ -34,7 +34,7 @@ namespace PokeCord
         //Scoreboard data structure
         private static readonly ConcurrentDictionary<ulong, PlayerData> scoreboard = LoadScoreboard();
 
-
+        private const int pokeballMax = 10;
 
         public static async Task Main(string[] args)
         {
@@ -55,7 +55,7 @@ namespace PokeCord
         }
 
         public static async Task ClientReady()
-        {            
+        {
             LoadScoreboard();
 
             var catchCommand = new SlashCommandBuilder()
@@ -92,9 +92,31 @@ namespace PokeCord
         {
             string username = command.User.Username;
             ulong userId = command.User.Id;
+            Console.WriteLine($"{username} used {command.Data.Name}");
 
+            // Get the PlayerData instance from the scoreboard
+            PlayerData playerData = null;
+            if (scoreboard.TryGetValue(userId, out playerData))
+            {
+                // PlayerData exists for this userId
+            }
+            else
+            {
+                // PlayerData does not exist for this userId, create new
+                playerData = new PlayerData
+                {
+                    UserId = userId,
+                    UserName = username,
+                    Experience = 0,
+                    Pokeballs = 10,
+                    CaughtPokemon = new List<PokemonData>()
+                };
+            }
+
+            // Catch command section
             if (command.CommandName == "catch")
             {
+                // Check cooldown information
                 if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
                 {
                     Console.WriteLine($"{username} dict entry read: key {username} value {lastUsed}");
@@ -112,7 +134,6 @@ namespace PokeCord
                     Console.WriteLine($"Could not get value for last command usage by {username} with userID {userId}\n" +
                         $"New user, or dict read error.");
                 }
-
                 if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow)) // If unable to add new cooldown for user
                 {
                     //Cooldown exists so update existing cooldown
@@ -124,64 +145,56 @@ namespace PokeCord
                         Console.WriteLine($"Unable to update dict for {username} with data {userId}:{DateTime.UtcNow}");
                     }
                 }
-
                 Console.WriteLine($"{username} dict entry update attempted: key {username} value {DateTime.UtcNow}");
-                Console.WriteLine($"{username} used {command.Data.Name}");
 
-                // Set up a new PokeSelector
-                PokeSelector pokeSelector = new PokeSelector(maxPokemonId);
-                // Set up PokeApiClient
-                var pokeApiClient = _services.GetRequiredService<PokeApiClient>();
-                // Get a new pokemon
-                PokemonData pokemonData = await pokeSelector.GetRandomPokemon(pokeApiClient);
-
-                if (pokemonData != null)
+                // Check for enough Pokeballs
+                if (playerData.Pokeballs > 0)
                 {
-                    // Update scoreboard
-                    // Check for existing entry
-                    if (scoreboard.TryGetValue(userId, out PlayerData playerData))
+                    // Set up a new PokeSelector
+                    PokeSelector pokeSelector = new PokeSelector(maxPokemonId);
+                    // Set up PokeApiClient
+                    var pokeApiClient = _services.GetRequiredService<PokeApiClient>();
+                    // Get a new pokemon
+                    PokemonData pokemonData = await pokeSelector.GetRandomPokemon(pokeApiClient);
+
+                    if (pokemonData != null)
                     {
-                        // Update existing player data
+                        // Update the existing playerData instance
                         playerData.Experience += (int)pokemonData.BaseExperience;
                         playerData.CaughtPokemon.Add(pokemonData);
+
+                        // Save the updated scoreboard data
+                        SaveScoreboard();
+
+                        // Reply in Discord
+                        string message = $"{username} caught a {pokemonData.Name} worth {pokemonData.BaseExperience} exp!";
+                        Embed[] embeds = new Embed[]
+                        {
+                            new EmbedBuilder()
+                            .WithImageUrl(pokemonData.ImageUrl)
+                            .Build()
+                        };
+                        await command.RespondAsync(message, embeds);
+                        Console.WriteLine($"{username} caught a {pokemonData.Name}");
                     }
                     else
                     {
-                        // Create new player data
-                        PlayerData newPlayerData = new PlayerData
-                        {
-                            UserId = userId,
-                            UserName = username,
-                            Experience = (int)pokemonData.BaseExperience
-                        };
-                        newPlayerData.CaughtPokemon.Add(pokemonData);
-                        scoreboard.TryAdd(userId, newPlayerData);
+                        await command.RespondAsync("Error catching a Pokémon :( @arctycfox What's up?");
+                        Console.WriteLine($"{username}'s command failed at " + DateTime.Now.ToString());
                     }
-
-                    // Save the updated scoreboard data
-                    SaveScoreboard();
-
-                    // Reply in Discord
-                    string message = $"{username} caught a {pokemonData.Name} worth {pokemonData.BaseExperience} exp!";
-                    Embed[] embeds = new Embed[]
-                    {
-                    new EmbedBuilder()
-                    .WithImageUrl(pokemonData.ImageUrl)
-                    .Build()
-                    };
-                    await command.RespondAsync(message, embeds);
-                    Console.WriteLine($"{username} caught a {pokemonData.Name}");
                 }
-                else
+                else // Not enough pokeballs
                 {
-                    await command.RespondAsync("Error catching a Pokémon :( @arctycfox What's up?");
-                    Console.WriteLine($"{username}'s command failed at " + DateTime.Now.ToString());
+                    await command.RespondAsync("Sorry, you're out of Poké Balls for today. " +
+                        "The Poké Mart will automatically give you 10 new Poké Balls tomorrow! " +
+                        "Unfortunately, you will not receive a bonus Premier Ball.");
                 }
             }
 
+            // Pokescore command section
             if (command.CommandName == "pokescore")
             {
-                if (scoreboard.TryGetValue(userId, out PlayerData playerData))
+                if (playerData != null)
                 {
                     int score = playerData.Experience;
                     List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
@@ -193,7 +206,13 @@ namespace PokeCord
                     // Reply in Discord
                     string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
                                      $"Their best catch was a {bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
-                    await command.RespondAsync(message);
+                    Embed[] embeds = new Embed[]
+                        {
+                            new EmbedBuilder()
+                            .WithImageUrl(bestPokemon.ImageUrl)
+                            .Build()
+                        };
+                    await command.RespondAsync(message, embeds);
                 }
                 else
                 {
