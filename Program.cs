@@ -297,7 +297,7 @@ namespace PokeCord
                 {
                     leaderCount = leaders.Count;
                 }
-                for (int i = leaderCount-1; i >= 0; i--)
+                for (int i = 0; i < leaderCount; i++)
                 {
                     string leaderName = leaders[i].UserName;
                     int leaderExp = leaders[i].Experience;
