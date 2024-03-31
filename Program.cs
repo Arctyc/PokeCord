@@ -24,6 +24,7 @@ namespace PokeCord
     public class Program
     {
         const int maxPokemonId = 1025;
+        const int shinyRatio = 256;
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
         private static Timer _dailyResetTimer;
@@ -160,7 +161,7 @@ namespace PokeCord
                 if (playerData.Pokeballs > 0)
                 {
                     // Set up a new PokeSelector
-                    PokeSelector pokeSelector = new PokeSelector(maxPokemonId);
+                    PokeSelector pokeSelector = new PokeSelector(maxPokemonId, shinyRatio);
                     // Set up PokeApiClient
                     var pokeApiClient = _services.GetRequiredService<PokeApiClient>();
                     // Get a new pokemon
@@ -177,6 +178,10 @@ namespace PokeCord
 
                         // Reply in Discord
                         string message = $"{username} caught a {pokemonData.Name} worth {pokemonData.BaseExperience} exp!";
+                        if (pokemonData.Shiny)
+                        {
+                            message = $"{username} caught a SHINY {pokemonData.Name} worth {pokemonData.BaseExperience} exp!";
+                        }                        
                         Embed[] embeds = new Embed[]
                         {
                             new EmbedBuilder()
@@ -215,6 +220,11 @@ namespace PokeCord
                     // Reply in Discord
                     string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
                                      $"Their best catch was a {bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
+                    if (bestPokemon.Shiny)
+                    {
+                        message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
+                                  $"Their best catch was a SHINY {bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
+                    }
                     Embed[] embeds = new Embed[]
                         {
                             new EmbedBuilder()

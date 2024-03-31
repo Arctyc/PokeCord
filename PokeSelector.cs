@@ -11,16 +11,25 @@ namespace PokeCord
     {
         private readonly Random _random;
         private readonly int _maxPokemonId = 1025;
+        private readonly int _shinyRatio = 256;
 
-        public PokeSelector(int maxPokemonId)
+        public PokeSelector(int maxPokemonId, int shinyRatio)
         {
             _random = new Random();
             _maxPokemonId = maxPokemonId;
+            _shinyRatio = shinyRatio;
         }
 
         public async Task<PokemonData> GetRandomPokemon(PokeApiClient pokeApiClient)
         {
             int randomId = _random.Next(1, _maxPokemonId + 1); // Generate random ID within range
+            int shinyCheck = _random.Next(1, _shinyRatio + 1); // Check for a shiny catch
+            //bool shiny = false;
+            bool shiny = true;
+            if (shinyCheck == _shinyRatio + 1)
+            {
+                shiny = true;
+            }
 
             /*
              * TODO:
@@ -30,14 +39,21 @@ namespace PokeCord
              * 4: If not, use rest of method
              */
 
-
             Pokemon pokemon = await pokeApiClient.GetResourceAsync<Pokemon>(randomId);
 
             if (pokemon != null)
             {
                 string imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
-                if (pokemon.BaseExperience == null) { pokemon.BaseExperience = 50; } // Avoid null experience
-                return new PokemonData { Name = pokemon.Name, ImageUrl = imageUrl, BaseExperience = (int)pokemon.BaseExperience, Timestamp = DateTime.UtcNow };
+                int experience = (int)pokemon.BaseExperience;
+                if (shiny)
+                {
+                    imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
+                    experience = experience * 4;
+
+                }
+                
+                if (pokemon.BaseExperience == null) { pokemon.BaseExperience = 50; }
+                return new PokemonData { Name = pokemon.Name, ImageUrl = imageUrl, BaseExperience = experience, Timestamp = DateTime.UtcNow, Shiny = shiny };
             }
             else
             {
@@ -49,6 +65,7 @@ namespace PokeCord
 
     public class PokemonData // Simple data structure for Pokemon information
     {
+        public bool Shiny {  get; set; }
         public string Name { get; set; }
         public string ImageUrl { get; set; }
         public int BaseExperience { get; set; }
