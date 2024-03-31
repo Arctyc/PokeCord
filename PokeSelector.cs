@@ -36,7 +36,8 @@ namespace PokeCord
             if (pokemon != null)
             {
                 string imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
-                return new PokemonData { Name = pokemon.Name, ImageUrl = imageUrl };
+                if (pokemon.BaseExperience == null) { pokemon.BaseExperience = 50; } // Avoid null experience
+                return new PokemonData { Name = pokemon.Name, ImageUrl = imageUrl, BaseExperience = (int)pokemon.BaseExperience, Timestamp = DateTime.UtcNow };
             }
             else
             {
@@ -50,5 +51,7 @@ namespace PokeCord
     {
         public string Name { get; set; }
         public string ImageUrl { get; set; }
+        public int BaseExperience { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }
