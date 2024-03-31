@@ -8,6 +8,7 @@ namespace PokeCord
 {
     internal class PlayerData
     {
+        public int version = 1;
         public ulong UserId {  get; set; }
         public string UserName { get; set; }
         public int Experience { get; set; }
