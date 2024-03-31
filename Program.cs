@@ -25,19 +25,19 @@ namespace PokeCord
     {
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         const int shinyRatio = 256; // Chance of catching a shiny
+        private const int pokeballMax = 10; // Maximum catches per restock (currently hourly)
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
-        private static Timer _dailyResetTimer;
+        private static Timer _pokeballResetTimer;
+
+        //TODO: Create a timer to batch save to file every so often
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(300); // Set your desired cooldown time
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(60); // Set your desired cooldown time
 
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
-
-        // Maximum catches per day
-        private const int pokeballMax = 50;
 
         public static async Task Main(string[] args)
         {
@@ -49,16 +49,13 @@ namespace PokeCord
             _services = ConfigureServices();
             _client.Log += Log;
 
-            // Load scoreboard
-            scoreboard = await LoadScoreboardAsync();
-
             // Set up Pokemart
-            // Calculate the time remaining until the next midnight
-            TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-            _dailyResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
-            Console.WriteLine("Time until Pokeball reset: " +  delay);
-            // Run once on startup
-            await ResetPokeballs(null);            
+            // Calculate the time remaining until the next pokeball restock (Hourly)
+            DateTime nextHour = DateTime.Now.AddHours(1).AddMinutes(-DateTime.Now.Minute).AddSeconds(-DateTime.Now.Second);
+            TimeSpan delay = nextHour - DateTime.Now;
+            // Call the restock method on the delay
+            _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromHours(1));
+            Console.WriteLine("Time until Pokeball reset: " + delay);
 
             // Login to Discord
             await _client.LoginAsync(TokenType.Bot, token);
@@ -76,6 +73,11 @@ namespace PokeCord
 
         public static async Task ClientReady()
         {
+            // Load scoreboard
+            scoreboard = await LoadScoreboardAsync();
+            // Make sure everyone has a full stock of pokeballs when bot comes online
+            await ResetPokeballs(null); 
+
             // Set up slash commands
             var catchCommand = new SlashCommandBuilder()
                 .WithName("catch")
@@ -92,11 +94,11 @@ namespace PokeCord
             try
             {
                 await _client.CreateGlobalApplicationCommandAsync(catchCommand.Build());
-                Console.WriteLine("Creating catch command...");
+                Console.WriteLine("Created command: catch");
                 await _client.CreateGlobalApplicationCommandAsync(scoreCommand.Build());
-                Console.WriteLine("Creating score command...");
+                Console.WriteLine("Created command: pokescore");
                 await _client.CreateGlobalApplicationCommandAsync(leaderboardCommand.Build());
-                Console.WriteLine("Creating leaderboard command...");
+                Console.WriteLine("Created command: pokeleaderboard");
             }
             catch (HttpException ex)
             {
@@ -206,8 +208,8 @@ namespace PokeCord
 
                         // Update the existing playerData instance
                         playerData.Experience += (int)pokemonData.BaseExperience; //BUG: Occasionally null reference error!?
-                        playerData.CaughtPokemon.Add(pokemonData);
-                        playerData.Pokeballs -= 1;
+                        playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
+                        playerData.Pokeballs -= 1; // subtract one pokeball from user's inventory
 
                         if (scoreboard.TryUpdate(userId, playerData, originalPlayerData))
                         {
@@ -322,10 +324,10 @@ namespace PokeCord
             // Update the actual scoreboard atomically
             await Task.Run(() => scoreboard = new ConcurrentDictionary<ulong, PlayerData>(playerDataList.ToDictionary(p => p.UserId, p => p)));
 
-            // Save the updated scoreboard
-            await SaveScoreboardAsync();
-
             Console.WriteLine("Pokeballs have been reset for all players!");
+
+            // Save the updated scoreboard
+            await SaveScoreboardAsync();            
         }
 
         private static async Task<ConcurrentDictionary<ulong, PlayerData>> LoadScoreboardAsync()

@@ -26,7 +26,7 @@ namespace PokeCord
             int randomId = _random.Next(1, _maxPokemonId + 1); // Generate random ID within range
             int shinyCheck = _random.Next(1, _shinyRatio + 1); // Check for a shiny catch
             bool shiny = false;
-            if (shinyCheck == _shinyRatio + 1)
+            if (shinyCheck == _shinyRatio)
             {
                 shiny = true;
             }
