@@ -277,7 +277,7 @@ namespace PokeCord
             if (command.CommandName == "pokeleaderboard")
             {
                 // Get a sorted list of players
-                var leaders = scoreboard.Values.OrderByDescending(p => p.Experience).ToList();
+                var leaders = scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
                 // Add a message line for each of the top 10 from 10 to 1
                 List<string> leaderMessages = new List<string>();
                 for (int i = 9; i >= 0; i--)
