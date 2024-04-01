@@ -25,7 +25,7 @@ namespace PokeCord
     {
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         const int shinyRatio = 256; // Chance of catching a shiny
-        private const int pokeballMax = 25; // Maximum catches per restock (currently hourly)
+        private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
         private static Timer _pokeballResetTimer;
@@ -36,7 +36,7 @@ namespace PokeCord
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(300); // Set your desired cooldown time
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(2); // Cooldown time in seconds
 
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
@@ -66,8 +66,8 @@ namespace PokeCord
             TimeSpan delay = nextHour - DateTime.Now;
             // Call the restock method on the delay
             _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromHours(1));
-            */
             Console.WriteLine("Time until Pokeball reset: " + delay);
+            */
 
             // Login to Discord
             await _client.LoginAsync(TokenType.Bot, token);
@@ -229,23 +229,24 @@ namespace PokeCord
                         Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
 
                         // Update the existing playerData instance
-                        playerData.Experience += (int)pokemonData.BaseExperience; //BUG: Occasionally null reference error!?
+                        playerData.Experience += (int)pokemonData.BaseExperience;
                         playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                         playerData.Pokeballs -= 1; // subtract one pokeball from user's inventory
 
                         // Check for new badges
                         BadgeManager badgeManager = new BadgeManager();
-                        List<Badge> newBadges = badgeManager.UpdateBadgesAsync(playerData, badges);
+                        List<Badge> newBadges = badgeManager.UpdateBadgesAsync(playerData, badges, pokemonData);
                         List<string> newBadgeMessages = new List<string>();
                         if (newBadges != null)
                         {
                             foreach (Badge badge in newBadges)
                             {
-                                string newBadgeMessage = $"{username} has acquired the {badge.Name} badge!\n{badge.Description}";
+                                // Add badges to playerData
+                                playerData.Badges.Add(badge, DateTime.UtcNow);
+
+                                string newBadgeMessage = $":felChamp: {username} has acquired the {badge.Name}!\n{badge.Description}\n";
                                 newBadgeMessages.Add(newBadgeMessage);
                             }
-                            string allNewBadgeMessages = string.Join("\n", newBadgeMessages);
-                            command.RespondAsync(allNewBadgeMessages);
                         }
 
                         if (scoreboard.TryUpdate(userId, playerData, originalPlayerData))
@@ -259,17 +260,26 @@ namespace PokeCord
                         // Save the updated scoreboard data
                         await SaveScoreboardAsync();
 
-                        // Reply in Discord
-                        string message = $"{username} caught a {(pokemonData.Shiny ? "SHINY " : "")}" +
-                                         $"{pokemonData.Name} worth {pokemonData.BaseExperience} exp! {playerData.Pokeballs}/{pokeballMax} Poké Balls remaining.";                    
+                        // Format Discord Reply
+                        string richPokemonName = FixPokemonName(pokemonData.Name);
+                        bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
+                        if (pokemonData.Shiny) { startsWithVowel = false; }                        
+                        string message = $"{username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
+                                         $"{richPokemonName} worth {pokemonData.BaseExperience} exp! {playerData.Pokeballs}/{pokeballMax} Poké Balls remaining.";                    
                         Embed[] embeds = new Embed[]
                         {
                             new EmbedBuilder()
                             .WithImageUrl(pokemonData.ImageUrl)
                             .Build()
                         };
+                        if (newBadgeMessages != null)
+                        {
+                            string newMessage = String.Join("\n", newBadgeMessages);
+                            newMessage += "\n" + message;
+                            message = newMessage;
+                        }
+                        // Send Discord reply
                         await command.RespondAsync(message, embeds);
-                        
                     }
                     else
                     {
@@ -298,14 +308,12 @@ namespace PokeCord
                     if (playerData.CaughtPokemon.Any())
                     {
                         PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
-                        int badgesEarned = 0;//TESTING
-                        int totalBadges = 0;//TESTING
-
+                        int averageExp = playerData.Experience / playerData.CaughtPokemon.Count;
                         // Reply in Discord
-                        string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
-                                         $"They have earned {badgesEarned} out of {totalBadges} badges.\n" + 
+                        string message = $"{username} has caught {catches} Pokémon totalling {score} exp. Average exp/catch: {averageExp}\n" +
+                                         $"They have earned {playerData.Badges.Count} out of {badges.Count} badges.\n" + 
                                          $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
-                                         $"{bestPokemon.Name} worth {bestPokemon.BaseExperience} exp!";
+                                         $"{FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
                         Embed[] embeds = new Embed[]
                             {
                             new EmbedBuilder()
@@ -348,6 +356,41 @@ namespace PokeCord
                 // Output message to discord
                 string leaderboardMessage = string.Join("\n", leaderMessages);
                 await command.RespondAsync($"Top {leaderCount} trainers:\n" + leaderboardMessage);
+            }
+
+            // Badges section
+            if (command.CommandName == "pokebadges")
+            {
+                string badgeCountMessage;
+                List<Badge> playerBadges = playerData.Badges.Keys.ToList();
+                if (playerBadges == null)
+                {
+                    badgeCountMessage = $"{username} has not yet earned any badges.";
+                }
+                else
+                {
+                    badgeCountMessage = $"{username} has acquired {playerData.Badges.Count} of {badges.Count} badges.\n";
+                }                
+                foreach (Badge badge in playerBadges)
+                {
+                    badgeCountMessage += string.Join(", ", badge.Name);
+                }
+                await command.RespondAsync(badgeCountMessage);
+            }
+        }
+
+        public static string FixPokemonName(string pokemonName)
+        {
+            if (pokemonName.IndexOf('-') != -1)
+            {
+                int hyphenIndex = pokemonName.IndexOf('-');
+                return pokemonName.Substring(0, hyphenIndex) + " " +
+                       char.ToUpper(pokemonName[hyphenIndex + 1]) +
+                       pokemonName.Substring(hyphenIndex + 2);
+            }
+            else
+            {
+                return pokemonName;
             }
         }
 
