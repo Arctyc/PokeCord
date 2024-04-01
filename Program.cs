@@ -49,6 +49,9 @@ namespace PokeCord
             // Load scoreboard
             scoreboard = LoadScoreboard();
 
+            // Remove duplicate badges
+            scoreboard = RemoveDuplicateBadges(scoreboard);
+
             // FETCH ENVIRONMENT VARIABLE TOKEN
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
@@ -504,6 +507,50 @@ namespace PokeCord
                     return new List<Badge>();
                 }
             }            
+        }
+
+        // Remove duplicate badges
+        public static ConcurrentDictionary<ulong, PlayerData> RemoveDuplicateBadges(ConcurrentDictionary<ulong, PlayerData> scoreboard)
+        {
+            ConcurrentDictionary<ulong, PlayerData> newScoreboard = new ConcurrentDictionary<ulong, PlayerData>();
+
+            foreach (var kvp in scoreboard)
+            {
+                ulong userId = kvp.Key;
+                PlayerData playerData = kvp.Value;
+
+                // Rebuild each playerData object
+                PlayerData newPlayerData = new PlayerData
+                {
+                    Version = playerData.Version,
+                    UserId = playerData.UserId,
+                    UserName = playerData.UserName,
+                    Experience = playerData.Experience,
+                    Pokeballs = playerData.Pokeballs,
+                    CaughtPokemon = playerData.CaughtPokemon,
+                    EarnedBadges = new List<Badge>()              
+                };
+
+                HashSet<int> uniqueBadgeIds = new HashSet<int>();
+
+                foreach (var badge in playerData.EarnedBadges)
+                {
+                    if (!uniqueBadgeIds.Contains(badge.Id))
+                    {
+                        // Badge is unique, add it to the new EarnedBadges list
+                        newPlayerData.EarnedBadges.Add(badge);
+                        uniqueBadgeIds.Add(badge.Id);
+                    }
+                }
+                if(newScoreboard.TryAdd(userId, newPlayerData))
+                {                    
+                }
+                else
+                {
+                    Console.WriteLine($"Unable to remove duplicate badges for {newPlayerData.UserName}. Data lost?");
+                }
+            }
+            return newScoreboard;
         }
 
         private static Task Log(LogMessage msg)

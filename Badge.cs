@@ -20,13 +20,14 @@ namespace PokeCord
         public List<Badge> UpdateBadgesAsync(PlayerData playerData, List<Badge> allBadges, PokemonData pokemonData)
         {
             List<Badge> newBadges = new List<Badge>();
+
             // Ignore badges already acquired by player
-            // Retroactively check shiny badge
             foreach (Badge badge in playerData.EarnedBadges)
             {
-                if (allBadges.Contains(badge))
+                if (allBadges.Any(b => b.Id == badge.Id))
                 {
-                    allBadges.Remove(badge);
+                    // Player has already earned this badge, do not check for it
+                    allBadges.RemoveAll(b => b.Id == badge.Id);                    
                 }
             }
             // Check for new acquisitions
@@ -48,7 +49,8 @@ namespace PokeCord
                 {
                     newBadges.Add(badge);
                 }
-            }            
+
+            }
             //pass data back
             return newBadges;
         }
