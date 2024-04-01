@@ -50,7 +50,7 @@ namespace PokeCord
             scoreboard = LoadScoreboard();
 
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
