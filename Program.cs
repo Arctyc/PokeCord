@@ -30,8 +30,10 @@ namespace PokeCord
         private static IServiceProvider _services;
         private static Timer _pokeballResetTimer;
 
-        //TODO: Create a timer to batch save to file every so often
+        //TODO: Create a timer to batch save to file every so often -- queue?
 
+        //TODO: Monthly leaderboard - Keep CaughtPokemon but reset exp
+      
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
         private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(60); // Set your desired cooldown time
@@ -348,7 +350,21 @@ namespace PokeCord
             try
             {
                 string jsonData = File.ReadAllText(filePath);
-                return JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, PlayerData>>(jsonData);
+                ConcurrentDictionary<ulong, PlayerData> loadedScoreboard = JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, PlayerData>>(jsonData);
+                
+                // Handle playerData version mismatch here
+                foreach (var playerData in loadedScoreboard.Values)
+                {
+                    if (playerData.Version == 1)
+                    {
+                        // Upgrade to Version 2
+                        playerData.Version = 2;
+                        playerData.Badges = new Dictionary<Badge, DateTime>();
+                        Console.WriteLine($"{playerData.UserName} upgraded playerData version from 1 to 2");
+                    }
+                }
+
+                return loadedScoreboard;
             }
             catch (Exception ex)
             {
