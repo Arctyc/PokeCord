@@ -36,7 +36,7 @@ namespace PokeCord
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(2); // Cooldown time in seconds
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
 
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
@@ -45,7 +45,7 @@ namespace PokeCord
         public static async Task Main(string[] args)
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
