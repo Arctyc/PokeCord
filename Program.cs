@@ -45,7 +45,7 @@ namespace PokeCord
         public static async Task Main(string[] args)
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
