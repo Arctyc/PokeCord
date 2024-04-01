@@ -70,7 +70,7 @@ namespace PokeCord
         }
     }
 
-    public class PokemonData // Simple data structure for Pokemon information
+    public class PokemonData
     {
         public int PokedexId { get; set; }
         public bool Shiny {  get; set; }
