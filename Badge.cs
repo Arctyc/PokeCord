@@ -8,7 +8,7 @@ namespace PokeCord
 {
     public class Badge
     {
-        public int version = 1;
+        public int Version { get; set; } = 1;
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
@@ -22,7 +22,7 @@ namespace PokeCord
             List<Badge> newBadges = new List<Badge>();
             // Ignore badges already acquired by player
             // Retroactively check shiny badge
-            foreach (Badge badge in playerData.Badges.Keys)
+            foreach (Badge badge in playerData.EarnedBadges)
             {
                 if (allBadges.Contains(badge))
                 {
