@@ -290,7 +290,7 @@ namespace PokeCord
                 else // Not enough pokeballs
                 {
                     await command.RespondAsync($"Sorry, you're out of Poké Balls for now. " +
-                        $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls every hour. " +
+                        $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls every day. " +
                         $"Unfortunately, you will not receive a bonus Premier Ball.");
                 }
             }
