@@ -36,7 +36,7 @@ namespace PokeCord
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(3); // Cooldown time in seconds
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
 
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
