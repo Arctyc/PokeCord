@@ -244,7 +244,7 @@ namespace PokeCord
                                 // Add badges to playerData
                                 playerData.Badges.Add(badge, DateTime.UtcNow);
 
-                                string newBadgeMessage = $"{username} has acquired the {badge.Name}!\n{badge.Description}\n";
+                                string newBadgeMessage = $":felChamp: {username} has acquired the {badge.Name}!\n{badge.Description}\n";
                                 newBadgeMessages.Add(newBadgeMessage);
                             }
                         }
