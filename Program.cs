@@ -94,7 +94,7 @@ namespace PokeCord
         public static async Task ClientReady()
         {
             // Make sure everyone has a full stock of pokeballs when bot comes online
-            await ResetPokeballs(null);
+            //await ResetPokeballs(null); // Unnecessary for now
 
             // Set up slash commands
             var catchCommand = new SlashCommandBuilder()
