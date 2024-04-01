@@ -36,7 +36,7 @@ namespace PokeCord
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(3); // Cooldown time in seconds
 
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
@@ -44,11 +44,13 @@ namespace PokeCord
 
         public static async Task Main(string[] args)
         {
+            // Load badges
+            badges = LoadBadges();
             // Load scoreboard
             scoreboard = LoadScoreboard();
 
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
@@ -88,8 +90,6 @@ namespace PokeCord
 
         public static async Task ClientReady()
         {
-            // Load badges
-            badges = await LoadBadgesAsync();
             // Make sure everyone has a full stock of pokeballs when bot comes online
             await ResetPokeballs(null);
 
@@ -162,7 +162,8 @@ namespace PokeCord
                     Experience = 0,
                     Pokeballs = pokeballMax,
                     CaughtPokemon = new List<PokemonData>(),
-                    Badges = new Dictionary<Badge, DateTime>()
+                    EarnedBadges = new List<Badge>()
+                    //Badges = new Dictionary<Badge, DateTime>()
                 };
                 if (scoreboard.TryAdd(userId, playerData))
                 {
@@ -243,7 +244,8 @@ namespace PokeCord
                             foreach (Badge badge in newBadges)
                             {
                                 // Add badges to playerData
-                                playerData.Badges.Add(badge, DateTime.UtcNow);
+                                playerData.EarnedBadges.Add(badge);
+                                //playerData.Badges.Add(badge, DateTime.UtcNow);
 
                                 string newBadgeMessage = $"{username} has acquired the {badge.Name}!\n{badge.Description}\n";
                                 newBadgeMessages.Add(newBadgeMessage);
@@ -259,7 +261,7 @@ namespace PokeCord
                             Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                         }
                         // Save the updated scoreboard data
-                        SaveScoreboard();
+                        await SaveScoreboardAsync();
 
                         // Format Discord Reply
                         string richPokemonName = FixPokemonName(pokemonData.Name);
@@ -312,7 +314,7 @@ namespace PokeCord
                         int averageExp = playerData.Experience / playerData.CaughtPokemon.Count;
                         // Reply in Discord
                         string message = $"{username} has caught {catches} Pokémon totalling {score} exp. Average exp/catch: {averageExp}\n" +
-                                         $"They have earned {playerData.Badges.Count} out of {badges.Count} badges.\n" +
+                                         $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
                                          $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
                                          $"{FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
                         Embed[] embeds = new Embed[]
@@ -363,16 +365,17 @@ namespace PokeCord
             if (command.CommandName == "pokebadges")
             {
                 string badgeCountMessage;
-                List<Badge> playerBadges = playerData.Badges.Keys.ToList();
-                if (playerBadges == null)
+
+                //List<Badge> playerBadges = playerData.Badges.Keys.ToList();
+                if (playerData.EarnedBadges == null)
                 {
                     badgeCountMessage = $"{username} has not yet earned any badges.";
                 }
                 else
                 {
-                    badgeCountMessage = $"{username} has acquired {playerData.Badges.Count} of {badges.Count} badges.\n";
+                    badgeCountMessage = $"{username} has acquired {playerData.EarnedBadges.Count} of {badges.Count} badges.\n";
                 }
-                foreach (Badge badge in playerBadges)
+                foreach (Badge badge in playerData.EarnedBadges)
                 {
                     badgeCountMessage += string.Join(", ", badge.Name);
                 }
@@ -412,7 +415,7 @@ namespace PokeCord
             Console.WriteLine("Pokeballs have been reset for all players!");
 
             // Save the updated scoreboard
-            SaveScoreboard();
+            await SaveScoreboardAsync();
         }
 
         private static ConcurrentDictionary<ulong, PlayerData> LoadScoreboard()
@@ -422,7 +425,7 @@ namespace PokeCord
             if (!File.Exists(filePath))
             {
                 Console.WriteLine("Scoreboard data file not found. Creating a new one.");
-                SaveScoreboard();
+                SaveScoreboardAsync();
                 return new ConcurrentDictionary<ulong, PlayerData>();
             }
             else
@@ -442,11 +445,11 @@ namespace PokeCord
                     {
                         // Upgrade to Version 2
                         playerData.Version = 2;
-                        playerData.Badges = new Dictionary<Badge, DateTime>();
+                        playerData.EarnedBadges = new List<Badge>();
+                        //playerData.Badges = new Dictionary<Badge, DateTime>();
                         Console.WriteLine($"{playerData.UserName} upgraded playerData version from 1 to 2");
                     }
                 }
-
                 return loadedScoreboard;
             }
             catch (Exception ex)
@@ -457,7 +460,7 @@ namespace PokeCord
             }
         }
 
-        private static void SaveScoreboard()
+        private static async Task SaveScoreboardAsync()
         {
             string filePath = "scoreboard.json";
 
@@ -467,7 +470,7 @@ namespace PokeCord
                 string jsonData = JsonConvert.SerializeObject(scoreboard);
 
                 // Write the JSON string to the file asynchronously
-                File.WriteAllTextAsync(filePath, jsonData);
+                await File.WriteAllTextAsync(filePath, jsonData);
                 Console.WriteLine("Scoreboard data saved successfully.");
             }
             catch (Exception ex)
@@ -477,7 +480,7 @@ namespace PokeCord
             }
         }
 
-        private static async Task<List<Badge>> LoadBadgesAsync()
+        private static List<Badge> LoadBadges()
         {
             string filePath = "badges.json";
 
@@ -488,20 +491,19 @@ namespace PokeCord
             }
             else
             {
-                Console.WriteLine($"Badges loaded from {filePath}");
-            }
-
-            try
-            {
-                string jsonData = File.ReadAllText(filePath);
-                return JsonConvert.DeserializeObject<List<Badge>>(jsonData);
-            }
-            catch (Exception ex)
-            {
-                // Handle deserialization errors or file access exceptions
-                Console.WriteLine("Error loading badge data: {0}", ex.Message);
-                return new List<Badge>();
-            }
+                try
+                {
+                    string jsonData = File.ReadAllText(filePath);
+                    Console.WriteLine($"Badges loaded from {filePath}");
+                    return JsonConvert.DeserializeObject<List<Badge>>(jsonData);
+                }
+                catch (Exception ex)
+                {
+                    // Handle deserialization errors or file access exceptions
+                    Console.WriteLine("Error loading badge data: {0}", ex.Message);
+                    return new List<Badge>();
+                }
+            }            
         }
 
         private static Task Log(LogMessage msg)
