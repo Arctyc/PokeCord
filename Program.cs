@@ -44,6 +44,9 @@ namespace PokeCord
 
         public static async Task Main(string[] args)
         {
+            // Load scoreboard
+            scoreboard = LoadScoreboard();
+
             // FETCH ENVIRONMENT VARIABLE TOKEN
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
@@ -85,8 +88,6 @@ namespace PokeCord
 
         public static async Task ClientReady()
         {
-            // Load scoreboard
-            scoreboard = await LoadScoreboardAsync();
             // Load badges
             badges = await LoadBadgesAsync();
             // Make sure everyone has a full stock of pokeballs when bot comes online
@@ -258,7 +259,7 @@ namespace PokeCord
                             Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                         }
                         // Save the updated scoreboard data
-                        await SaveScoreboardAsync();
+                        SaveScoreboard();
 
                         // Format Discord Reply
                         string richPokemonName = FixPokemonName(pokemonData.Name);
@@ -411,17 +412,17 @@ namespace PokeCord
             Console.WriteLine("Pokeballs have been reset for all players!");
 
             // Save the updated scoreboard
-            await SaveScoreboardAsync();
+            SaveScoreboard();
         }
 
-        private static async Task<ConcurrentDictionary<ulong, PlayerData>> LoadScoreboardAsync()
+        private static ConcurrentDictionary<ulong, PlayerData> LoadScoreboard()
         {
             string filePath = "scoreboard.json";
 
             if (!File.Exists(filePath))
             {
                 Console.WriteLine("Scoreboard data file not found. Creating a new one.");
-                await SaveScoreboardAsync();
+                SaveScoreboard();
                 return new ConcurrentDictionary<ulong, PlayerData>();
             }
             else
@@ -456,7 +457,7 @@ namespace PokeCord
             }
         }
 
-        private static async Task SaveScoreboardAsync()
+        private static void SaveScoreboard()
         {
             string filePath = "scoreboard.json";
 
@@ -466,7 +467,7 @@ namespace PokeCord
                 string jsonData = JsonConvert.SerializeObject(scoreboard);
 
                 // Write the JSON string to the file asynchronously
-                await File.WriteAllTextAsync(filePath, jsonData);
+                File.WriteAllTextAsync(filePath, jsonData);
                 Console.WriteLine("Scoreboard data saved successfully.");
             }
             catch (Exception ex)
