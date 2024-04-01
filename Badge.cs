@@ -17,9 +17,10 @@ namespace PokeCord
 
     public class BadgeManager
     {
-        public List<Badge> UpdateBadgesAsync(PlayerData playerData, List<Badge> allBadges, PokemonData pokemonData)
+        public List<Badge> UpdateBadgesAsync(PlayerData playerData, List<Badge> badges, PokemonData pokemonData)
         {
             List<Badge> newBadges = new List<Badge>();
+            List<Badge> allBadges = new List<Badge>(badges);
 
             // Ignore badges already acquired by player
             foreach (Badge badge in playerData.EarnedBadges)
