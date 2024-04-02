@@ -29,7 +29,6 @@ namespace PokeCord
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
         private static Timer _pokeballResetTimer;
-        private static TimeSpan delay;
 
         //TODO: Create a timer to batch save to file every so often
 
@@ -66,7 +65,7 @@ namespace PokeCord
 
             // -- Daily Restock
             // Calculate the time remaining until the next pokeball restock
-            delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
+            TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
             _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
@@ -307,6 +306,7 @@ namespace PokeCord
                 }
                 else // Not enough pokeballs
                 {
+                    TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
                     int timeRemaining = (int)delay.TotalSeconds;
                     var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
 
@@ -358,6 +358,7 @@ namespace PokeCord
             // Leaderboard section
             if (command.CommandName == "pokeleaderboard")
             {
+                TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
                 // Log time til next pokeball in console - cheeky workaround to check it
                 Console.WriteLine("Time until Pokeball reset: " + delay);
 
