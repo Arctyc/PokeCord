@@ -25,7 +25,7 @@ namespace PokeCord
     {
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         const int shinyRatio = 256; // Chance of catching a shiny
-        private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
+        private const int pokeballMax = 5; // Maximum catches per restock (currently hourly)
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
         private static Timer _pokeballResetTimer;
@@ -307,8 +307,11 @@ namespace PokeCord
                 }
                 else // Not enough pokeballs
                 {
+                    int timeRemaining = (int)delay.TotalSeconds;
+                    var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+
                     await command.RespondAsync($"Sorry, you're out of Poké Balls for now. " +
-                        $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls every day. " +
+                        $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls <t:{cooldownUnixTime}:R>. " +
                         $"Unfortunately, you will not receive a bonus Premier Ball.");
                 }
             }
