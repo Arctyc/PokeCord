@@ -37,7 +37,7 @@ namespace PokeCord
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(3); // Cooldown time in seconds
 
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
@@ -253,7 +253,8 @@ namespace PokeCord
                                 playerData.Pokeballs += badge.BonusPokeballs;
                                 //playerData.Badges.Add(badge, DateTime.UtcNow);
 
-                                string newBadgeMessage = $"{username} has acquired the {badge.Name}!\n{badge.Description}\n";
+                                string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Poké Balls!\n" +
+                                                         $"{badge.Description}\n";
                                 newBadgeMessages.Add(newBadgeMessage);
                             }
                         }
