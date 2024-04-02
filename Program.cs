@@ -29,6 +29,7 @@ namespace PokeCord
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
         private static Timer _pokeballResetTimer;
+        private static TimeSpan delay;
 
         //TODO: Create a timer to batch save to file every so often
 
@@ -54,6 +55,7 @@ namespace PokeCord
 
             // FETCH ENVIRONMENT VARIABLE TOKEN
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            //var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
@@ -62,7 +64,7 @@ namespace PokeCord
 
             // -- Daily Restock
             // Calculate the time remaining until the next pokeball restock
-            TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
+            delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
             _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
@@ -306,7 +308,7 @@ namespace PokeCord
             {
                 if (playerData != null)
                 {
-                    int score = playerData.Experience;
+                    string score = playerData.Experience.ToString("N0");
                     List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
                     int catches = caughtPokemon.Count;
 
@@ -317,6 +319,7 @@ namespace PokeCord
                         int averageExp = playerData.Experience / playerData.CaughtPokemon.Count;
                         // Reply in Discord
                         string message = $"{username} has caught {catches} Pokémon totalling {score} exp. Average exp/catch: {averageExp}\n" +
+                                         //$"Rank: \n" +
                                          $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
                                          $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
                                          $"{FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
@@ -342,6 +345,9 @@ namespace PokeCord
             // Leaderboard section
             if (command.CommandName == "pokeleaderboard")
             {
+                // Log time til next pokeball in console - cheeky workaround to check it
+                Console.WriteLine("Time until Pokeball reset: " + delay);
+
                 // Get a sorted list of players
                 var leaders = scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
                 // Add a message line for each of the top 10 from 10 to 1
