@@ -54,8 +54,8 @@ namespace PokeCord
             scoreboard = RemoveDuplicateBadges(scoreboard);
 
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-            //var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
@@ -415,7 +415,10 @@ namespace PokeCord
             // Reset Pokeballs for each player in the copy
             foreach (var playerData in playerDataList)
             {
-                playerData.Pokeballs = pokeballMax;
+                if (playerData.Pokeballs < pokeballMax)
+                {
+                    playerData.Pokeballs = pokeballMax;
+                }                
             }
 
             // Update the actual scoreboard atomically
