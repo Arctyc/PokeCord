@@ -25,7 +25,7 @@ namespace PokeCord
     {
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         const int shinyRatio = 256; // Chance of catching a shiny
-        private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
+        private const int pokeballMax = 5; // Maximum catches per restock (currently hourly)
         private static DiscordSocketClient _client;
         private static IServiceProvider _services;
         private static Timer _pokeballResetTimer;
@@ -37,7 +37,7 @@ namespace PokeCord
 
         //Cooldown data structure
         private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(3); // Cooldown time in seconds
 
         //Scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
@@ -54,13 +54,15 @@ namespace PokeCord
             scoreboard = RemoveDuplicateBadges(scoreboard);
 
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-            //var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
             _services = ConfigureServices();
             _client.Log += Log;
+
+            //TODO: Monthly scoreboard reset
 
             // -- Daily Restock
             // Calculate the time remaining until the next pokeball restock
@@ -113,6 +115,12 @@ namespace PokeCord
             var badgesCommand = new SlashCommandBuilder()
                 .WithName("pokebadges")
                 .WithDescription("Show a list of your earned badges");
+
+            //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
+            // - /givepokeballs <user> <amount>
+            /*
+            var givepokeballsCommand = new SlashCommandBuilder()
+            */
 
             try
             {
@@ -250,9 +258,11 @@ namespace PokeCord
                             {
                                 // Add badges to playerData
                                 playerData.EarnedBadges.Add(badge);
+                                playerData.Pokeballs += badge.BonusPokeballs;
                                 //playerData.Badges.Add(badge, DateTime.UtcNow);
 
-                                string newBadgeMessage = $"{username} has acquired the {badge.Name}!\n{badge.Description}\n";
+                                string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Poké Balls!\n" +
+                                                         $"{badge.Description}\n";
                                 newBadgeMessages.Add(newBadgeMessage);
                             }
                         }
@@ -297,8 +307,11 @@ namespace PokeCord
                 }
                 else // Not enough pokeballs
                 {
+                    int timeRemaining = (int)delay.TotalSeconds;
+                    var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+
                     await command.RespondAsync($"Sorry, you're out of Poké Balls for now. " +
-                        $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls every day. " +
+                        $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls <t:{cooldownUnixTime}:R>. " +
                         $"Unfortunately, you will not receive a bonus Premier Ball.");
                 }
             }
@@ -415,7 +428,10 @@ namespace PokeCord
             // Reset Pokeballs for each player in the copy
             foreach (var playerData in playerDataList)
             {
-                playerData.Pokeballs = pokeballMax;
+                if (playerData.Pokeballs < pokeballMax)
+                {
+                    playerData.Pokeballs = pokeballMax;
+                }                
             }
 
             // Update the actual scoreboard atomically

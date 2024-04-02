@@ -12,6 +12,7 @@ namespace PokeCord
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public int BonusPokeballs { get; set; }
         public List<PokemonData> GymPokemon {  get; set; }
     }
 
