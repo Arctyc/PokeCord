@@ -360,7 +360,7 @@ namespace PokeCord
                 for (int i = 0; i < leaderCount; i++)
                 {
                     string leaderName = leaders[i].UserName;
-                    int leaderExp = leaders[i].Experience;
+                    string leaderExp = leaders[i].Experience.ToString("N0");
                     int averageExp = leaders[i].Experience / leaders[i].CaughtPokemon.Count;
                     string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Average exp/catch: {averageExp}";
                     leaderMessages.Add(message);
