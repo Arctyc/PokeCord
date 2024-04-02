@@ -62,6 +62,8 @@ namespace PokeCord
             _services = ConfigureServices();
             _client.Log += Log;
 
+            //TODO: Monthly scoreboard reset
+
             // -- Daily Restock
             // Calculate the time remaining until the next pokeball restock
             delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
@@ -113,6 +115,12 @@ namespace PokeCord
             var badgesCommand = new SlashCommandBuilder()
                 .WithName("pokebadges")
                 .WithDescription("Show a list of your earned badges");
+
+            //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
+            // - /givepokeballs <user> <amount>
+            /*
+            var givepokeballsCommand = new SlashCommandBuilder()
+            */
 
             try
             {
