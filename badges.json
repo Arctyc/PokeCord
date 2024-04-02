@@ -1,69 +1,167 @@
 [
-    {
-        "Version": 1,
-        "Id": 1,
-        "Name": "New Trainer Badge",
-        "Description": "This badge is awarded for catching your first Pokémon."
-    },
-    {
-        "Version": 1,
-        "Id": 2,
-        "Name": "Shiny Badge",
-        "Description": "This badge is awarded for catching your first shiny Pokémon."
-    },
-    {
-        "Version": 1,
-        "Id": 101,
-        "Name": "Boulder Badge",
-        "Description": "This badge is awarded for catching all of the Pewter Gym Pokémon. You Brock!",
-        "GymPokemon": [
-          { "Id": 27, "Name": "Sandshrew" },
-          { "Id": 50, "Name": "Diglett" },
-          { "Id": 74, "Name": "Geodude" },
-          { "Id": 75, "Name": "Graveler" },
-          { "Id": 76, "Name": "Golem" },
-          { "Id": 95, "Name": "Onix" },
-          { "Id": 111, "Name": "Rhyhorn" },
-          { "Id": 112, "Name": "Rhydon" },
-          { "Id": 139, "Name": "Omastar" },
-          { "Id": 141, "Name": "Kabutops" }
-        ]
+  {
+    "Version": 1,
+    "Id": 1,
+    "Name": "New Trainer Badge",
+    "Description": "This badge is awarded for catching your first Pokémon.",
+    "BonusPokeballs":  10
+  },
+  {
+    "Version": 1,
+    "Id": 2,
+    "Name": "Shiny Badge",
+    "Description": "This badge is awarded for catching your first shiny Pokémon.",
+    "BonusPokeballs": 10
+  },
+  {
+    "Version": 1,
+    "Id": 101,
+    "Name": "Boulder Badge",
+    "Description": "This badge is awarded for catching all of the Pewter Gym Pokémon. You Brock!",
+    "BonusPokeballs": 20,
+    "GymPokemon": [
+      {
+        "Id": 27,
+        "Name": "Sandshrew"
       },
-    {
-      "Version": 1,
-      "Id": 102,
-      "Name": "Cascade Badge",
-      "Description": "This badge is awarded for catching all of the Cerulean Gym Pokémon. I'm getting Misty-eyed!",
-      "GymPokemon": [
-        { "Id": 55, "Name": "Golduck" },
-        { "Id": 90, "Name": "Shellder" },
-        { "Id": 91, "Name": "Cloyster" },
-        { "Id": 116, "Name": "Horsea" },
-        { "Id": 118, "Name": "Goldeen" },
-        { "Id": 119, "Name": "Seaking" },
-        { "Id": 120, "Name": "Staryu" },
-        { "Id": 121, "Name": "Starmie" },
-        { "Id": 131, "Name": "Lapras" },
-        { "Id": 184, "Name": "Azumarill" },
-        { "Id": 195, "Name": "Quagsire" }
-      ]
-    },
-    {
-      "Version": 1,
-      "Id": 103,
-      "Name": "Thunder Badge",
-      "Description": "This badge is awarded for catching all of the Vermilion Gym Pokémon. You're on a Surge!",
-      "GymPokemon": [
-        { "Id": 25, "Name": "Pikachu" },
-        { "Id": 26, "Name": "Raichu" },
-        { "Id": 81, "Name": "Magnemite" },
-        { "Id": 82, "Name": "Magneton" },
-        { "Id": 100, "Name": "Voltorb" },
-        { "Id": 101, "Name": "Electrode" },
-        { "Id": 125, "Name": "Electabuzz" },
-        { "Id": 135, "Name": "Jolteon" },
-        { "Id": 180, "Name": "Flaaffy" },
-        { "Id": 309, "Name": "Electrike" }
-      ]
-    }
-  ]
+      {
+        "Id": 50,
+        "Name": "Diglett"
+      },
+      {
+        "Id": 74,
+        "Name": "Geodude"
+      },
+      {
+        "Id": 75,
+        "Name": "Graveler"
+      },
+      {
+        "Id": 76,
+        "Name": "Golem"
+      },
+      {
+        "Id": 95,
+        "Name": "Onix"
+      },
+      {
+        "Id": 111,
+        "Name": "Rhyhorn"
+      },
+      {
+        "Id": 112,
+        "Name": "Rhydon"
+      },
+      {
+        "Id": 139,
+        "Name": "Omastar"
+      },
+      {
+        "Id": 141,
+        "Name": "Kabutops"
+      }
+    ]
+  },
+  {
+    "Version": 1,
+    "Id": 102,
+    "Name": "Cascade Badge",
+    "Description": "This badge is awarded for catching all of the Cerulean Gym Pokémon. I'm getting Misty-eyed!",
+    "BonusPokeballs": 20,
+    "GymPokemon": [
+      {
+        "Id": 55,
+        "Name": "Golduck"
+      },
+      {
+        "Id": 90,
+        "Name": "Shellder"
+      },
+      {
+        "Id": 91,
+        "Name": "Cloyster"
+      },
+      {
+        "Id": 116,
+        "Name": "Horsea"
+      },
+      {
+        "Id": 118,
+        "Name": "Goldeen"
+      },
+      {
+        "Id": 119,
+        "Name": "Seaking"
+      },
+      {
+        "Id": 120,
+        "Name": "Staryu"
+      },
+      {
+        "Id": 121,
+        "Name": "Starmie"
+      },
+      {
+        "Id": 131,
+        "Name": "Lapras"
+      },
+      {
+        "Id": 184,
+        "Name": "Azumarill"
+      },
+      {
+        "Id": 195,
+        "Name": "Quagsire"
+      }
+    ]
+  },
+  {
+    "Version": 1,
+    "Id": 103,
+    "Name": "Thunder Badge",
+    "Description": "This badge is awarded for catching all of the Vermilion Gym Pokémon. You're on a Surge!",
+    "BonusPokeballs": 20,
+    "GymPokemon": [
+      {
+        "Id": 25,
+        "Name": "Pikachu"
+      },
+      {
+        "Id": 26,
+        "Name": "Raichu"
+      },
+      {
+        "Id": 81,
+        "Name": "Magnemite"
+      },
+      {
+        "Id": 82,
+        "Name": "Magneton"
+      },
+      {
+        "Id": 100,
+        "Name": "Voltorb"
+      },
+      {
+        "Id": 101,
+        "Name": "Electrode"
+      },
+      {
+        "Id": 125,
+        "Name": "Electabuzz"
+      },
+      {
+        "Id": 135,
+        "Name": "Jolteon"
+      },
+      {
+        "Id": 180,
+        "Name": "Flaaffy"
+      },
+      {
+        "Id": 309,
+        "Name": "Electrike"
+      }
+    ]
+  }
+]

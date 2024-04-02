@@ -250,6 +250,7 @@ namespace PokeCord
                             {
                                 // Add badges to playerData
                                 playerData.EarnedBadges.Add(badge);
+                                playerData.Pokeballs += badge.BonusPokeballs;
                                 //playerData.Badges.Add(badge, DateTime.UtcNow);
 
                                 string newBadgeMessage = $"{username} has acquired the {badge.Name}!\n{badge.Description}\n";
