@@ -19,59 +19,64 @@ using System.Reflection.Metadata;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Discord.Commands;
+using System.Runtime.CompilerServices;
+
+using PokeCord.Helpers;
+using PokeCord.Data;
 
 namespace PokeCord
 {
     public class Program
     {
-        const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
-        const int shinyRatio = 256; // Chance of catching a shiny
-        private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
+        //const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
+        //const int shinyRatio = 256; // Chance of catching a shiny
+        //private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
         //public const int teamCreateCost = 1000; // Cost in poke dollars to create a team
+        //private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
         public const int teamCreateCost = 0; // Cost in poke dollars to create a team
-        private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
+
 
         private static DiscordSocketClient _client;
+        private static InteractionService _interactionService;
         private static IServiceProvider _services;
         private static Timer _pokeballResetTimer;
 
         //TODO: Weekly leaderboard
 
         //Cooldown data structure
-        private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
+        public static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
 
+        /* // Moved to Data
         // Individual scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
         // Team scoreboard data structure
         private static List<Team> teamScoreboard = new List<Team>();
+        */
 
         //TODO: Create a timer to batch save to file every so often
 
-        // Badge data structure
-        private static List<Badge> badges;
-
         public static async Task Main(string[] args)
         {
-            // Load badges
-            badges = LoadBadges();
-            // Load individual scoreboard
-            scoreboard = LoadScoreboard();
-            // Load team scoreboard
-            teamScoreboard = LoadTeamScoreboard();
-            // Remove duplicate badges
-            scoreboard = RemoveDuplicateBadges(scoreboard);
-
             // FETCH ENVIRONMENT VARIABLE TOKEN
             //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             // Set up Discord.NET
             _client = new DiscordSocketClient();
+            _interactionService = new InteractionService(_client);
             _services = ConfigureServices();
             _client.Log += LogAsync;
 
-            //TODO: Monthly scoreboard reset
+            var scoreboardService = _services.GetRequiredService<ScoreboardService>();
+            await scoreboardService.LoadScoreboardAsync();
+
+            /* // Moved to Data
+            // Load individual scoreboard
+            scoreboard = LoadScoreboard();
+            // Load team scoreboard
+            teamScoreboard = LoadTeamScoreboard();
+            */
 
             // -- Daily Restock
             // Calculate the time remaining until the next pokeball restock
@@ -115,9 +120,11 @@ namespace PokeCord
             //await ResetPokeballs(null); // Unnecessary for now
 
             // Set up slash commands
+            /* Moved to SlashCommands
             var catchCommand = new SlashCommandBuilder()
                 .WithName("catch")
                 .WithDescription("Catch a Pokémon!");
+            */
 
             var scoreCommand = new SlashCommandBuilder()
                 .WithName("pokescore")
@@ -163,10 +170,9 @@ namespace PokeCord
 
             try
             {
-
                 //FIX: Too many commands? "A ready handler is blocking the gateway task" -- Causes slow start
-                await _client.CreateGlobalApplicationCommandAsync(catchCommand.Build());
-                Console.WriteLine("Created command: catch");
+                //await _client.CreateGlobalApplicationCommandAsync(catchCommand.Build());
+                //Console.WriteLine("Created command: catch");
                 await _client.CreateGlobalApplicationCommandAsync(scoreCommand.Build());
                 Console.WriteLine("Created command: pokescore");
                 await _client.CreateGlobalApplicationCommandAsync(leaderboardCommand.Build());
@@ -179,6 +185,9 @@ namespace PokeCord
                 Console.WriteLine("Created command: teamcreate");
                 await _client.CreateGlobalApplicationCommandAsync(joinTeamCommand.Build());
                 Console.WriteLine("Created command: teamjoin");
+
+                // New, keep this:
+                await _interactionService.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
             }
             catch (HttpException ex)
             {
@@ -193,7 +202,9 @@ namespace PokeCord
                 //.AddSingleton<DiscordSocketClient>()
                 //.AddSingleton<CommandHandler>()
                 .AddSingleton<PokeApiClient>()
-                .BuildServiceProvider();                
+                .AddSingleton<InteractionService>()
+                .AddTransient<ScoreboardService>()
+                .BuildServiceProvider();
             /*
             var services = new ServiceCollection();
             services.AddSingleton<PokeApiClient>(); // Add PokeApiClient as Singleton
@@ -241,8 +252,6 @@ namespace PokeCord
                     await command.RespondAsync($"Something went wrong setting up your player profile.");
                 }
             }
-
-            //TODO: Update to switch on command.CommandName, split each command into a unique class
 
             // Catch command section
             if (command.CommandName == "catch")
@@ -331,7 +340,7 @@ namespace PokeCord
                         await SaveScoreboardAsync();
 
                         // Format Discord Reply
-                        string richPokemonName = FixPokemonName(pokemonData.Name);
+                        string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);
                         bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
                         if (pokemonData.Shiny) { startsWithVowel = false; }
                         string message = $"{username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
@@ -393,7 +402,7 @@ namespace PokeCord
                                          $"Pokémon Dollars: {pokemonDollars}" +
                                          $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
                                          $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
-                                         $"{FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
+                                         $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
 
                         Embed[] embeds = new Embed[]
                             {
@@ -522,6 +531,7 @@ namespace PokeCord
         }
         */
 
+        /* // Moved to own class
         public static string FixPokemonName(string pokemonName)
         {
             if (pokemonName.IndexOf('-') != -1)
@@ -536,7 +546,9 @@ namespace PokeCord
                 return pokemonName;
             }
         }
+        */
 
+        //TODO: Move to scoreboard service?
         private static async Task ResetPokeballs(object state)
         {
             // Create a temporary copy of scoreboard to avoid conflicts
@@ -560,6 +572,7 @@ namespace PokeCord
             await SaveScoreboardAsync();
         }
 
+        /*
         private static List<Team> LoadTeamScoreboard()
         {
             string filePath = "teamscoreboard.json";
@@ -582,11 +595,9 @@ namespace PokeCord
 
                 // Handle Team.cs version mismatch
                 // Version 1 => 2
-                /*
-                foreach (var team in teamScoreboard)
-                {
-                }
-                */
+                //foreach (var team in teamScoreboard)
+                //{
+                //}
 
                 return loadedTeamScoreboard;
             }
@@ -687,91 +698,7 @@ namespace PokeCord
                 Console.WriteLine("Error saving scoreboard data: {0}", ex.Message);
             }
         }
-
-        private static List<Badge> LoadBadges()
-        {
-            string filePath = "badges.json";
-
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine("Badge data file not found.");
-                return new List<Badge>();
-            }
-            else
-            {
-                try
-                {
-                    string jsonData = File.ReadAllText(filePath);
-                    List<Badge> badges = JsonConvert.DeserializeObject<List<Badge>>(jsonData);
-
-                    // Handle badge mismatch
-                    foreach (Badge badge in badges)
-                    {
-                        // Version 1 => 2
-                        badge.Version = 2;
-                        badge.Id = badge.Id;
-                        badge.Name = badge.Name;
-                        badge.Description = badge.Description;
-                        badge.ImageAddress = ""; // Get badge image address
-                        badge.BonusPokeballs = badge.BonusPokeballs;
-                        badge.GymPokemon = badge.GymPokemon;
-                    }
-
-                    Console.WriteLine($"Badges loaded from {filePath}");
-                    return badges;
-                }
-                catch (Exception ex)
-                {
-                    // Handle deserialization errors or file access exceptions
-                    Console.WriteLine("Error loading badge data: {0}", ex.Message);
-                    return new List<Badge>();
-                }
-            }            
-        }
-
-        // Remove duplicate badges
-        public static ConcurrentDictionary<ulong, PlayerData> RemoveDuplicateBadges(ConcurrentDictionary<ulong, PlayerData> scoreboard)
-        {
-            ConcurrentDictionary<ulong, PlayerData> newScoreboard = new ConcurrentDictionary<ulong, PlayerData>();
-
-            foreach (var kvp in scoreboard)
-            {
-                ulong userId = kvp.Key;
-                PlayerData playerData = kvp.Value;
-
-                // Rebuild each playerData object
-                PlayerData newPlayerData = new PlayerData
-                {
-                    Version = playerData.Version,
-                    UserId = playerData.UserId,
-                    UserName = playerData.UserName,
-                    Experience = playerData.Experience,
-                    Pokeballs = playerData.Pokeballs,
-                    CaughtPokemon = playerData.CaughtPokemon,
-                    EarnedBadges = new List<Badge>()              
-                };
-
-                HashSet<int> uniqueBadgeIds = new HashSet<int>();
-
-                foreach (var badge in playerData.EarnedBadges)
-                {
-                    if (!uniqueBadgeIds.Contains(badge.Id))
-                    {
-                        // Badge is unique, add it to the new EarnedBadges list
-                        newPlayerData.EarnedBadges.Add(badge);
-                        uniqueBadgeIds.Add(badge.Id);
-                    }
-                }
-                if(newScoreboard.TryAdd(userId, newPlayerData))
-                {                    
-                }
-                else
-                {
-                    Console.WriteLine($"Unable to remove duplicate badges for {newPlayerData.UserName}. Data lost?");
-                }
-            }
-            return newScoreboard;
-        }
+        */
 
         private static Task LogAsync(LogMessage msg)
         {
