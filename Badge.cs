@@ -8,18 +8,13 @@ namespace PokeCord
 {
     public class Badge
     {
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = 2;
         public int Id { get; set; }
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public string Name { get; set; }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public string Description { get; set; }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? ImageAddress {  get; set; }
         public int BonusPokeballs { get; set; }
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public List<PokemonData> GymPokemon {  get; set; }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public List<PokemonData>? GymPokemon {  get; set; }
     }
 
     public class BadgeManager

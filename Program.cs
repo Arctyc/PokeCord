@@ -27,7 +27,8 @@ namespace PokeCord
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         const int shinyRatio = 256; // Chance of catching a shiny
         private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
-        private const int teamCreateCost = 0; // Amount of pokemon dollars required to create a team
+        //public const int teamCreateCost = 1000; // Cost in poke dollars to create a team
+        public const int teamCreateCost = 0; // Cost in poke dollars to create a team
         private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
 
         private static DiscordSocketClient _client;
@@ -41,9 +42,9 @@ namespace PokeCord
         private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
 
         // Individual scoreboard data structure
-        private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
+        private static ConcurrentDictionary<ulong, PlayerData> scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
         // Team scoreboard data structure
-        private static List<Team> teamscoreboard;
+        private static List<Team> teamScoreboard = new List<Team>();
 
         //TODO: Create a timer to batch save to file every so often
 
@@ -57,7 +58,7 @@ namespace PokeCord
             // Load individual scoreboard
             scoreboard = LoadScoreboard();
             // Load team scoreboard
-            teamscoreboard = LoadTeamScoreboard();
+            teamScoreboard = LoadTeamScoreboard();
             // Remove duplicate badges
             scoreboard = RemoveDuplicateBadges(scoreboard);
 
@@ -128,18 +129,18 @@ namespace PokeCord
 
             var badgesCommand = new SlashCommandBuilder()
                 .WithName("pokebadges")
-                .WithDescription("Show a list of your earned badges");
+                .WithDescription("Show a list of your earned badges.");
 
             var viewTeamsCommand = new SlashCommandBuilder()
                 .WithName("poketeams")
-                .WithDescription("View all Poké Teams");
+                .WithDescription("View all Poké Teams.");
 
             var createTeamCommand = new SlashCommandBuilder()
                 .WithName("teamcreate")
                 .WithDescription("Create a Poké Team!")
                 .AddOption(new SlashCommandOptionBuilder()
                     .WithName("team")
-                    .WithDescription("Fill in the blank: Team ___")
+                    .WithDescription("Fill in the blank: Team ___.")
                     .WithRequired(true)
                     .WithType(ApplicationCommandOptionType.String)
                 );
@@ -149,7 +150,7 @@ namespace PokeCord
                 .WithDescription("Join a Poké Team!")
                 .AddOption(new SlashCommandOptionBuilder()
                     .WithName("team")
-                    .WithDescription("The name of the Poké Team you want to join")
+                    .WithDescription("The name of the Poké Team you want to join.")
                     .WithRequired(true)
                     .WithType(ApplicationCommandOptionType.String)
                 );
@@ -174,7 +175,7 @@ namespace PokeCord
                 Console.WriteLine("Created command: pokebadges");
                 await _client.CreateGlobalApplicationCommandAsync(viewTeamsCommand.Build());
                 Console.WriteLine("Created command: poketeams");
-                await _client.CreateGlobalApplicationCommandAsync(createTeamCommand.Build());
+                //await _client.CreateGlobalApplicationCommandAsync(createTeamCommand.Build());
                 Console.WriteLine("Created command: teamcreate");
                 await _client.CreateGlobalApplicationCommandAsync(joinTeamCommand.Build());
                 Console.WriteLine("Created command: teamjoin");
@@ -469,108 +470,57 @@ namespace PokeCord
             }
 
             // Teams section
+            // View teams
             if (command.CommandName == "poketeams")
             {
                 TeamManager teamManager = new TeamManager();
-                string message = TeamManager.ViewTeams(command);
+                string message = TeamManager.ViewTeams(command, teamScoreboard);
 
                 // Reply in Discord
                 await command.RespondAsync(message);
             }
 
+            // Create team
             if (command.CommandName == "teamcreate")
             {
-                // cost 1000 pokecoins
-
-                if (playerData.PokemonDollars < teamCreateCost)
+                // Pass to CreateTeam method for 
+                (string message, Team team) = TeamManager.CreateTeam(command, playerData, teamCreateCost, teamScoreboard);
+                if (team.Id == -1)
                 {
-
-                    command.RespondAsync($"Sorry, you need {teamCreateCost} Pokémon Dollars to create a team.");
-
+                    // Do not charge
+                    await command.RespondAsync(message);
                 }
-
-                string message = TeamManager.CreateTeam(command);
-
+                teamScoreboard.Add(team);
+                await SaveTeamScoreboardAsync();
+                playerData.PokemonDollars -= teamCreateCost;
                 // Reply in Discord
                 await command.RespondAsync(message);
             }
 
             if (command.CommandName == "teamjoin")
             {
-                string message = TeamManager.JoinTeam(command);
-
+                (bool joined, string message) = TeamManager.JoinTeam(command);
+                if (!joined)
+                {
+                    await command.RespondAsync(message);
+                }
+                string? teamName = command.Data.Options.First().Value.ToString();
+                // Add player to team
+                Team teamToJoin = teamScoreboard.Find(t => t.Name == teamName);
+                teamToJoin.Players.Add(playerData);
+                await SaveTeamScoreboardAsync();
                 // Reply in Discord
                 await command.RespondAsync(message);
             }
         }
 
+        /*
         public static List<Team> GetTeamList()
         {
             List<Team> teams = new List<Team>();
-            // TODO: Load teams.json
-            // foreach: get name, get score,
-            // order by score descending
             return teams;
         }
-
-        private static List<Team> LoadTeamScoreboard()
-        {
-            string filePath = "teamscoreboard.json";
-
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine("Team scoreboard data file not found. Creating a new one.");
-                SaveTeamScoreboardAsync();
-                return new List<Team>();
-            }
-            else
-            {
-                Console.WriteLine($"Team scoreboard loaded from {filePath}");
-            }
-
-            try
-            {
-                string jsonData = File.ReadAllText(filePath);
-                List<Team> teamScoreboard = new List<Team>();
-                teamScoreboard = JsonConvert.DeserializeObject<List<Team>>(jsonData);
-
-                // Handle Team.cs version mismatch
-                // Version 1 => 2
-                /*
-                foreach (var team in teamScoreboard)
-                {
-                }
-                */
-
-                return teamScoreboard;
-            }
-            catch (Exception ex)
-            {
-                // Handle deserialization errors or file access exceptions
-                Console.WriteLine("Error loading scoreboard data: {0}", ex.Message);
-                return new List<Team>();
-            }
-        }
-
-        private static async Task SaveTeamScoreboardAsync()
-        {
-            string filePath = "teamscoreboard.json";
-
-            try
-            {
-                // Serialize the team scoreboard to JSON string
-                string jsonData = JsonConvert.SerializeObject(teamscoreboard);
-
-                // Write the JSON string to the file asynchronously
-                await File.WriteAllTextAsync(filePath, jsonData);
-                Console.WriteLine("Team scoreboard data saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Handle serialization errors or file access exceptions
-                Console.WriteLine("Error saving team scoreboard data: {0}", ex.Message);
-            }
-        }
+        */
 
         public static string FixPokemonName(string pokemonName)
         {
@@ -608,6 +558,64 @@ namespace PokeCord
 
             // Save the updated scoreboard
             await SaveScoreboardAsync();
+        }
+
+        private static List<Team> LoadTeamScoreboard()
+        {
+            string filePath = "teamscoreboard.json";
+            List<Team> loadedTeamScoreboard = new List<Team>();
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("Team scoreboard data file not found. Creating a new one.");
+                SaveTeamScoreboardAsync();
+                return new List<Team>();
+            }
+            else
+            {
+                Console.WriteLine($"Team scoreboard loaded from {filePath}");
+            }
+
+            try
+            {
+                string jsonData = File.ReadAllText(filePath);
+                loadedTeamScoreboard = JsonConvert.DeserializeObject<List<Team>>(jsonData);
+
+                // Handle Team.cs version mismatch
+                // Version 1 => 2
+                /*
+                foreach (var team in teamScoreboard)
+                {
+                }
+                */
+
+                return loadedTeamScoreboard;
+            }
+            catch (Exception ex)
+            {
+                // Handle deserialization errors or file access exceptions
+                Console.WriteLine("Error loading scoreboard data: {0}", ex.Message);
+                return new List<Team>();
+            }
+        }
+
+        private static async Task SaveTeamScoreboardAsync()
+        {
+            string filePath = "teamscoreboard.json";
+
+            try
+            {
+                // Serialize the team scoreboard to JSON string
+                string jsonData = JsonConvert.SerializeObject(teamScoreboard);
+
+                // Write the JSON string to the file asynchronously
+                await File.WriteAllTextAsync(filePath, jsonData);
+                Console.WriteLine("Team scoreboard data saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                // Handle serialization errors or file access exceptions
+                Console.WriteLine("Error saving team scoreboard data: {0}", ex.Message);
+            }
         }
 
         private static ConcurrentDictionary<ulong, PlayerData> LoadScoreboard()
@@ -694,8 +702,23 @@ namespace PokeCord
                 try
                 {
                     string jsonData = File.ReadAllText(filePath);
+                    List<Badge> badges = JsonConvert.DeserializeObject<List<Badge>>(jsonData);
+
+                    // Handle badge mismatch
+                    foreach (Badge badge in badges)
+                    {
+                        // Version 1 => 2
+                        badge.Version = 2;
+                        badge.Id = badge.Id;
+                        badge.Name = badge.Name;
+                        badge.Description = badge.Description;
+                        badge.ImageAddress = ""; // Get badge image address
+                        badge.BonusPokeballs = badge.BonusPokeballs;
+                        badge.GymPokemon = badge.GymPokemon;
+                    }
+
                     Console.WriteLine($"Badges loaded from {filePath}");
-                    return JsonConvert.DeserializeObject<List<Badge>>(jsonData);
+                    return badges;
                 }
                 catch (Exception ex)
                 {
