@@ -6,12 +6,11 @@ using System.Reflection;
 
 namespace PokeCord
 {
-    public class CommandHandler : I
+    public class CommandHandler
     {
         private readonly DiscordSocketClient _client;
         private readonly InteractionService _commands;
         private readonly IServiceProvider _services;
-
         private readonly IConfiguration _configuration;
 
         public CommandHandler(DiscordSocketClient client, InteractionService commands, IServiceProvider services, IConfiguration config)
