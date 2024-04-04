@@ -1,28 +1,14 @@
-﻿using System;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
-
-using Discord;
-using Discord.Net;
+﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using PokeApiNet;
-using Newtonsoft.Json;
-using System.Windows.Input;
-using System.Reflection.Metadata;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using Discord.Commands;
-using System.Runtime.CompilerServices;
-
-using PokeCord.Helpers;
 using PokeCord.Data;
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Reflection;
+using System.Windows.Input;
 
 namespace PokeCord
 {
@@ -39,6 +25,7 @@ namespace PokeCord
         private static DiscordSocketClient _client;
         private static InteractionService _interactionService;
         private static IServiceProvider _services;
+        private static IConfiguration _configuration;
         private static Timer _pokeballResetTimer;
 
         //TODO: Weekly leaderboard
@@ -56,17 +43,36 @@ namespace PokeCord
 
         //TODO: Create a timer to batch save to file every so often
 
+        private static readonly InteractionServiceConfig _interactionServiceConfig = new()
+        {
+            LocalizationManager = new ResxLocalizationManager("InteractionFramework.Resources.CommandLocales", Assembly.GetEntryAssembly(),
+                new CultureInfo("en-US"), new CultureInfo("ru"))
+        };
+
         public static async Task Main(string[] args)
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
             //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
+            
+            _configuration = new ConfigurationBuilder()
+                .AddEnvironmentVariables(prefix: "DC_")
+                .AddJsonFile("appsettings.json", optional: true)
+                .Build();
+
             // Set up Discord.NET
             _client = new DiscordSocketClient();
             _interactionService = new InteractionService(_client);
             _services = ConfigureServices();
             _client.Log += LogAsync;
+
+            var client = _services.GetRequiredService<DiscordSocketClient>();
+            client.Log += LogAsync;
+
+            await _services.GetRequiredService<CommandHandler>()
+            .InitializeAsync();
+
 
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
             await scoreboardService.LoadScoreboardAsync();
@@ -115,6 +121,7 @@ namespace PokeCord
         static async Task RunAsync()
         {
             // Keep bot running indefinitely
+            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             await Task.Delay(Timeout.Infinite);
         }
 
@@ -207,9 +214,10 @@ namespace PokeCord
         private static IServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
-                //.AddSingleton(configuration)
-                //.AddSingleton<DiscordSocketClient>()
-                //.AddSingleton<CommandHandler>()
+                .AddSingleton(_configuration)
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), _interactionServiceConfig))
+                .AddSingleton<CommandHandler>()
                 .AddSingleton<PokeApiClient>()
                 .AddSingleton<InteractionService>()
                 .AddTransient<ScoreboardService>()
@@ -390,165 +398,165 @@ namespace PokeCord
             }
             */
 
-            /*
-            // Pokescore command section
-            if (command.CommandName == "pokescore")
+        /*
+        // Pokescore command section
+        if (command.CommandName == "pokescore")
+        {
+            if (playerData != null)
             {
-                if (playerData != null)
+                string score = playerData.Experience.ToString("N0");
+                string pokemonDollars = playerData.PokemonDollars.ToString("N0");
+                List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
+                int catches = caughtPokemon.Count;
+
+                // Find best catch
+                if (playerData.CaughtPokemon.Any())
                 {
-                    string score = playerData.Experience.ToString("N0");
-                    string pokemonDollars = playerData.PokemonDollars.ToString("N0");
-                    List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
-                    int catches = caughtPokemon.Count;
+                    PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
 
-                    // Find best catch
-                    if (playerData.CaughtPokemon.Any())
-                    {
-                        PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
+                    int averageExp = playerData.Experience / playerData.CaughtPokemon.Count;
 
-                        int averageExp = playerData.Experience / playerData.CaughtPokemon.Count;
-                        
-                        // Format Discord reply
-                        string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
-                                         //$"Rank: \n" +
-                                         $"Average exp/catch: {averageExp}\n" +
-                                         $"Pokémon Dollars: {pokemonDollars}" +
-                                         $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
-                                         $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
-                                         $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
+                    // Format Discord reply
+                    string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
+                                     //$"Rank: \n" +
+                                     $"Average exp/catch: {averageExp}\n" +
+                                     $"Pokémon Dollars: {pokemonDollars}" +
+                                     $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
+                                     $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
+                                     $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
 
-                        Embed[] embeds = new Embed[]
-                            {
-                            new EmbedBuilder()
-                            .WithImageUrl(bestPokemon.ImageUrl)
-                            .Build()
-                            };
-                        // Reply in Discord
-                        await command.RespondAsync(message, embeds);
-                    }
-                    else
-                    {
-                        // Reply in Discord
-                        await command.RespondAsync($"{username} hasn't caught any Pokémon yet.");
-                    }
+                    Embed[] embeds = new Embed[]
+                        {
+                        new EmbedBuilder()
+                        .WithImageUrl(bestPokemon.ImageUrl)
+                        .Build()
+                        };
+                    // Reply in Discord
+                    await command.RespondAsync(message, embeds);
                 }
                 else
                 {
                     // Reply in Discord
-                    await command.RespondAsync($"No data for {username}.");
+                    await command.RespondAsync($"{username} hasn't caught any Pokémon yet.");
                 }
             }
-            */
-
-            /*
-            // Leaderboard section
-            if (command.CommandName == "pokeleaderboard")
+            else
             {
-                TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-                // Log time til next pokeball in console - cheeky workaround to check it
-                Console.WriteLine("Time until Pokeball reset: " + delay);
-
-                // Get a sorted list of players
-                var leaders = scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
-                // Add a message line for each of the top 10 from 10 to 1
-                List<string> leaderMessages = new List<string>();
-                int leaderCount = 10;
-                if (leaders.Count < 10)
-                {
-                    leaderCount = leaders.Count;
-                }
-                for (int i = 0; i < leaderCount; i++)
-                {
-                    string leaderName = leaders[i].UserName;
-                    string leaderExp = leaders[i].Experience.ToString("N0");
-                    int averageExp = leaders[i].Experience / leaders[i].CaughtPokemon.Count;
-                    string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Average exp/catch: {averageExp}";
-                    leaderMessages.Add(message);
-                }
-                // Output message to discord
-                string leaderboardMessage = string.Join("\n", leaderMessages);
-                await command.RespondAsync($"Top {leaderCount} trainers:\n" + leaderboardMessage);
-            }
-            */
-
-            /*
-            // Badges section
-            if (command.CommandName == "pokebadges")
-            {
-                string badgeCountMessage;
-
-                if (playerData.EarnedBadges == null)
-                {
-                    badgeCountMessage = $"{username} has not yet earned any badges.";
-                }
-                else
-                {
-                    badgeCountMessage = $"{username} has acquired {playerData.EarnedBadges.Count} of {badges.Count} badges.\n";
-                }
-
-                foreach (Badge badge in playerData.EarnedBadges)
-                {
-                    badgeCountMessage += string.Join(", ", badge.Name);
-                }
-
                 // Reply in Discord
-                await command.RespondAsync(badgeCountMessage);
+                await command.RespondAsync($"No data for {username}.");
             }
-            */
-
-            // Teams section
-
-            /*
-            // View teams
-            if (command.CommandName == "poketeams")
-            {
-                TeamManager teamManager = new TeamManager();
-                string message = TeamManager.ViewTeams(command, teamScoreboard);
-
-                // Reply in Discord
-                await command.RespondAsync(message);
-            }
-            */
-
-            /*
-            // Create team
-            if (command.CommandName == "teamcreate")
-            {
-                // Pass to CreateTeam method for 
-                (string message, Team team) = TeamManager.CreateTeam(command, playerData, teamCreateCost, teamScoreboard);
-                if (team.Id == -1)
-                {
-                    // Do not charge
-                    await command.RespondAsync(message);
-                }
-                teamScoreboard.Add(team);
-                await SaveTeamScoreboardAsync();
-                playerData.PokemonDollars -= teamCreateCost;
-                // Reply in Discord
-                await command.RespondAsync(message);
-            }
-            */
-
-            /*
-            // Join team
-            if (command.CommandName == "teamjoin")
-            {
-                (bool joined, string message) = TeamManager.JoinTeam(command);
-                if (!joined)
-                {
-                    await command.RespondAsync(message);
-                }
-                string? teamName = command.Data.Options.First().Value.ToString();
-                // Add player to team
-                Team teamToJoin = teamScoreboard.Find(t => t.Name == teamName);
-                teamToJoin.Players.Add(playerData);
-                await SaveTeamScoreboardAsync();
-                // Reply in Discord
-                await command.RespondAsync(message);
-            }
-
         }
         */
+
+        /*
+        // Leaderboard section
+        if (command.CommandName == "pokeleaderboard")
+        {
+            TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
+            // Log time til next pokeball in console - cheeky workaround to check it
+            Console.WriteLine("Time until Pokeball reset: " + delay);
+
+            // Get a sorted list of players
+            var leaders = scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
+            // Add a message line for each of the top 10 from 10 to 1
+            List<string> leaderMessages = new List<string>();
+            int leaderCount = 10;
+            if (leaders.Count < 10)
+            {
+                leaderCount = leaders.Count;
+            }
+            for (int i = 0; i < leaderCount; i++)
+            {
+                string leaderName = leaders[i].UserName;
+                string leaderExp = leaders[i].Experience.ToString("N0");
+                int averageExp = leaders[i].Experience / leaders[i].CaughtPokemon.Count;
+                string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Average exp/catch: {averageExp}";
+                leaderMessages.Add(message);
+            }
+            // Output message to discord
+            string leaderboardMessage = string.Join("\n", leaderMessages);
+            await command.RespondAsync($"Top {leaderCount} trainers:\n" + leaderboardMessage);
+        }
+        */
+
+        /*
+        // Badges section
+        if (command.CommandName == "pokebadges")
+        {
+            string badgeCountMessage;
+
+            if (playerData.EarnedBadges == null)
+            {
+                badgeCountMessage = $"{username} has not yet earned any badges.";
+            }
+            else
+            {
+                badgeCountMessage = $"{username} has acquired {playerData.EarnedBadges.Count} of {badges.Count} badges.\n";
+            }
+
+            foreach (Badge badge in playerData.EarnedBadges)
+            {
+                badgeCountMessage += string.Join(", ", badge.Name);
+            }
+
+            // Reply in Discord
+            await command.RespondAsync(badgeCountMessage);
+        }
+        */
+
+        // Teams section
+
+        /*
+        // View teams
+        if (command.CommandName == "poketeams")
+        {
+            TeamManager teamManager = new TeamManager();
+            string message = TeamManager.ViewTeams(command, teamScoreboard);
+
+            // Reply in Discord
+            await command.RespondAsync(message);
+        }
+        */
+
+        /*
+        // Create team
+        if (command.CommandName == "teamcreate")
+        {
+            // Pass to CreateTeam method for 
+            (string message, Team team) = TeamManager.CreateTeam(command, playerData, teamCreateCost, teamScoreboard);
+            if (team.Id == -1)
+            {
+                // Do not charge
+                await command.RespondAsync(message);
+            }
+            teamScoreboard.Add(team);
+            await SaveTeamScoreboardAsync();
+            playerData.PokemonDollars -= teamCreateCost;
+            // Reply in Discord
+            await command.RespondAsync(message);
+        }
+        */
+
+        /*
+        // Join team
+        if (command.CommandName == "teamjoin")
+        {
+            (bool joined, string message) = TeamManager.JoinTeam(command);
+            if (!joined)
+            {
+                await command.RespondAsync(message);
+            }
+            string? teamName = command.Data.Options.First().Value.ToString();
+            // Add player to team
+            Team teamToJoin = teamScoreboard.Find(t => t.Name == teamName);
+            teamToJoin.Players.Add(playerData);
+            await SaveTeamScoreboardAsync();
+            // Reply in Discord
+            await command.RespondAsync(message);
+        }
+
+    }
+    */
 
         /*
         public static List<Team> GetTeamList()
@@ -575,7 +583,7 @@ namespace PokeCord
         }
         */
 
-        
+
         /* // Moved to scoreboard service
         private static async Task ResetPokeballs(object state)
         {

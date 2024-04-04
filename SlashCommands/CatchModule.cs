@@ -19,6 +19,9 @@ namespace PokeCord.SlashCommands
 {
     public class CatchModule : InteractionModuleBase<SocketInteractionContext>
     {
+        public InteractionService Commands { get; set; }
+        private CommandHandler _handler;
+
         private readonly ScoreboardService scoreboard;
         private readonly BadgeService badgeService;
         private readonly PokeApiClient pokeApiClient;
