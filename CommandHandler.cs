@@ -26,6 +26,7 @@ namespace PokeCord
         {
             // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            Console.WriteLine("Commands registered.");
 
             // Process the InteractionCreated payloads to execute Interactions commands
             //_client.InteractionCreated += HandleInteraction; // Needed?

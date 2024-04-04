@@ -195,9 +195,6 @@ namespace PokeCord
                 //Console.WriteLine("Created command: teamcreate");
                 //await _client.CreateGlobalApplicationCommandAsync(joinTeamCommand.Build());
                 //Console.WriteLine("Created command: teamjoin");
-
-                // New, keep this:
-                await _interactionService.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
             }
             catch (HttpException ex)
             {
