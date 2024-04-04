@@ -28,7 +28,7 @@ namespace PokeCord
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             // Process the InteractionCreated payloads to execute Interactions commands
-            //_client.InteractionCreated += HandleInteraction;
+            //_client.InteractionCreated += HandleInteraction; // Needed?
 
             // Process the command execution results 
             _commands.SlashCommandExecuted += SlashCommandExecuted;

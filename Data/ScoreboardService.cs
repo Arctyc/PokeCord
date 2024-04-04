@@ -10,6 +10,8 @@ namespace PokeCord.Data
 {
     public class ScoreboardService
     {
+        public const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
+
         //TODO: Monthly scoreboard reset
 
         // Individual scoreboard data structure
@@ -34,6 +36,33 @@ namespace PokeCord.Data
         public bool TryUpdatePlayerData(ulong userId, PlayerData playerData, PlayerData originalPlayerData)
         {
             return _scoreboard.TryUpdate(userId, playerData, originalPlayerData);
+        }
+        public async Task ResetPokeballs(object state)
+        {
+            // Create a temporary copy of scoreboard to avoid conflicts
+            var playerDataList = _scoreboard.Values.ToList();
+
+            // Reset Pokeballs for each player in the copy
+            foreach (var playerData in playerDataList)
+            {
+                if (playerData.Pokeballs < pokeballMax)
+                {
+                    playerData.Pokeballs = pokeballMax;
+                }
+            }
+
+            // Update the actual scoreboard atomically
+            await Task.Run(() => _scoreboard = new ConcurrentDictionary<ulong, PlayerData>(playerDataList.ToDictionary(p => p.UserId, p => p)));
+
+            Console.WriteLine("Pokeballs have been reset for all players!");
+
+            // Save the updated scoreboard
+            await SaveScoreboardAsync();
+        }
+
+        public static List<PlayerData> GetLeaderboard()
+        {
+            return _scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
         }
 
         private async Task LoadTeamScoreboard()

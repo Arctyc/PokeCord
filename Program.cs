@@ -71,17 +71,12 @@ namespace PokeCord
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
             await scoreboardService.LoadScoreboardAsync();
 
-            /* // Moved to Data
-            // Load individual scoreboard
-            scoreboard = LoadScoreboard();
-            // Load team scoreboard
-            teamScoreboard = LoadTeamScoreboard();
-            */
 
-            // -- Daily Restock
+
+            // -- Daily Restock -- KEEP IN program.cs
             // Calculate the time remaining until the next pokeball restock
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-            _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
+            _pokeballResetTimer = new Timer(async (e) => await scoreboardService.ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
             /*
@@ -95,12 +90,21 @@ namespace PokeCord
             Console.WriteLine("Time until Pokeball reset: " + delay);
             */
 
+            /* // Moved to Data
+            // Load individual scoreboard
+            scoreboard = LoadScoreboard();
+            // Load team scoreboard
+            teamScoreboard = LoadTeamScoreboard();
+            */
+
+
             // Login to Discord
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
             // Set up interactions
-            _client.SlashCommandExecuted += SlashCommandHandler;
+            // Moved to CommandHandler.cs
+            //_client.SlashCommandExecuted += SlashCommandHandler;
 
             // Additionall ready settings
             _client.Ready += ClientReady;
@@ -126,14 +130,19 @@ namespace PokeCord
                 .WithDescription("Catch a Pokémon!");
             */
 
+            /*
             var scoreCommand = new SlashCommandBuilder()
                 .WithName("pokescore")
                 .WithDescription("View your PokeCord score.");
+            */
 
+            /*
             var leaderboardCommand = new SlashCommandBuilder()
                 .WithName("pokeleaderboard")
                 .WithDescription("Show a list of the trainers with the most exp.");
+            */
 
+            /* -- Double check these added
             var badgesCommand = new SlashCommandBuilder()
                 .WithName("pokebadges")
                 .WithDescription("Show a list of your earned badges.");
@@ -161,6 +170,7 @@ namespace PokeCord
                     .WithRequired(true)
                     .WithType(ApplicationCommandOptionType.String)
                 );
+            */
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
             // - /givepokeballs <user> <amount>
@@ -173,18 +183,18 @@ namespace PokeCord
                 //FIX: Too many commands? "A ready handler is blocking the gateway task" -- Causes slow start
                 //await _client.CreateGlobalApplicationCommandAsync(catchCommand.Build());
                 //Console.WriteLine("Created command: catch");
-                await _client.CreateGlobalApplicationCommandAsync(scoreCommand.Build());
-                Console.WriteLine("Created command: pokescore");
-                await _client.CreateGlobalApplicationCommandAsync(leaderboardCommand.Build());
-                Console.WriteLine("Created command: pokeleaderboard");
-                await _client.CreateGlobalApplicationCommandAsync(badgesCommand.Build());
-                Console.WriteLine("Created command: pokebadges");
-                await _client.CreateGlobalApplicationCommandAsync(viewTeamsCommand.Build());
-                Console.WriteLine("Created command: poketeams");
+                //await _client.CreateGlobalApplicationCommandAsync(scoreCommand.Build());
+                //Console.WriteLine("Created command: pokescore");
+                //await _client.CreateGlobalApplicationCommandAsync(leaderboardCommand.Build());
+                //Console.WriteLine("Created command: pokeleaderboard");
+                //await _client.CreateGlobalApplicationCommandAsync(badgesCommand.Build());
+                //Console.WriteLine("Created command: pokebadges");
+                //await _client.CreateGlobalApplicationCommandAsync(viewTeamsCommand.Build());
+                //Console.WriteLine("Created command: poketeams");
                 //await _client.CreateGlobalApplicationCommandAsync(createTeamCommand.Build());
-                Console.WriteLine("Created command: teamcreate");
-                await _client.CreateGlobalApplicationCommandAsync(joinTeamCommand.Build());
-                Console.WriteLine("Created command: teamjoin");
+                //Console.WriteLine("Created command: teamcreate");
+                //await _client.CreateGlobalApplicationCommandAsync(joinTeamCommand.Build());
+                //Console.WriteLine("Created command: teamjoin");
 
                 // New, keep this:
                 await _interactionService.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
@@ -212,6 +222,7 @@ namespace PokeCord
             */
         }
 
+        /*
         private static async Task SlashCommandHandler(SocketSlashCommand command)
         {
             string username = command.User.GlobalName;
@@ -254,6 +265,7 @@ namespace PokeCord
             }
 
             // Catch command section
+            /*
             if (command.CommandName == "catch")
             {
                 // Check cooldown information
@@ -377,7 +389,9 @@ namespace PokeCord
                         $"Unfortunately, you will not receive a bonus Premier Ball.");
                 }
             }
+            */
 
+            /*
             // Pokescore command section
             if (command.CommandName == "pokescore")
             {
@@ -425,7 +439,9 @@ namespace PokeCord
                     await command.RespondAsync($"No data for {username}.");
                 }
             }
+            */
 
+            /*
             // Leaderboard section
             if (command.CommandName == "pokeleaderboard")
             {
@@ -454,7 +470,9 @@ namespace PokeCord
                 string leaderboardMessage = string.Join("\n", leaderMessages);
                 await command.RespondAsync($"Top {leaderCount} trainers:\n" + leaderboardMessage);
             }
+            */
 
+            /*
             // Badges section
             if (command.CommandName == "pokebadges")
             {
@@ -477,8 +495,11 @@ namespace PokeCord
                 // Reply in Discord
                 await command.RespondAsync(badgeCountMessage);
             }
+            */
 
             // Teams section
+
+            /*
             // View teams
             if (command.CommandName == "poketeams")
             {
@@ -488,7 +509,9 @@ namespace PokeCord
                 // Reply in Discord
                 await command.RespondAsync(message);
             }
+            */
 
+            /*
             // Create team
             if (command.CommandName == "teamcreate")
             {
@@ -505,7 +528,10 @@ namespace PokeCord
                 // Reply in Discord
                 await command.RespondAsync(message);
             }
+            */
 
+            /*
+            // Join team
             if (command.CommandName == "teamjoin")
             {
                 (bool joined, string message) = TeamManager.JoinTeam(command);
@@ -521,7 +547,9 @@ namespace PokeCord
                 // Reply in Discord
                 await command.RespondAsync(message);
             }
+
         }
+        */
 
         /*
         public static List<Team> GetTeamList()
@@ -548,7 +576,8 @@ namespace PokeCord
         }
         */
 
-        //TODO: Move to scoreboard service?
+        
+        /* // Moved to scoreboard service
         private static async Task ResetPokeballs(object state)
         {
             // Create a temporary copy of scoreboard to avoid conflicts
@@ -571,6 +600,7 @@ namespace PokeCord
             // Save the updated scoreboard
             await SaveScoreboardAsync();
         }
+        */
 
         /*
         private static List<Team> LoadTeamScoreboard()

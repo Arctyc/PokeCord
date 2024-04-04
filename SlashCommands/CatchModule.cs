@@ -26,7 +26,6 @@ namespace PokeCord.SlashCommands
         // TODO: These should probably be in a config file
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         const int shinyRatio = 256; // Chance of catching a shiny
-        private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
         private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars
 
         //Cooldown data structure
@@ -66,7 +65,7 @@ namespace PokeCord.SlashCommands
                     UserId = userId,
                     UserName = username,
                     Experience = 0,
-                    Pokeballs = pokeballMax,
+                    Pokeballs = ScoreboardService.pokeballMax,
                     CaughtPokemon = new List<PokemonData>(),
                     EarnedBadges = new List<Badge>()
                     //Badges = new Dictionary<Badge, DateTime>()
@@ -169,7 +168,7 @@ namespace PokeCord.SlashCommands
                     bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
                     if (pokemonData.Shiny) { startsWithVowel = false; }
                     string message = $"{username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                     $"{richPokemonName} worth {pokemonData.BaseExperience} exp! {playerData.Pokeballs}/{pokeballMax} Poké Balls remaining.";
+                                     $"{richPokemonName} worth {pokemonData.BaseExperience} exp! {playerData.Pokeballs}/{ScoreboardService.pokeballMax} Poké Balls remaining.";
                     Embed[] embeds = new Embed[]
                     {
                             new EmbedBuilder()
@@ -198,7 +197,7 @@ namespace PokeCord.SlashCommands
                 var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
 
                 await RespondAsync($"Sorry, you're out of Poké Balls for now. " +
-                    $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls <t:{cooldownUnixTime}:R>. " +
+                    $"The Poké Mart will automatically send you up to {ScoreboardService.pokeballMax} new Poké Balls <t:{cooldownUnixTime}:R>. " +
                     $"Unfortunately, you will not receive a bonus Premier Ball.");
             }
         }
