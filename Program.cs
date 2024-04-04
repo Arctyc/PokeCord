@@ -120,6 +120,7 @@ namespace PokeCord
 
         public static async Task ClientReady()
         {
+
             // Make sure everyone has a full stock of pokeballs when bot comes online
             //await ResetPokeballs(null); // Unnecessary for now
 
@@ -177,7 +178,7 @@ namespace PokeCord
             /*
             var givepokeballsCommand = new SlashCommandBuilder()
             */
-
+            /*
             try
             {
                 //FIX: Too many commands? "A ready handler is blocking the gateway task" -- Causes slow start
@@ -200,6 +201,7 @@ namespace PokeCord
             {
                 Console.WriteLine("Could not create a command. " + ex.Message);
             }
+            */
         }
 
         private static IServiceProvider ConfigureServices()

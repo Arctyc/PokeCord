@@ -1,5 +1,6 @@
 ﻿using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,10 +27,8 @@ namespace PokeCord
         {
             // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _commands.RegisterCommandsGloballyAsync();
             Console.WriteLine("Commands registered.");
-
-            // Process the InteractionCreated payloads to execute Interactions commands
-            //_client.InteractionCreated += HandleInteraction; // Needed?
 
             // Process the command execution results 
             _commands.SlashCommandExecuted += SlashCommandExecuted;
