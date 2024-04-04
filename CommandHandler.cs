@@ -6,11 +6,12 @@ using System.Reflection;
 
 namespace PokeCord
 {
-    public class CommandHandler
+    public class CommandHandler : I
     {
         private readonly DiscordSocketClient _client;
         private readonly InteractionService _commands;
         private readonly IServiceProvider _services;
+
         private readonly IConfiguration _configuration;
 
         public CommandHandler(DiscordSocketClient client, InteractionService commands, IServiceProvider services, IConfiguration config)
@@ -19,6 +20,12 @@ namespace PokeCord
             _commands = commands;
             _services = services;
             _configuration = config;
+
+            client.InteractionCreated += x =>
+            {
+                Task.Run(() => TryRunInteraction(x));
+                return Task.CompletedTask;
+            };
         }
 
         public async Task InitializeAsync()
@@ -28,7 +35,7 @@ namespace PokeCord
             //_handler.Log += LogAsync;
 
             // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
-            //await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             _client.InteractionCreated += HandleInteraction;
             _commands.InteractionExecuted += HandleInteractionExecute;
@@ -40,7 +47,7 @@ namespace PokeCord
         {
             // Register the commands globally.
             Console.WriteLine("Commands registered.");
-            await _commands.RegisterCommandsGloballyAsync();
+            //await _commands.RegisterCommandsGloballyAsync();
         }
 
         private async Task HandleInteraction(SocketInteraction interaction)
@@ -87,8 +94,16 @@ namespace PokeCord
                         break;
                 }
             }
-                
         }
+
+        private async Task TryRunInteraction(SocketInteraction interaction)
+        {
+            var ctx = new SocketInteractionContext(_client, interaction);
+            var result = await _commands.ExecuteCommandAsync(ctx, _services).ConfigureAwait(false);
+            Console.WriteLine($"Command executed:{result.IsSuccess}\nReason:{result.ErrorReason}");
+            //Log.Information($"Button was executed:{result.IsSuccess}\nReason:{result.ErrorReason}");
+        }
+
         private Task SlashCommandExecuted(SlashCommandInfo arg1, Discord.IInteractionContext arg2, IResult arg3)
         {
             if (!arg3.IsSuccess)
@@ -115,6 +130,12 @@ namespace PokeCord
                 }
             }
 
+            return Task.CompletedTask;
+        }
+        private static Task LogAsync(LogMessage msg)
+        {
+            Console.WriteLine(msg.ToString());
+            // TODO: Create a log file and log errors to it.
             return Task.CompletedTask;
         }
     }

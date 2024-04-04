@@ -19,7 +19,7 @@ namespace PokeCord.SlashCommands
         }
 
         [SlashCommand("pokeleaderboard", "Show a list of the trainers with the most exp.")]
-        public async Task LeaderboardCommand(InteractionContext context)
+        public async Task LeaderboardCommand()
         {
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
             // Log time til next pokeball in console - cheeky workaround to check it

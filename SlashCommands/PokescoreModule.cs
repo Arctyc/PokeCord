@@ -21,14 +21,14 @@ namespace PokeCord.SlashCommands
         public PokescoreModule (IServiceProvider services)
         {
             scoreboard = services.GetRequiredService<ScoreboardService>();
-            badgeService = services.GetRequiredService<BadgeService>();
+            //badgeService = services.GetRequiredService<BadgeService>();
         }
 
         [SlashCommand("pokescore", "View your PokeCord score, badges, and best catch.")]
-        public async Task PokescoreCommand(InteractionContext context)
+        public async Task PokescoreCommand()
         {
-            string username = context.User.GlobalName;
-            ulong userId = context.User.Id;
+            string username = Context.User.GlobalName;
+            ulong userId = Context.User.Id;
             List<Badge> badges = badgeService.GetBadges();
             Console.WriteLine($"{username} used pokescore");
 

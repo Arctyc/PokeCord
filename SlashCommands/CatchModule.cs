@@ -38,15 +38,15 @@ namespace PokeCord.SlashCommands
         public CatchModule(IServiceProvider services)
         {
             scoreboard = services.GetRequiredService<ScoreboardService>();
-            badgeService = services.GetRequiredService<BadgeService>();
+            //badgeService = services.GetRequiredService<BadgeService>();
             pokeApiClient = services.GetRequiredService<PokeApiClient>();
         }
 
         [SlashCommand("catch", "Catch a Pokémon!")]
-        public async Task CatchCommand(InteractionContext context)
+        public async Task CatchCommand()
         {
-            string username = context.User.GlobalName;
-            ulong userId = context.User.Id;
+            string username = Context.User.GlobalName;
+            ulong userId = Context.User.Id;
             PlayerData originalPlayerData = new PlayerData();
             List<Badge> badges = badgeService.GetBadges();
             Console.WriteLine($"{username} used catch");
