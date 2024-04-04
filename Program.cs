@@ -221,6 +221,7 @@ namespace PokeCord
                 .AddSingleton<PokeApiClient>()
                 .AddSingleton<InteractionService>()
                 .AddTransient<ScoreboardService>()
+                .AddTransient<BadgeService>()
                 .BuildServiceProvider();
             /*
             var services = new ServiceCollection();

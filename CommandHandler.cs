@@ -39,7 +39,7 @@ namespace PokeCord
             _client.InteractionCreated += HandleInteraction;
             _commands.InteractionExecuted += HandleInteractionExecute;
             // Process the command execution results 
-            _commands.SlashCommandExecuted += SlashCommandExecuted;
+            _commands.SlashCommandExecuted += HandleCommands;
 
         }
         private async Task ReadyAsync()
@@ -103,7 +103,7 @@ namespace PokeCord
             //Log.Information($"Button was executed:{result.IsSuccess}\nReason:{result.ErrorReason}");
         }
 
-        private Task SlashCommandExecuted(SlashCommandInfo arg1, Discord.IInteractionContext arg2, IResult arg3)
+        private Task HandleCommands(SlashCommandInfo arg1, Discord.IInteractionContext arg2, IResult arg3)
         {
             if (!arg3.IsSuccess)
             {

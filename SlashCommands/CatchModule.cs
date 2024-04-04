@@ -38,10 +38,12 @@ namespace PokeCord.SlashCommands
         public CatchModule(IServiceProvider services)
         {
             scoreboard = services.GetRequiredService<ScoreboardService>();
-            //badgeService = services.GetRequiredService<BadgeService>();
+            badgeService = services.GetRequiredService<BadgeService>();
             pokeApiClient = services.GetRequiredService<PokeApiClient>();
         }
 
+        [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
+        [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("catch", "Catch a Pokémon!")]
         public async Task CatchCommand()
         {
@@ -71,7 +73,6 @@ namespace PokeCord.SlashCommands
                     Pokeballs = ScoreboardService.pokeballMax,
                     CaughtPokemon = new List<PokemonData>(),
                     EarnedBadges = new List<Badge>()
-                    //Badges = new Dictionary<Badge, DateTime>()
                 };
                 if (scoreboard.TryAddPlayerData(userId, playerData))
                 {
