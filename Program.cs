@@ -66,6 +66,12 @@ namespace PokeCord
             _interactionService = new InteractionService(_client);
             _services.GetRequiredService<CommandHandler>();
 
+            _client.InteractionCreated += async interaction =>
+            {
+                var context = new SocketInteractionContext(_client, interaction);
+                await _interactionService.ExecuteCommandAsync(context, _services);
+            };
+
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
             await scoreboardService.LoadScoreboardAsync();
 
