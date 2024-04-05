@@ -10,7 +10,6 @@ namespace PokeCord.Helpers
 {
     public class TeamManager
     {
-
         public static (string, Team) CreateTeam(SocketSlashCommand command, PlayerData playerData, int teamCreateCost, List<Team> teams)
         {
             string message;
@@ -59,7 +58,7 @@ namespace PokeCord.Helpers
             string message = "";
 
             /*
-            // Error handling
+            // TODO: Error handling
             if (unable to join team) 
             {
                 // Player is already on a team

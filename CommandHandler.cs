@@ -27,12 +27,13 @@ namespace PokeCord
                 return Task.CompletedTask;
             };
 
+            // Subscribe to events
             _client.InteractionCreated += HandleInteraction;
-            _commands.InteractionExecuted += HandleInteractionExecute;
             _commands.SlashCommandExecuted += HandleCommands;
+            _commands.InteractionExecuted += HandleInteractionExecute;
+
             Console.WriteLine("Interactions setup in CommandHandler.cs");
         }
-
 
         public async Task InitializeAsync()
         {
@@ -48,6 +49,7 @@ namespace PokeCord
         {
             try
             {
+                Console.WriteLine($"Received interaction: {interaction.Type}");
                 // Create an execution context that matches the generic type parameter of your InteractionModuleBase<T> modules.
                 var context = new SocketInteractionContext(_client, interaction);
 
@@ -98,33 +100,44 @@ namespace PokeCord
             //Log.Information($"Button was executed:{result.IsSuccess}\nReason:{result.ErrorReason}");
         }
 
-        private Task HandleCommands(SlashCommandInfo arg1, Discord.IInteractionContext arg2, IResult arg3)
+        private async Task HandleCommands(SlashCommandInfo command, Discord.IInteractionContext context, IResult result)
         {
-            if (!arg3.IsSuccess)
+            Console.WriteLine("HandleCommands called.");
+            if (!result.IsSuccess)
             {
-                switch (arg3.Error)
+                switch (result.Error)
                 {
                     case InteractionCommandError.UnmetPrecondition:
-                        // implement
+                        // Handle unmet precondition errors
+                        await context.Interaction.RespondAsync("You don't have permission to use this command.");
                         break;
                     case InteractionCommandError.UnknownCommand:
-                        // implement
+                        // Handle unknown command errors
+                        await context.Interaction.RespondAsync("That's not a valid command.");
                         break;
                     case InteractionCommandError.BadArgs:
-                        // implement
+                        // Handle bad argument errors
+                        await context.Interaction.RespondAsync("You provided invalid arguments for the command.");
                         break;
                     case InteractionCommandError.Exception:
-                        // implement
+                        // Handle exceptions
+                        await context.Interaction.RespondAsync("An unexpected error occurred while executing the command.");
                         break;
                     case InteractionCommandError.Unsuccessful:
-                        // implement
+                        // Handle other errors
+                        await context.Interaction.RespondAsync("The command was not executed successfully.");
                         break;
                     default:
+                        // Handle other cases
+                        await context.Interaction.RespondAsync("An unknown error occurred while executing the command.");
                         break;
                 }
             }
-
-            return Task.CompletedTask;
+            else
+            {
+                // Command execution was successful
+                // You can add any additional logic here
+            }
         }
         private static Task LogAsync(LogMessage msg)
         {
