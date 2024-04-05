@@ -30,26 +30,19 @@ namespace PokeCord
             _client.InteractionCreated += HandleInteraction;
             _commands.InteractionExecuted += HandleInteractionExecute;
             _commands.SlashCommandExecuted += HandleCommands;
+            Console.WriteLine("Interactions setup in CommandHandler.cs");
         }
 
-        /*
+
         public async Task InitializeAsync()
         {
             _client.Ready += ReadyAsync;
-
-
         }
+
         private async Task ReadyAsync()
         {
             Console.WriteLine("ReadyAsync called in CommandHandler.cs");
-
-            // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
-            _client.InteractionCreated += HandleInteraction;
-            _commands.InteractionExecuted += HandleInteractionExecute;
-            // Process the command execution results 
-            _commands.SlashCommandExecuted += HandleCommands;
         }
-        */
 
         private async Task HandleInteraction(SocketInteraction interaction)
         {

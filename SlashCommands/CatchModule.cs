@@ -13,18 +13,21 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 
 using PokeCord.Helpers;
+using Discord.WebSocket;
 
 
 namespace PokeCord.SlashCommands
 {
     public class CatchModule : InteractionModuleBase<SocketInteractionContext>
     {
-        public InteractionService Commands { get; set; }
-        private CommandHandler _handler;
-
-        private readonly ScoreboardService scoreboard;
-        private readonly BadgeService badgeService;
-        private readonly PokeApiClient pokeApiClient;
+        // Discord.NET services
+        private readonly DiscordSocketClient _client;
+        private readonly InteractionService _interactionService;
+        // PokeCord services
+        private readonly CommandHandler _handler;
+        private readonly ScoreboardService _scoreboard;
+        private readonly BadgeService _badgeService;
+        private readonly PokeApiClient _pokeApiClient;
 
         // TODO: These should probably be in a config file
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
@@ -37,9 +40,14 @@ namespace PokeCord.SlashCommands
 
         public CatchModule(IServiceProvider services)
         {
-            scoreboard = services.GetRequiredService<ScoreboardService>();
-            badgeService = services.GetRequiredService<BadgeService>();
-            pokeApiClient = services.GetRequiredService<PokeApiClient>();
+            // Discord.NET services
+            _client = services.GetRequiredService<DiscordSocketClient>();
+            _interactionService = services.GetRequiredService<InteractionService>();
+            //PokeCord services
+            _handler = services.GetRequiredService<CommandHandler>();
+            _scoreboard = services.GetRequiredService<ScoreboardService>();
+            _badgeService = services.GetRequiredService<BadgeService>();
+            _pokeApiClient = services.GetRequiredService<PokeApiClient>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -50,13 +58,13 @@ namespace PokeCord.SlashCommands
             string username = Context.User.GlobalName;
             ulong userId = Context.User.Id;
             PlayerData originalPlayerData = new PlayerData();
-            List<Badge> badges = badgeService.GetBadges();
+            List<Badge> badges = _badgeService.GetBadges();
             Console.WriteLine($"{username} used catch");
 
             // Get the PlayerData instance from the scoreboard
             PlayerData playerData = new PlayerData();
 
-            if (scoreboard.TryGetPlayerData(userId, out originalPlayerData))
+            if (_scoreboard.TryGetPlayerData(userId, out originalPlayerData))
             {
                 // PlayerData exists for this userId
                 playerData = originalPlayerData;
@@ -74,7 +82,7 @@ namespace PokeCord.SlashCommands
                     CaughtPokemon = new List<PokemonData>(),
                     EarnedBadges = new List<Badge>()
                 };
-                if (scoreboard.TryAddPlayerData(userId, playerData))
+                if (_scoreboard.TryAddPlayerData(userId, playerData))
                 {
                     originalPlayerData = playerData;
                     Console.WriteLine($"New PlayerData for {username} added with userId {userId}");
@@ -126,7 +134,7 @@ namespace PokeCord.SlashCommands
                 // Set up a new PokeSelector
                 PokeSelector pokeSelector = new PokeSelector(maxPokemonId, shinyRatio);
                 // Get a new pokemon
-                PokemonData pokemonData = await pokeSelector.GetRandomPokemon(pokeApiClient);
+                PokemonData pokemonData = await pokeSelector.GetRandomPokemon(_pokeApiClient);
 
                 if (pokemonData != null)
                 {
@@ -156,7 +164,7 @@ namespace PokeCord.SlashCommands
                         }
                     }
 
-                    if (scoreboard.TryUpdatePlayerData(userId, playerData, originalPlayerData))
+                    if (_scoreboard.TryUpdatePlayerData(userId, playerData, originalPlayerData))
                     {
                         Console.WriteLine($"Catch written to scoreboard for {username}'s {pokemonData.Name}");
                     }
@@ -165,7 +173,7 @@ namespace PokeCord.SlashCommands
                         Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                     }
                     // Save the updated scoreboard data
-                    await scoreboard.SaveScoreboardAsync();
+                    await _scoreboard.SaveScoreboardAsync();
 
                     // Format Discord Reply
                     string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);

@@ -24,6 +24,7 @@ namespace PokeCord
 
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService;
+        private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
         private static IServiceProvider _services { get; set; }
         private static IConfiguration _configuration;
         private static Timer _pokeballResetTimer;
@@ -32,9 +33,9 @@ namespace PokeCord
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
         public static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
 
-        private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
 
-        public static async Task Main(string[] args)
+
+        public static async Task Main()
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
             //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
@@ -47,10 +48,7 @@ namespace PokeCord
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
-            _configuration = new ConfigurationBuilder()
-                .AddEnvironmentVariables(prefix: "DC_")
-                .AddJsonFile("appsettings.json", optional: true)
-                .Build();
+            _configuration = new ConfigurationBuilder().Build();
 
             RunAsync().GetAwaiter().GetResult();
         }
@@ -64,9 +62,8 @@ namespace PokeCord
         public static async Task ClientReady()
         {
             // Set up Discord.NET
-            _interactionService = new InteractionService(_client);
             _services = ConfigureServices();
-
+            _interactionService = new InteractionService(_client);
             _services.GetRequiredService<CommandHandler>();
 
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
@@ -81,17 +78,6 @@ namespace PokeCord
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
             _pokeballResetTimer = new Timer(async (e) => await scoreboardService.ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
-
-            /*
-            // -- Hourly Restock
-            // Set up Pokemart
-            // Calculate the time remaining until the next pokeball restock (Hourly)
-            DateTime nextHour = DateTime.Now.AddHours(1).AddMinutes(-DateTime.Now.Minute).AddSeconds(-DateTime.Now.Second);
-            TimeSpan delay = nextHour - DateTime.Now;
-            // Call the restock method on the delay
-            _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromHours(1));
-            Console.WriteLine("Time until Pokeball reset: " + delay);
-            */
 
             // Reset pokeballs when bot comes online
             // Unnecessary for now
@@ -180,14 +166,17 @@ namespace PokeCord
         private static IServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
+                //Discord.NET
                 .AddSingleton(_configuration)
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), _interactionServiceConfig))
+                .AddSingleton<InteractionService>()
+                //PokeCord
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<PokeApiClient>()
-                .AddSingleton<InteractionService>()
                 .AddTransient<ScoreboardService>()
                 .AddTransient<BadgeService>()
+                //Build Collection
                 .BuildServiceProvider();
         }
 
