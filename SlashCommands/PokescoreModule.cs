@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using PokeCord.Data;
 using PokeCord.Helpers;
+using PokeCord.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -14,6 +14,7 @@ using System.Collections.Concurrent;
 
 using PokeCord.Helpers;
 using Discord.WebSocket;
+using PokeCord.Services;
 
 
 namespace PokeCord.SlashCommands

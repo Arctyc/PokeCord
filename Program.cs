@@ -5,7 +5,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PokeApiNet;
-using PokeCord.Data;
+using PokeCord.Services;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
