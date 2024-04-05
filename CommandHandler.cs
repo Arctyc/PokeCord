@@ -19,6 +19,7 @@ namespace PokeCord
             _commands = commands;
             _services = services;
             _configuration = config;
+            _client.Log += LogAsync;
 
             client.InteractionCreated += x =>
             {
@@ -29,24 +30,25 @@ namespace PokeCord
 
         public async Task InitializeAsync()
         {
-            //_client.Ready += ReadyAsync();
-            _client.Ready += async () => await ReadyAsync();
-            //_handler.Log += LogAsync;
-
-            // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-
             _client.InteractionCreated += HandleInteraction;
             _commands.InteractionExecuted += HandleInteractionExecute;
             // Process the command execution results 
             _commands.SlashCommandExecuted += HandleCommands;
 
+            _client.Ready += ReadyAsync;
+            //_handler.Log += LogAsync;
         }
         private async Task ReadyAsync()
         {
             // Register the commands globally.
-            Console.WriteLine("Commands registered.");
-            //await _commands.RegisterCommandsGloballyAsync();
+            // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
+            //MOVED_TO_Program.cs await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            Console.WriteLine("ReadyAsync called in CommandHandler.cs");
+            //MOVED_TO_Progam.cs await _commands.RegisterCommandsGloballyAsync();
+            _client.InteractionCreated += HandleInteraction;
+            _commands.InteractionExecuted += HandleInteractionExecute;
+            // Process the command execution results 
+            _commands.SlashCommandExecuted += HandleCommands;
         }
 
         private async Task HandleInteraction(SocketInteraction interaction)
@@ -134,7 +136,6 @@ namespace PokeCord
         private static Task LogAsync(LogMessage msg)
         {
             Console.WriteLine(msg.ToString());
-            // TODO: Create a log file and log errors to it.
             return Task.CompletedTask;
         }
     }

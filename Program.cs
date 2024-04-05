@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -103,7 +104,6 @@ namespace PokeCord
             teamScoreboard = LoadTeamScoreboard();
             */
 
-
             // Login to Discord
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
@@ -111,6 +111,8 @@ namespace PokeCord
             // Set up interactions
             // Moved to CommandHandler.cs
             //_client.SlashCommandExecuted += SlashCommandHandler;
+
+            //await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             // Additionall ready settings
             _client.Ready += ClientReady;
@@ -121,12 +123,14 @@ namespace PokeCord
         static async Task RunAsync()
         {
             // Keep bot running indefinitely
-            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             await Task.Delay(Timeout.Infinite);
         }
 
         public static async Task ClientReady()
         {
+            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _interactionService.RegisterCommandsGloballyAsync();
+            Console.WriteLine("Commands registered in Program.cs.");
 
             // Make sure everyone has a full stock of pokeballs when bot comes online
             //await ResetPokeballs(null); // Unnecessary for now
@@ -741,7 +745,6 @@ namespace PokeCord
         private static Task LogAsync(LogMessage msg)
         {
             Console.WriteLine(msg.ToString());
-            // TODO: Create a log file and log errors to it.
             return Task.CompletedTask;
         }
     }
