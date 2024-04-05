@@ -37,6 +37,12 @@ namespace PokeCord
 
             _client.Ready += ReadyAsync;
             //_handler.Log += LogAsync;
+
+            // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
+            _client.InteractionCreated += HandleInteraction;
+            _commands.InteractionExecuted += HandleInteractionExecute;
+            // Process the command execution results 
+            _commands.SlashCommandExecuted += HandleCommands;
         }
         private async Task ReadyAsync()
         {

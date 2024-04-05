@@ -24,6 +24,8 @@ namespace PokeCord.SlashCommands
             //badgeService = services.GetRequiredService<BadgeService>();
         }
 
+        [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
+        [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("pokescore", "View your PokeCord score, badges, and best catch.")]
         public async Task PokescoreCommand()
         {

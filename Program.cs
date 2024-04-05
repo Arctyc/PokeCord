@@ -22,8 +22,7 @@ namespace PokeCord
         //private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
         public const int teamCreateCost = 0; // Cost in poke dollars to create a team
 
-
-        private static DiscordSocketClient _client;
+        private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService;
         private static IServiceProvider _services;
         private static IConfiguration _configuration;
@@ -44,11 +43,7 @@ namespace PokeCord
 
         //TODO: Create a timer to batch save to file every so often
 
-        private static readonly InteractionServiceConfig _interactionServiceConfig = new()
-        {
-            LocalizationManager = new ResxLocalizationManager("InteractionFramework.Resources.CommandLocales", Assembly.GetEntryAssembly(),
-                new CultureInfo("en-US"), new CultureInfo("ru"))
-        };
+        private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
 
         public static async Task Main(string[] args)
         {
@@ -56,29 +51,42 @@ namespace PokeCord
             //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
-            
+            _client.Ready += ClientReady;
+            _client.Log += LogAsync;
+
+            // Login to Discord
+            await _client.LoginAsync(TokenType.Bot, token);
+            await _client.StartAsync();
+
             _configuration = new ConfigurationBuilder()
                 .AddEnvironmentVariables(prefix: "DC_")
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
 
+            RunAsync().GetAwaiter().GetResult();
+        }
+
+        static async Task RunAsync()
+        {
+            // Keep bot running indefinitely
+            await Task.Delay(Timeout.Infinite);
+        }
+
+        public static async Task ClientReady()
+        {
             // Set up Discord.NET
-            _client = new DiscordSocketClient();
             _interactionService = new InteractionService(_client);
             _services = ConfigureServices();
-            _client.Log += LogAsync;
-
-            var client = _services.GetRequiredService<DiscordSocketClient>();
-            client.Log += LogAsync;
 
             await _services.GetRequiredService<CommandHandler>()
             .InitializeAsync();
 
-
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
             await scoreboardService.LoadScoreboardAsync();
 
-
+            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _interactionService.RegisterCommandsGloballyAsync();
+            Console.WriteLine("Commands registered in Program.cs.");
 
             // -- Daily Restock -- KEEP IN program.cs
             // Calculate the time remaining until the next pokeball restock
@@ -97,43 +105,9 @@ namespace PokeCord
             Console.WriteLine("Time until Pokeball reset: " + delay);
             */
 
-            /* // Moved to Data
-            // Load individual scoreboard
-            scoreboard = LoadScoreboard();
-            // Load team scoreboard
-            teamScoreboard = LoadTeamScoreboard();
-            */
-
-            // Login to Discord
-            await _client.LoginAsync(TokenType.Bot, token);
-            await _client.StartAsync();
-
-            // Set up interactions
-            // Moved to CommandHandler.cs
-            //_client.SlashCommandExecuted += SlashCommandHandler;
-
-            //await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-
-            // Additionall ready settings
-            _client.Ready += ClientReady;
-
-            RunAsync().GetAwaiter().GetResult();
-        }
-
-        static async Task RunAsync()
-        {
-            // Keep bot running indefinitely
-            await Task.Delay(Timeout.Infinite);
-        }
-
-        public static async Task ClientReady()
-        {
-            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-            await _interactionService.RegisterCommandsGloballyAsync();
-            Console.WriteLine("Commands registered in Program.cs.");
-
-            // Make sure everyone has a full stock of pokeballs when bot comes online
-            //await ResetPokeballs(null); // Unnecessary for now
+            // Reset pokeballs when bot comes online
+            // Unnecessary for now
+            //await ResetPokeballs(null); 
 
             // Set up slash commands
             /* Moved to SlashCommands
