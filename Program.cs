@@ -24,7 +24,7 @@ namespace PokeCord
 
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService;
-        private static IServiceProvider _services;
+        private static IServiceProvider _services { get; set; }
         private static IConfiguration _configuration;
         private static Timer _pokeballResetTimer;
 
@@ -67,8 +67,7 @@ namespace PokeCord
             _interactionService = new InteractionService(_client);
             _services = ConfigureServices();
 
-            await _services.GetRequiredService<CommandHandler>()
-            .InitializeAsync();
+            _services.GetRequiredService<CommandHandler>();
 
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
             await scoreboardService.LoadScoreboardAsync();

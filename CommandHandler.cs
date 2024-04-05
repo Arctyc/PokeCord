@@ -26,23 +26,18 @@ namespace PokeCord
                 Task.Run(() => TryRunInteraction(x));
                 return Task.CompletedTask;
             };
+
+            _client.InteractionCreated += HandleInteraction;
+            _commands.InteractionExecuted += HandleInteractionExecute;
+            _commands.SlashCommandExecuted += HandleCommands;
         }
 
+        /*
         public async Task InitializeAsync()
         {
-            _client.InteractionCreated += HandleInteraction;
-            _commands.InteractionExecuted += HandleInteractionExecute;
-            // Process the command execution results 
-            _commands.SlashCommandExecuted += HandleCommands;
-
             _client.Ready += ReadyAsync;
-            //_handler.Log += LogAsync;
 
-            // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
-            _client.InteractionCreated += HandleInteraction;
-            _commands.InteractionExecuted += HandleInteractionExecute;
-            // Process the command execution results 
-            _commands.SlashCommandExecuted += HandleCommands;
+
         }
         private async Task ReadyAsync()
         {
@@ -54,6 +49,7 @@ namespace PokeCord
             // Process the command execution results 
             _commands.SlashCommandExecuted += HandleCommands;
         }
+        */
 
         private async Task HandleInteraction(SocketInteraction interaction)
         {
