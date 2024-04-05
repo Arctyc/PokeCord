@@ -28,20 +28,9 @@ namespace PokeCord
         private static IConfiguration _configuration;
         private static Timer _pokeballResetTimer;
 
-        //TODO: Weekly leaderboard
-
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
         public static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
-
-        /* // Moved to Data
-        // Individual scoreboard data structure
-        private static ConcurrentDictionary<ulong, PlayerData> scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
-        // Team scoreboard data structure
-        private static List<Team> teamScoreboard = new List<Team>();
-        */
-
-        //TODO: Create a timer to batch save to file every so often
 
         private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
 
@@ -201,11 +190,6 @@ namespace PokeCord
                 .AddTransient<ScoreboardService>()
                 .AddTransient<BadgeService>()
                 .BuildServiceProvider();
-            /*
-            var services = new ServiceCollection();
-            services.AddSingleton<PokeApiClient>(); // Add PokeApiClient as Singleton
-            return services.BuildServiceProvider(); // Build and return the service provider
-            */
         }
 
         /*
