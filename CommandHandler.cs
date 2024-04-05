@@ -40,11 +40,9 @@ namespace PokeCord
         }
         private async Task ReadyAsync()
         {
-            // Register the commands globally.
-            // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
-            //MOVED_TO_Program.cs await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             Console.WriteLine("ReadyAsync called in CommandHandler.cs");
-            //MOVED_TO_Progam.cs await _commands.RegisterCommandsGloballyAsync();
+
+            // Add the public modules that inherit InteractionModuleBase<T> to the InteractionService
             _client.InteractionCreated += HandleInteraction;
             _commands.InteractionExecuted += HandleInteractionExecute;
             // Process the command execution results 
