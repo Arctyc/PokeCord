@@ -9,19 +9,19 @@ namespace PokeCord.SlashCommands
 {
     public class PokescoreModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboard;
+        private readonly ScoreboardService scoreboardService;
         private readonly BadgeService badgeService;
 
         public PokescoreModule(IServiceProvider services)
         {
             Console.Write("Loaded command: pokescore\n");
-            scoreboard = services.GetRequiredService<ScoreboardService>();
+            scoreboardService = services.GetRequiredService<ScoreboardService>();
             badgeService = services.GetRequiredService<BadgeService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
         [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
-        [SlashCommand("pokescore", "View your PokeCord score, badges, and best catch.")]
+        [SlashCommand("pokescore", "View your PokeCord exp, Pokémon Dollars, badge count, and best catch.")]
         public async Task PokescoreCommand()
         {
             string username = Context.User.GlobalName;
@@ -32,7 +32,7 @@ namespace PokeCord.SlashCommands
             // Get the PlayerData instance from the scoreboard
             PlayerData playerData = new PlayerData();
 
-            if (scoreboard.TryGetPlayerData(userId, out playerData))
+            if (scoreboardService.TryGetPlayerData(userId, out playerData))
             {
                 Console.WriteLine($"PlayerData found for {username} {userId}");
             }

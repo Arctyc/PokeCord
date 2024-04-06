@@ -6,7 +6,7 @@ using PokeCord.Services;
 
 namespace PokeCord.SlashCommands
 {
-    internal class PokebadgesModule : InteractionModuleBase<SocketInteractionContext>
+    public class PokebadgesModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly ScoreboardService scoreboardService;
         private readonly BadgeService badgeService;

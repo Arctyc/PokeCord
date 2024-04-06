@@ -66,6 +66,11 @@ namespace PokeCord.Services
             List<Team> teams = _teamScoreboard;
             return teams;
         }
+        public async void AddTeam(Team team)
+        {
+            _teamScoreboard.Add(team);
+            await SaveScoreboardAsync();
+        }
 
         private async Task LoadTeamScoreboard()
         {
@@ -159,6 +164,7 @@ namespace PokeCord.Services
                     {
                         playerData.Version = 3;
                         playerData.PokemonDollars = 100; // Give 100 free pokemon dollars to everyone upon upgrade
+                        playerData.WeeklyExperience = 0;
                     }
                 }
 

@@ -123,8 +123,9 @@ namespace PokeCord.SlashCommands
                 {
                     Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
 
-                    // Update the existing playerData instance                        
-                    playerData.Experience += (int)pokemonData.BaseExperience; // Award experience points                        
+                    // Update the existing playerData instance
+                    playerData.Experience += (int)pokemonData.BaseExperience;// Award overall experience points
+                    playerData.WeeklyExperience += (int)pokemonData.BaseExperience;// Award weekly experience points
                     playerData.Pokeballs -= 1; // subtract one pokeball from user's inventory
                     playerData.PokemonDollars += (int)pokemonData.BaseExperience / pokemonDollarRatio; // award pokemon dollars
                     playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon

@@ -8,16 +8,16 @@ namespace PokeCord.Data
         public ulong UserId { get; set; }
         public string UserName { get; set; }
         public int Experience { get; set; }
+        public int WeeklyExperience { get; set; } // New!
         public int Pokeballs { get; set; }
         public int PokemonDollars { get; set; } // New!
         public List<PokemonData> CaughtPokemon { get; set; }
-        public List<Badge> EarnedBadges { get; set; } // Fixedish version
+        public List<Badge> EarnedBadges { get; set; }
 
         public PlayerData()
         {
             CaughtPokemon = new List<PokemonData>();
             EarnedBadges = new List<Badge>();
-            //Badges = new Dictionary<Badge, DateTime>();
         }
     }
 }
