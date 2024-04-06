@@ -42,8 +42,8 @@ namespace PokeCord.SlashCommands
         public CatchModule(IServiceProvider services)
         {
             // Discord.NET services
-            _client = services.GetRequiredService<DiscordSocketClient>();
-            _interactionService = services.GetRequiredService<InteractionService>();
+            _client = services.GetRequiredService<DiscordSocketClient>(); // May not need
+            _interactionService = services.GetRequiredService<InteractionService>(); // May not need
             //PokeCord services
             _handler = services.GetRequiredService<CommandHandler>();
             _scoreboard = services.GetRequiredService<ScoreboardService>();

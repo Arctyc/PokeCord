@@ -1,20 +1,43 @@
-﻿using Discord.Interactions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Discord;
+using Discord.Interactions;
+using Microsoft.Extensions.DependencyInjection;
+using PokeCord.Data;
+using PokeCord.Services;
 
 namespace PokeCord.SlashCommands
 {
-    internal class PokebadgesModule
+    internal class PokebadgesModule : InteractionModuleBase<SocketInteractionContext>
     {
+        private readonly ScoreboardService scoreboardService;
+        private readonly BadgeService badgeService;
 
-        /*
-        [SlashCommand]
+        public PokebadgesModule(IServiceProvider services)
+        {
+            scoreboardService = services.GetRequiredService<ScoreboardService>();
+            badgeService = services.GetRequiredService<BadgeService>();
+        }
+
+        [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
+        [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
+        [SlashCommand("pokebadges", "View a list of all your earned badges.")]
         public async Task PokebadgesCommand(InteractionContext context)
         {
             string badgeCountMessage;
+            List<Badge> badges = badgeService.GetBadges();
+
+            ulong userId = context.User.Id;
+            string username = context.User.Username;
+
+            PlayerData playerData = new PlayerData();
+            if (scoreboardService.TryGetPlayerData(userId, out playerData))
+            {
+                Console.WriteLine($"PlayerData found for {username} {userId}");
+            }
+            else
+            {
+                // PlayerData does not exist for this userId
+                await RespondAsync($"No data for {username} found. Have you caught your first Pokémon?");                
+            }
 
             if (playerData.EarnedBadges == null)
             {
@@ -31,8 +54,7 @@ namespace PokeCord.SlashCommands
             }
 
             // Reply in Discord
-            await command.RespondAsync(badgeCountMessage);
+            await RespondAsync(badgeCountMessage);
         }
-        */
     }
 }

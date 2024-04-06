@@ -61,9 +61,15 @@ namespace PokeCord.Services
             await SaveScoreboardAsync();
         }
 
-        public static List<PlayerData> GetLeaderboard()
+        public List<PlayerData> GetLeaderboard()
         {
             return _scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
+        }
+
+        public List<Team> GetTeams()
+        {
+            List<Team> teams = _teamScoreboard;
+            return teams;
         }
 
         private async Task LoadTeamScoreboard()

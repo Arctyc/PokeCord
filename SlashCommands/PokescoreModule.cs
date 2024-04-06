@@ -22,7 +22,7 @@ namespace PokeCord.SlashCommands
         public PokescoreModule (IServiceProvider services)
         {
             scoreboard = services.GetRequiredService<ScoreboardService>();
-            //badgeService = services.GetRequiredService<BadgeService>();
+            badgeService = services.GetRequiredService<BadgeService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]

@@ -1,5 +1,7 @@
 ﻿using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using PokeCord.Data;
+using PokeCord.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +12,12 @@ namespace PokeCord.Helpers
 {
     public class TeamManager
     {
+        private readonly ScoreboardService scoreboardService;
+
+        public TeamManager(IServiceProvider services)
+        {
+            scoreboardService = services.GetRequiredService<ScoreboardService>();
+        }
         public static (string, Team) CreateTeam(SocketSlashCommand command, PlayerData playerData, int teamCreateCost, List<Team> teams)
         {
             string message;

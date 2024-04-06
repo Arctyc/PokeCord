@@ -1,4 +1,5 @@
-﻿using Discord.Interactions;
+﻿using Discord;
+using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using PokeCord.Services;
 using System;
@@ -11,13 +12,15 @@ namespace PokeCord.SlashCommands
 {
     public class LeaderboardModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboard;
+        private readonly ScoreboardService scoreboardService;
 
         public LeaderboardModule(IServiceProvider services)
         {
-            scoreboard = services.GetRequiredService<ScoreboardService>();
+            scoreboardService = services.GetRequiredService<ScoreboardService>();
         }
 
+        [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
+        [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("pokeleaderboard", "Show a list of the trainers with the most exp.")]
         public async Task LeaderboardCommand()
         {
@@ -26,7 +29,7 @@ namespace PokeCord.SlashCommands
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
             // Get a sorted list of players
-            var leaders = ScoreboardService.GetLeaderboard();
+            var leaders = scoreboardService.GetLeaderboard();
 
             // Add a message line for each of the top 10
             List<string> leaderMessages = new List<string>();
