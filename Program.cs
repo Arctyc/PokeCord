@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -7,9 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PokeApiNet;
 using PokeCord.Services;
 using System.Collections.Concurrent;
-using System.Globalization;
 using System.Reflection;
-using System.Windows.Input;
 
 namespace PokeCord
 {

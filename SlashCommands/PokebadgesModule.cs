@@ -36,7 +36,7 @@ namespace PokeCord.SlashCommands
             else
             {
                 // PlayerData does not exist for this userId
-                await RespondAsync($"No data for {username} found. Have you caught your first Pokémon?");                
+                await RespondAsync($"No data for {username} found. Have you caught your first Pokémon?");
             }
 
             if (playerData.EarnedBadges == null)

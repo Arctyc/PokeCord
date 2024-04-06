@@ -4,11 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using PokeCord.Data;
 using PokeCord.Helpers;
 using PokeCord.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PokeCord.SlashCommands
 {
@@ -18,7 +13,7 @@ namespace PokeCord.SlashCommands
         private readonly ScoreboardService scoreboard;
         private readonly BadgeService badgeService;
 
-        public PokescoreModule (IServiceProvider services)
+        public PokescoreModule(IServiceProvider services)
         {
             scoreboard = services.GetRequiredService<ScoreboardService>();
             badgeService = services.GetRequiredService<BadgeService>();
