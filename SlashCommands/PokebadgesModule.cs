@@ -13,6 +13,7 @@ namespace PokeCord.SlashCommands
 
         public PokebadgesModule(IServiceProvider services)
         {
+            Console.Write("Loaded command: pokebadges\n");
             scoreboardService = services.GetRequiredService<ScoreboardService>();
             badgeService = services.GetRequiredService<BadgeService>();
         }

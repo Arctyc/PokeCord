@@ -7,7 +7,6 @@ using PokeCord.Services;
 
 namespace PokeCord.SlashCommands
 {
-
     public class PokescoreModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly ScoreboardService scoreboard;
@@ -15,6 +14,7 @@ namespace PokeCord.SlashCommands
 
         public PokescoreModule(IServiceProvider services)
         {
+            Console.Write("Loaded command: pokescore\n");
             scoreboard = services.GetRequiredService<ScoreboardService>();
             badgeService = services.GetRequiredService<BadgeService>();
         }

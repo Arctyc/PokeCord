@@ -11,6 +11,7 @@ namespace PokeCord.SlashCommands
 
         public LeaderboardModule(IServiceProvider services)
         {
+            Console.Write("Loaded command: pokeleaderboard\n");
             scoreboardService = services.GetRequiredService<ScoreboardService>();
         }
 

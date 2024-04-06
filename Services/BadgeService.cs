@@ -10,13 +10,12 @@ namespace PokeCord.Services
         private static List<Badge> _badges;
 
         public BadgeService()
-        {
-            // Load badges
-            _badges = LoadBadges();
+        {            
         }
 
         public List<Badge> GetBadges()
         {
+            _badges = LoadBadges();
             return _badges;
         }
 

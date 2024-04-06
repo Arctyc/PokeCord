@@ -12,11 +12,6 @@ namespace PokeCord.SlashCommands
 {
     public class CatchModule : InteractionModuleBase<SocketInteractionContext>
     {
-        // Discord.NET services
-        //private readonly DiscordSocketClient _client; //needed?
-        //private readonly InteractionService _interactionService; //needed?
-        // PokeCord services
-        //private readonly CommandHandler _handler; //needed?
         private readonly ScoreboardService _scoreboard;
         private readonly BadgeService _badgeService;
         private readonly PokeApiClient _pokeApiClient;
@@ -32,11 +27,7 @@ namespace PokeCord.SlashCommands
 
         public CatchModule(IServiceProvider services)
         {
-            // Discord.NET services
-            //_client = services.GetRequiredService<DiscordSocketClient>();//needed?
-            //_interactionService = services.GetRequiredService<InteractionService>();//needed?
-            //PokeCord services
-            //_handler = services.GetRequiredService<CommandHandler>();//needed?
+            Console.Write("Loaded command: catch\n");
             _scoreboard = services.GetRequiredService<ScoreboardService>();
             _badgeService = services.GetRequiredService<BadgeService>();
             _pokeApiClient = services.GetRequiredService<PokeApiClient>();

@@ -11,6 +11,7 @@ namespace PokeCord.SlashCommands
         private readonly ScoreboardService scoreboardService;
         public PoketeamsModule(IServiceProvider services)
         {
+            Console.Write("Loaded command: poketeams\n");
             scoreboardService = services.GetRequiredService<ScoreboardService>();
         }
 
