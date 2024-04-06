@@ -68,7 +68,10 @@ namespace PokeCord.SlashCommands
             team.TeamExperience = playerData.WeeklyExperience;
             // Add team
             scoreboardService.AddTeam(team); // Saved to file in service
-
+            // Charge player
+            playerData.PokemonDollars -= teamCreateCost;
+            await scoreboardService.SaveScoreboardAsync();
+            // Respond in Discord
             await RespondAsync($"Congratulations, {username}! You are the new leader of Team {teamName}");
 
             /*
