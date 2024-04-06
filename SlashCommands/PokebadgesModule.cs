@@ -20,13 +20,13 @@ namespace PokeCord.SlashCommands
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
         [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("pokebadges", "View a list of all your earned badges.")]
-        public async Task PokebadgesCommand(InteractionContext context)
+        public async Task PokebadgesCommand()
         {
             string badgeCountMessage;
             List<Badge> badges = badgeService.GetBadges();
 
-            ulong userId = context.User.Id;
-            string username = context.User.GlobalName;
+            ulong userId = Context.User.Id;
+            string username = Context.User.GlobalName;
 
             PlayerData playerData = new PlayerData();
             if (scoreboardService.TryGetPlayerData(userId, out playerData))

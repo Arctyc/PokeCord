@@ -10,8 +10,6 @@ namespace PokeCord.SlashCommands
     internal class PoketeamsModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly ScoreboardService scoreboardService;
-        public enum TeamsOperation { View, Create, Join }
-
         public PoketeamsModule(IServiceProvider services)
         {
             scoreboardService = services.GetRequiredService<ScoreboardService>();
@@ -20,11 +18,11 @@ namespace PokeCord.SlashCommands
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
         [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("poketeams", "View all Poké Teams.")]
-        public async Task PoketeamsCommand(InteractionContext context, TeamsOperation operation)
+        public async Task PoketeamsCommand([Choice("View", "view"), Choice("Create", "create"), Choice("Join", "join")] string operation)
         {
             switch (operation)
             {
-                case TeamsOperation.View:
+                case "view":
                     // Formatted message (list of teams with score, ordered descending for output
                     string viewMessage = "";
 
@@ -57,7 +55,7 @@ namespace PokeCord.SlashCommands
                     await RespondAsync(viewMessage);
                     break;
 
-                case TeamsOperation.Create:
+                case "create":
                     string createMessage = "Not Implemented";
 
                     /*
@@ -77,7 +75,7 @@ namespace PokeCord.SlashCommands
                     await RespondAsync(createMessage);
                     break;
 
-                case TeamsOperation.Join:
+                case "join":
                     string joinMessage = "Not Implemented";
 
                     /*

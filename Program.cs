@@ -33,8 +33,6 @@ namespace PokeCord
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
         public static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
 
-
-
         public static async Task Main()
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN

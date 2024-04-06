@@ -18,7 +18,6 @@ namespace PokeCord.SlashCommands
         private readonly ScoreboardService scoreboard;
         private readonly BadgeService badgeService;
 
-
         public PokescoreModule (IServiceProvider services)
         {
             scoreboard = services.GetRequiredService<ScoreboardService>();

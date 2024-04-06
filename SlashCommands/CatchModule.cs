@@ -1,20 +1,11 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using PokeApiNet;
 using PokeCord.Data;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-
 using PokeCord.Helpers;
-using Discord.WebSocket;
 using PokeCord.Services;
+using System.Collections.Concurrent;
 
 
 namespace PokeCord.SlashCommands
