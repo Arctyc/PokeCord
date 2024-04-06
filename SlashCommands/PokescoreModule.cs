@@ -61,7 +61,7 @@ namespace PokeCord.SlashCommands
                     string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
                                      //$"Rank: \n" +
                                      $"Average exp/catch: {averageExp}\n" +
-                                     $"Pokémon Dollars: {pokemonDollars}" +
+                                     $"Pokémon Dollars: {pokemonDollars}\n" +
                                      $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
                                      $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
