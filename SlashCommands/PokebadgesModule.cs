@@ -26,7 +26,7 @@ namespace PokeCord.SlashCommands
             List<Badge> badges = badgeService.GetBadges();
 
             ulong userId = context.User.Id;
-            string username = context.User.Username;
+            string username = context.User.GlobalName;
 
             PlayerData playerData = new PlayerData();
             if (scoreboardService.TryGetPlayerData(userId, out playerData))

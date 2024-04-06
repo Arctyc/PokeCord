@@ -9,25 +9,17 @@ namespace PokeCord.SlashCommands
 {
     internal class PoketeamsModule : InteractionModuleBase<SocketInteractionContext>
     {
-
         private readonly ScoreboardService scoreboardService;
+        public enum TeamsOperation { View, Create, Join }
 
         public PoketeamsModule(IServiceProvider services)
         {
             scoreboardService = services.GetRequiredService<ScoreboardService>();
         }
 
-        public enum TeamsOperation
-        {
-            View,
-            Create,
-            Join
-        }
-
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
         [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("poketeams", "View all Poké Teams.")]
-        //TODO: Use options for view, create, join?
         public async Task PoketeamsCommand(InteractionContext context, TeamsOperation operation)
         {
             switch (operation)
