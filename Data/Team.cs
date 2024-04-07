@@ -6,12 +6,12 @@
         public int Id { get; set; }
         public string Name { get; set; }
         public int TeamExperience { get; set; }
-        public List<PlayerData> Players { get; set; }
+        public List<ulong> Players { get; set; }
 
         public Team()
 
         {
-            Players = new List<PlayerData>();
+            Players = new List<ulong>();
         }
     }
 }

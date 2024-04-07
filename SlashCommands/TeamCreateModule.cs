@@ -32,6 +32,8 @@ namespace PokeCord.SlashCommands
             ulong userId = Context.User.Id;
             string username = Context.User.GlobalName;
 
+            //TODO: Refuse if after WeeklyTimerEnd or before WeeklyTimerStart
+
             // Get player data
             PlayerData playerData = new PlayerData();
             if (scoreboardService.TryGetPlayerData(userId, out playerData))
@@ -41,13 +43,25 @@ namespace PokeCord.SlashCommands
             {
                 // PlayerData does not exist for this userId
                 await RespondAsync($"No data for {username} found. Have you caught your first Pokémon?");
+                return;
             }
-            
+
             // Check player is not already on a team
             if (playerData.TeamId != -1)
             {
-                string? teamName = scoreboardService.GetTeams().Where(x => x.Id == playerData.TeamId).Select(x => x.Name).FirstOrDefault();
-                await RespondAsync($"You are already on Team {teamName}");
+                Team? existingTeam = scoreboardService.GetTeams().FirstOrDefault(t => t.Id == playerData.TeamId);
+                if (existingTeam != null)
+                {
+                    await RespondAsync($"You are already on Team {existingTeam.Name}");
+                }
+                else
+                {
+                    // The player's TeamId is not -1, but the team no longer exists in the scoreboard
+                    playerData.TeamId = -1;
+                    await scoreboardService.SaveScoreboardAsync();
+                    await RespondAsync($"PlayerData team ID error. Try again, if you see this message twice, contact @ArctycFox");
+                }
+                return;
             }
 
             // Check if user can afford to create team
@@ -55,29 +69,25 @@ namespace PokeCord.SlashCommands
             {
                 int remaining = teamCreateCost - playerData.PokemonDollars;
                 await RespondAsync($"You need {remaining.ToString()} more Pokémon Dollars to create a team.");
+                return;
             }
 
             // Check if team exists
             List<Team> existingTeams = scoreboardService.GetTeams();
-            bool exists = false;
-            foreach (Team t in existingTeams)
-            {
-                if (newTeamName == t.Name)
-                {
-                    exists = true;
-                }
-            }
-            if (exists)
+            if (existingTeams.Any(t => t.Name == newTeamName))
             {
                 await RespondAsync($"Team {newTeamName} already exists! Did you mean to use /teamjoin?");
+                return;
             }
 
             // Build team
-            Team team = new Team();
-            team.Id = existingTeams.Count + 1;
-            team.Name = newTeamName;
-            team.Players.Add(playerData);
-            team.TeamExperience = playerData.WeeklyExperience;
+            Team team = new Team
+            {
+                Id = existingTeams.Count + 1,
+                Name = newTeamName,
+                Players = new List<ulong> { userId },
+                TeamExperience = playerData.WeeklyExperience
+            };
 
             // Add team to list in memory
             scoreboardService.AddTeam(team); // Saved to file in service

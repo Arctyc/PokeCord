@@ -32,25 +32,27 @@ namespace PokeCord.SlashCommands
             {
                 viewMessage = $"There are no teams yet. Use /teamcreate to start one!";
             }
-            foreach (Team existingTeam in teams)
+            else
             {
-                // Sum experience of all players on team
-                existingTeam.TeamExperience = existingTeam.Players.Sum(player => player.Experience);
-            }
-            teams = teams.OrderByDescending(t => t.TeamExperience).ToList();
-            for (int i = 0; i < teams.Count; i++)
-            {
-                string teamExp = teams[i].TeamExperience.ToString("N0");
-                // Get list of name of each member of team
-                List<String> members = new List<string>();
-                foreach (PlayerData player in teams[i].Players)
+                for (int i = 0; i < teams.Count; i++)
                 {
-                    members.Add(player.UserName);
+                    string teamExp = teams[i].TeamExperience.ToString("N0");
+
+                    // Get list of name of each member of team
+                    List<String> members = new List<string>();
+                    foreach (ulong player in teams[i].Players)
+                    {
+                        if (scoreboardService.TryGetPlayerData(player, out var playerData))
+                        {
+                            members.Add(playerData.UserName);
+                        }
+                    }
+                    string membersList = string.Join(", ", members);
+                    viewMessage = $"{i + 1}. Team {teams[i].Name}: {teamExp} exp.\n" +
+                                  $"Trainers: {membersList}";
                 }
-                string membersList = string.Join(", ", members);
-                viewMessage = $"{i + 1}. Team {teams[i].Name}: {teamExp} exp.\n" +
-                              $"Trainers: {membersList}";
             }
+            
             // Reply in Discord
             await RespondAsync(viewMessage);
         }

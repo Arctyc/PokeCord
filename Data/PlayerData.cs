@@ -13,6 +13,7 @@ namespace PokeCord.Data
         public int Pokeballs { get; set; }
         public int PokemonDollars { get; set; } // New!
         public List<PokemonData> CaughtPokemon { get; set; }
+        public List<PokemonData> WeeklyCaughtPokemon { get; set; } // New!
         public List<Badge> EarnedBadges { get; set; }
 
         public PlayerData()

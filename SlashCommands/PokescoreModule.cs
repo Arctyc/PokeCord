@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PokeCord.Data;
 using PokeCord.Helpers;
 using PokeCord.Services;
+using System.Linq;
 
 namespace PokeCord.SlashCommands
 {
@@ -39,22 +40,47 @@ namespace PokeCord.SlashCommands
 
             if (playerData != null)
             {
-                string score = playerData.Experience.ToString("N0");
+                // Get all players
+                List<PlayerData> allPlayers = scoreboardService.GetLeaderboard();
+                // Get player's rank
+                int playerRank = allPlayers.IndexOf(playerData);
+                string rank;
+                if (playerRank == -1)
+                {
+                    rank = "Not Found";
+                }
+                else
+                {
+                    rank = (playerRank + 1).ToString();
+                }
+
+                string lifetimeExperience = playerData.Experience.ToString("N0");
+                string weeklyExperience = playerData.WeeklyExperience.ToString("N0");
                 string pokemonDollars = playerData.PokemonDollars.ToString("N0");
+                string playerTeam = "";
                 List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
                 int catches = caughtPokemon.Count;
+
+                
+                // Get all teams
+                List<Team> allTeams = scoreboardService.GetTeams();
 
                 // Find best catch
                 if (playerData.CaughtPokemon.Any())
                 {
                     PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
 
-                    int averageExp = playerData.Experience / playerData.CaughtPokemon.Count;
-
+                    int averageExp = playerData.WeeklyExperience / playerData.WeeklyCaughtPokemon.Count;
+                    bool onTeam = false;
+                    if (playerData.TeamId != -1)
+                    {
+                        onTeam = true;
+                        playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
+                    }
                     // Format Discord reply
-                    string message = $"{username} has caught {catches} Pokémon totalling {score} exp.\n" +
-                                     //$"Rank: \n" +
-                                     $"Average exp/catch: {averageExp}\n" +
+                    string message = $"{(onTeam ? "Team " : "")}{playerTeam} {username} has caught {catches} Pokémon totalling {lifetimeExperience} exp.\n" +
+                                     $"Weekly Experience: {weeklyExperience} - Rank: {rank}\n" +
+                                     $"Weekly Average Exp: {averageExp}\n" +
                                      $"Pokémon Dollars: {pokemonDollars}\n" +
                                      $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +

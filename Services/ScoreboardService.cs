@@ -1,19 +1,29 @@
-﻿using Newtonsoft.Json;
+﻿using Discord;
+using Discord.WebSocket;
+using Newtonsoft.Json;
 using PokeCord.Data;
+using PokeCord.Helpers;
 using System.Collections.Concurrent;
+using System.Threading.Channels;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using PokeApiNet;
 
 namespace PokeCord.Services
 {
     public class ScoreboardService
     {
-        public const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
+        public const int pokeballMax = 50; // Maximum catches per restock (currently daily)
+        public const int weeklyReward = 1000; // Amount of PokemonDollars to award each player of the winning team
 
-        //TODO: Monthly scoreboard reset
+        private const ulong felicityPokeCordChannel = 1224090596801511494;
+        private const ulong testingPokeCordChannel = 1223317230431895673;
 
         // Individual scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> _scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
         // Team scoreboard data structure
         private static List<Team> _teamScoreboard = new List<Team>();
+        private static Team _winningTeam;
         private readonly string _scoreboardFilePath = "scoreboard.json";
         private readonly string _teamScoreboardFilePath = "teamscoreboard.json";
 
@@ -23,6 +33,21 @@ namespace PokeCord.Services
         public bool TryAddPlayerData(ulong userId, PlayerData playerData)
         {
             return _scoreboard.TryAdd(userId, playerData);
+        }
+        public async Task TryAddPlayerToTeamAsync(ulong userId, int teamId)
+        {
+            // Find the team with the given teamId
+            Team team = _teamScoreboard.FirstOrDefault(t => t.Id == teamId);
+            // Add the reference to the player to the team
+            team.Players.Add(userId);
+            // Save the updated team scoreboard
+            await SaveTeamScoreboardAsync();
+            // Update the player's TeamId in the individual scoreboard
+            if (TryGetPlayerData(userId, out var playerData))
+            {
+                playerData.TeamId = teamId;
+                await SaveScoreboardAsync();
+            }
         }
         public bool TryGetPlayerData(ulong userId, out PlayerData playerData)
         {
@@ -56,7 +81,78 @@ namespace PokeCord.Services
             // Save the updated scoreboard
             await SaveScoreboardAsync();
         }
-        
+
+        public async Task StartWeeklyTeamsEventAsync(DiscordSocketClient client)
+        {
+
+            string message = $"";
+
+            // Make announcement
+            var channel = await client.GetChannelAsync(testingPokeCordChannel) as IMessageChannel;
+
+            if (channel == null)
+            {
+                Console.WriteLine("Channel not found!");
+                return;
+            }
+            await channel.SendMessageAsync(message);
+        }
+
+
+        public async Task EndWeeklyTeamsEventAsync(DiscordSocketClient client)
+        {
+            Console.WriteLine("*** The weekly event has ended *** Time: " + DateTime.UtcNow.ToString());
+            // Find winning team
+            List<Team> teams = GetTeams();
+            _winningTeam = teams.First();
+            string reward = weeklyReward.ToString("N0");
+            string message = $"Attention Trainers! The weekly Team Championship has ended! The results are...\n";
+            for (int i = 0; i < teams.Count; i++)
+            {
+                if (teams.Count <= 0)
+                {
+                    message += $"There were no teams created during this event, or something went horribly wrong.";
+                    break;
+                }
+                string teamExp = teams[i].TeamExperience.ToString("N0");
+                // Get list of name of each member of team
+                List<String> members = new List<string>();
+                foreach (ulong player in teams[i].Players)
+                {
+                    if (_scoreboard.TryGetValue(player, out var playerData))
+                    {
+                        members.Add(playerData.UserName);
+                    }
+                }
+                string membersList = string.Join(", ", members);
+                message += $"{i + 1}. Team {teams[i].Name}: {teamExp} exp.\n" +
+                          $"Trainers: {membersList}\n";
+            }
+            message += $"\nEach member of the winning team is awarded {reward} Pokémon Dollars!";
+            // Dish out rewards
+            foreach (ulong player in _winningTeam.Players)
+            {
+                if (_scoreboard.TryGetValue(player, out var playerData))
+                {
+                    playerData.PokemonDollars += weeklyReward;
+                }
+                else
+                {
+                    Console.WriteLine($"Could not give award to user: {player}");
+                }
+            }
+            // Make announcement
+            var channel = await client.GetChannelAsync(testingPokeCordChannel) as IMessageChannel;
+
+            if (channel == null)
+            {
+                Console.WriteLine("Channel not found!");
+                return;
+            }
+            await channel.SendMessageAsync(message);
+            await ResetTeamsAsync(null);
+        }
+
         public async Task ResetTeamsAsync(object state)
         {
             // Create a temporary copy of scoreboard to avoid conflicts
@@ -67,6 +163,8 @@ namespace PokeCord.Services
                 if (playerData.TeamId != -1)
                 {
                     playerData.TeamId = -1;
+                    playerData.WeeklyExperience = 0;
+                    playerData.WeeklyCaughtPokemon = new List<PokemonData>();
                 }
             }
 
@@ -82,12 +180,26 @@ namespace PokeCord.Services
 
         public List<PlayerData> GetLeaderboard()
         {
-            return _scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
+            return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyExperience).ToList();
         }
 
         public List<Team> GetTeams()
         {
             List<Team> teams = _teamScoreboard;
+            foreach (Team team in teams)
+            {
+                // Update team exp
+                int teamExperience = 0;
+                foreach (ulong playerId in team.Players)
+                {
+                    if (_scoreboard.TryGetValue(playerId, out var playerData))
+                    {
+                        teamExperience += playerData.Experience;
+                    }
+                }
+                team.TeamExperience = teamExperience;
+            }
+            teams = teams.OrderByDescending(t => t.TeamExperience).ToList();
             return teams;
         }
         public async void AddTeam(Team team)
@@ -96,7 +208,7 @@ namespace PokeCord.Services
             await SaveScoreboardAsync();
         }
 
-        private async Task LoadTeamScoreboard()
+        public async Task LoadTeamScoreboardAsync()
         {
             string filePath = "teamscoreboard.json";
             List<Team> loadedTeamScoreboard = new List<Team>();
@@ -190,6 +302,7 @@ namespace PokeCord.Services
                         playerData.PokemonDollars = 100; // Give 100 free pokemon dollars to everyone upon upgrade
                         playerData.WeeklyExperience = 0;
                         playerData.TeamId = -1;
+                        playerData.WeeklyCaughtPokemon = new List<PokemonData>();
                     }
                 }
 

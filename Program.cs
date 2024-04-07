@@ -25,6 +25,9 @@ namespace PokeCord
         private static IServiceProvider _services { get; set; }
         private static IConfiguration _configuration;
         private static Timer _pokeballResetTimer;
+        private static Timer _weeklyStartTimer;
+        private static Timer _weeklyEndTimer;
+        private static Timer _quickWeeklyEndTimer;
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
@@ -69,7 +72,7 @@ namespace PokeCord
 
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
             await scoreboardService.LoadScoreboardAsync();
-            await scoreboardService.ResetTeamsAsync(null); // TODO: FIX: WARNING: THIS IS FOR TESTING ONLY!!!
+            await scoreboardService.LoadTeamScoreboardAsync();
 
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             await _interactionService.RegisterCommandsGloballyAsync();
@@ -82,12 +85,32 @@ namespace PokeCord
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
             // -- Weekly Reset --
-            // TODO: Create a weekly reset which resets all playerData.WeeklyExperience
+            // Weekly Start Timer
+            DateTime weeklyStartTime = DateTime.UtcNow.AddDays(
+                (DayOfWeek.Monday - DateTime.UtcNow.DayOfWeek) % 7);
+            weeklyStartTime = weeklyStartTime.Date; // Set time to 00:00
 
+            TimeSpan weeklyStartDelay = weeklyStartTime - DateTime.UtcNow;
 
-            // Reset pokeballs when bot comes online
-            // Unnecessary for now
-            //await ResetPokeballs(null); 
+            _weeklyStartTimer = new Timer(async (e) => await scoreboardService.StartWeeklyTeamsEventAsync(_client), null, weeklyStartDelay, TimeSpan.FromDays(7));
+            Console.WriteLine("Time until Weekly Start Timer: " + weeklyStartDelay);
+
+            // Weekly End Timer
+            DateTime weeklyEndTime = DateTime.UtcNow.AddDays((DayOfWeek.Sunday - DateTime.UtcNow.DayOfWeek + 7) % 7);
+            weeklyEndTime = weeklyEndTime.Date; // Set time to 00:00
+            TimeSpan weeklyEndDelay = weeklyEndTime - DateTime.UtcNow;
+            if (weeklyEndDelay < TimeSpan.Zero)
+            {
+                weeklyEndDelay = weeklyEndDelay.Add(TimeSpan.FromDays(7)); // Add 7 days
+            }
+            _weeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
+            Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
+
+            //TODO: FIX: TESTING: REMOVE!!!
+            // 30 second timer to call EndWeeklyTeamsEventAsync
+            TimeSpan thirtySecondDelay = TimeSpan.FromSeconds(60);
+            _quickWeeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, thirtySecondDelay, TimeSpan.FromSeconds(60));
+            Console.WriteLine("Time until Weekly Teams Event: " + thirtySecondDelay);
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
             // - /givepokeballs <user> <amount>

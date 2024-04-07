@@ -130,6 +130,7 @@ namespace PokeCord.SlashCommands
                     playerData.Pokeballs -= 1; // subtract one pokeball from user's inventory
                     playerData.PokemonDollars += (int)pokemonData.BaseExperience / pokemonDollarRatio; // award pokemon dollars
                     playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
+                    playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
 
                     // Check for new badges
                     BadgeManager badgeManager = new BadgeManager();
