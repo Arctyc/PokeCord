@@ -15,7 +15,8 @@ namespace PokeCord.SlashCommands
     public class TeamCreateModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly ScoreboardService scoreboardService;
-        public const int teamCreateCost = 1000; // Cost in poke dollars to create a team
+        //public const int teamCreateCost = 1000; // Cost in poke dollars to create a team
+        public const int teamCreateCost = 0;
 
         public TeamCreateModule(IServiceProvider services)
         {
@@ -26,7 +27,7 @@ namespace PokeCord.SlashCommands
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
         [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("teamcreate", "Create a Poké Team. Fill in the blank: Team ___.")]
-        public async Task CreateTeamCommand([Choice("team", "Team:")] string teamName)
+        public async Task CreateTeamCommand([Summary("Team")] string newTeamName)
         {
             ulong userId = Context.User.Id;
             string username = Context.User.GlobalName;
@@ -41,6 +42,13 @@ namespace PokeCord.SlashCommands
                 // PlayerData does not exist for this userId
                 await RespondAsync($"No data for {username} found. Have you caught your first Pokémon?");
             }
+            
+            // Check player is not already on a team
+            if (playerData.TeamId != -1)
+            {
+                string? teamName = scoreboardService.GetTeams().Where(x => x.Id == playerData.TeamId).Select(x => x.Name).FirstOrDefault();
+                await RespondAsync($"You are already on Team {teamName}");
+            }
 
             // Check if user can afford to create team
             if (playerData.PokemonDollars < teamCreateCost)
@@ -54,94 +62,36 @@ namespace PokeCord.SlashCommands
             bool exists = false;
             foreach (Team t in existingTeams)
             {
-                if (teamName == t.Name)
-                {
-                    exists = true;
-                }
-            }
-
-            // Build team
-            Team team = new Team();
-            team.Id = existingTeams.Count + 1;
-            team.Name = teamName;
-            team.Players.Add(playerData);
-            team.TeamExperience = playerData.WeeklyExperience;
-            // Add team
-            scoreboardService.AddTeam(team); // Saved to file in service
-            // Charge player
-            playerData.PokemonDollars -= teamCreateCost;
-            await scoreboardService.SaveScoreboardAsync();
-            // Respond in Discord
-            await RespondAsync($"Congratulations, {username}! You are the new leader of Team {teamName}");
-
-            /*
-            // Get the PlayerData instance from the scoreboard
-            PlayerData playerData = new PlayerData();
-            if (scoreboardService.TryGetPlayerData(userId, out playerData))
-            {
-            }
-            else
-            {
-                // PlayerData does not exist for this userId
-                await RespondAsync($"No data for {username} found. Have you caught your first Pokémon?");
-            }
-
-            // Pass to TeamManager
-            (string message, Team team) = TeamManager.CreateTeam(Context, playerData, teamCreateCost);
-            if (team.Id == -1)
-            {
-                // Do not charge
-                await RespondAsync(message);
-            }
-            teamScoreboard.Add(team);
-            await SaveTeamScoreboardAsync();
-            playerData.PokemonDollars -= teamCreateCost;
-
-            // Reply in Discord
-            await RespondAsync(createMessage);
-
-            ////
-
-            string message;
-            List<Team> teams = scoreboardService.GetTeams();
-            if (teams == null)
-            {
-                teams = new List<Team>();
-            }
-            Team team = new Team();
-            team.Id = -1; // If returned with this ID, currency will not be deducted from user
-            string? teamName = Context.Options.First().Value.ToString();
-
-            // Verify user can afford team creation cost
-            if (playerData.PokemonDollars < teamCreateCost)
-            {
-                message = $"Sorry, you need {teamCreateCost} Pokémon Dollars to create a team. " +
-                          $"You current have {playerData.PokemonDollars}";
-            }
-            // Check for existing name
-            bool exists = false;
-            foreach (Team existingTeam in teams)
-            {
-                if (teamName == existingTeam.Name)
+                if (newTeamName == t.Name)
                 {
                     exists = true;
                 }
             }
             if (exists)
             {
-                message = $"There is already a team named Team {teamName}. Please choose something different.";
-                return (message, team);
+                await RespondAsync($"Team {newTeamName} already exists! Did you mean to use /teamjoin?");
             }
 
             // Build team
-            team.Id = teams.Count + 1;
-            team.Name = teamName;
-            team.TeamExperience = playerData.Experience;
+            Team team = new Team();
+            team.Id = existingTeams.Count + 1;
+            team.Name = newTeamName;
             team.Players.Add(playerData);
+            team.TeamExperience = playerData.WeeklyExperience;
 
-            message = $"{Context.User.GlobalName} has created Team {teamName}! If you'd like to join this team, type /teamjoin {teamName}.";
-            return (message, team);
-            */
+            // Add team to list in memory
+            scoreboardService.AddTeam(team); // Saved to file in service
+
+            // Adjust playerData
+            playerData.PokemonDollars -= teamCreateCost;
+            playerData.TeamId = team.Id;
+
+            // Save data
+            await scoreboardService.SaveTeamScoreboardAsync();
+            await scoreboardService.SaveScoreboardAsync();
+
+            // Respond in Discord
+            await RespondAsync($"Congratulations, {username}! You are the new leader of Team {newTeamName}");
         }
     }
 }

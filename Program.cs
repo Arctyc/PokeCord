@@ -7,6 +7,7 @@ using PokeApiNet;
 using PokeCord.Services;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 
 namespace PokeCord
 {
@@ -68,6 +69,7 @@ namespace PokeCord
 
             var scoreboardService = _services.GetRequiredService<ScoreboardService>();
             await scoreboardService.LoadScoreboardAsync();
+            await scoreboardService.ResetTeamsAsync(null); // TODO: FIX: WARNING: THIS IS FOR TESTING ONLY!!!
 
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             await _interactionService.RegisterCommandsGloballyAsync();
@@ -76,11 +78,12 @@ namespace PokeCord
             // -- Daily Restock -- KEEP IN program.cs
             // Calculate the time remaining until the next pokeball restock
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-            _pokeballResetTimer = new Timer(async (e) => await scoreboardService.ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
+            _pokeballResetTimer = new Timer(async (e) => await scoreboardService.ResetPokeballsAsync(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
             // -- Weekly Reset --
             // TODO: Create a weekly reset which resets all playerData.WeeklyExperience
+
 
             // Reset pokeballs when bot comes online
             // Unnecessary for now
@@ -106,6 +109,7 @@ namespace PokeCord
                 .AddSingleton<PokeApiClient>()
                 .AddTransient<ScoreboardService>()
                 .AddTransient<BadgeService>()
+                .AddSingleton<TeamAutocompleter>()
                 //Build Collection
                 .BuildServiceProvider();
         }

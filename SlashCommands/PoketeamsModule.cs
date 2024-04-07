@@ -48,8 +48,8 @@ namespace PokeCord.SlashCommands
                     members.Add(player.UserName);
                 }
                 string membersList = string.Join(", ", members);
-                viewMessage = $"{i + 1}. {teams[i].Name}: {teamExp} exp.\n" +
-                          $"Trainers: {membersList}";
+                viewMessage = $"{i + 1}. Team {teams[i].Name}: {teamExp} exp.\n" +
+                              $"Trainers: {membersList}";
             }
             // Reply in Discord
             await RespondAsync(viewMessage);

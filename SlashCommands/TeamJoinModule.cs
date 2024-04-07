@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using PokeCord.Data;
 using PokeCord.Helpers;
+using PokeCord.Services;
 
 namespace PokeCord.SlashCommands
 {
@@ -14,10 +15,12 @@ namespace PokeCord.SlashCommands
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
         [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
-        [SlashCommand("teamjoin", "Join a Poké Team.")]
-        public async Task JoinTeamCommand()
+        [SlashCommand("teamjoin", "Join a Poké Team.")]        
+        public async Task JoinTeamCommand(
+            [Summary("team", "The Poké Team you would like to join.")]
+            [Autocomplete(typeof(TeamAutocompleter))] string team)
         {
-            RespondAsync("Not implemented");
+            await RespondAsync($"You are now a member of Team {team}");
         }
     }
 }

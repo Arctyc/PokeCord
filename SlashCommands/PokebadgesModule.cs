@@ -46,14 +46,9 @@ namespace PokeCord.SlashCommands
             }
             else
             {
-                badgeCountMessage = $"{username} has acquired {playerData.EarnedBadges.Count} of {badges.Count} badges.\n";
+                badgeCountMessage = $"{username} has acquired {playerData.EarnedBadges.Count} of {badges.Count} badges.\n" +
+                                    $"{String.Join(", ", playerData.EarnedBadges.Select(b => b.Name))}";
             }
-
-            foreach (Badge badge in playerData.EarnedBadges)
-            {
-                badgeCountMessage += string.Join(", ", badge.Name);
-            }
-
             // Reply in Discord
             await RespondAsync(badgeCountMessage);
         }

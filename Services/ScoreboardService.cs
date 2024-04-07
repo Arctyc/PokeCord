@@ -26,6 +26,7 @@ namespace PokeCord.Services
         }
         public bool TryGetPlayerData(ulong userId, out PlayerData playerData)
         {
+
             return _scoreboard.TryGetValue(userId, out playerData);
         }
 
@@ -33,7 +34,7 @@ namespace PokeCord.Services
         {
             return _scoreboard.TryUpdate(userId, playerData, originalPlayerData);
         }
-        public async Task ResetPokeballs(object state)
+        public async Task ResetPokeballsAsync(object state)
         {
             // Create a temporary copy of scoreboard to avoid conflicts
             var playerDataList = _scoreboard.Values.ToList();
@@ -54,6 +55,29 @@ namespace PokeCord.Services
 
             // Save the updated scoreboard
             await SaveScoreboardAsync();
+        }
+        
+        public async Task ResetTeamsAsync(object state)
+        {
+            // Create a temporary copy of scoreboard to avoid conflicts
+            var playerDataList = _scoreboard.Values.ToList();
+
+            foreach (PlayerData playerData in playerDataList)
+            {
+                if (playerData.TeamId != -1)
+                {
+                    playerData.TeamId = -1;
+                }
+            }
+
+            // Set empty team scoreboard
+            _teamScoreboard = new List<Team>();
+
+            // Save both scoreboards
+            await SaveScoreboardAsync();
+            await SaveTeamScoreboardAsync();
+
+            Console.WriteLine("Teams have been reset at UTC: " + DateTime.UtcNow.ToString());
         }
 
         public List<PlayerData> GetLeaderboard()
@@ -79,7 +103,7 @@ namespace PokeCord.Services
             if (!File.Exists(filePath))
             {
                 Console.WriteLine("Team scoreboard data file not found. Creating a new one.");
-                SaveTeamScoreboardAsync();
+                await SaveTeamScoreboardAsync();
                 _teamScoreboard = new List<Team>();
                 return;
             }
@@ -115,7 +139,7 @@ namespace PokeCord.Services
 
         public async Task SaveTeamScoreboardAsync()
         {
-            string filePath = _scoreboardFilePath;
+            string filePath = _teamScoreboardFilePath;
 
             try
             {
@@ -165,6 +189,7 @@ namespace PokeCord.Services
                         playerData.Version = 3;
                         playerData.PokemonDollars = 100; // Give 100 free pokemon dollars to everyone upon upgrade
                         playerData.WeeklyExperience = 0;
+                        playerData.TeamId = -1;
                     }
                 }
 

@@ -61,6 +61,7 @@ namespace PokeCord.SlashCommands
                     UserId = userId,
                     UserName = username,
                     Experience = 0,
+                    WeeklyExperience = 0,
                     Pokeballs = ScoreboardService.pokeballMax,
                     CaughtPokemon = new List<PokemonData>(),
                     EarnedBadges = new List<Badge>()
