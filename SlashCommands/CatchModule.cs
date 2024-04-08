@@ -171,7 +171,7 @@ namespace PokeCord.SlashCommands
                     bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
                     if (pokemonData.Shiny) { startsWithVowel = false; }
                     string message = $"{username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                     $"{richPokemonName} worth {pokemonData.BaseExperience} exp and {pokemonDollarValue} Pokémon Dollars\n" +
+                                     $"{richPokemonName} worth {pokemonData.BaseExperience} exp and {pokemonDollarValue} Pokémon Dollars!\n" +
                                      $"{playerData.Pokeballs} Poké Balls remaining.";
                     Embed[] embeds = new Embed[]
                     {
