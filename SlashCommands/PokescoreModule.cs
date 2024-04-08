@@ -96,7 +96,7 @@ namespace PokeCord.SlashCommands
                                      $"Weekly Experience: {weeklyExperience}, Weekly Average Exp: {weeklyAverageExp}\n" +
                                      $"Pokémon Dollars: {pokemonDollars}\n" +
                                      $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
-                                     $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
+                                     $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
                                      $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
 
                     Embed[] embeds = new Embed[]

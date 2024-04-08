@@ -128,6 +128,7 @@ namespace PokeCord.SlashCommands
                 {
                     Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
                     int pokemonDollarValue = (int)pokemonData.BaseExperience / pokemonDollarRatio;
+
                     // Update the existing playerData instance
                     playerData.Experience += (int)pokemonData.BaseExperience;// Award overall experience points
                     playerData.WeeklyExperience += (int)pokemonData.BaseExperience;// Award weekly experience points
