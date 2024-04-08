@@ -27,7 +27,6 @@ namespace PokeCord
         private static Timer _pokeballResetTimer;
         private static Timer _weeklyStartTimer;
         private static Timer _weeklyEndTimer;
-        private static Timer _quickWeeklyEndTimer;
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
@@ -108,16 +107,6 @@ namespace PokeCord
             }
             _weeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
             Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
-
-
-            /*
-            //TODO: FIX: TESTING: REMOVE!!!
-            await scoreboardService.ResetTeamsAsync(null);
-            // 30 second timer to call EndWeeklyTeamsEventAsync
-            TimeSpan thirtySecondDelay = TimeSpan.FromSeconds(30);
-            _quickWeeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, thirtySecondDelay, Timeout.InfiniteTimeSpan);
-            Console.WriteLine("Time until Weekly Teams Event: " + thirtySecondDelay);
-            */
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
             // - /givepokeballs <user> <amount>

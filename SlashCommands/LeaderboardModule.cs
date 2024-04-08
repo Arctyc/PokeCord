@@ -20,9 +20,17 @@ namespace PokeCord.SlashCommands
         [SlashCommand("pokeleaderboard", "Show a list of the trainers with the most exp.")]
         public async Task LeaderboardCommand()
         {
+            // Console log for checking pokeball restock whenever leaderboard is called
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-            // Log time til next pokeball in console - cheeky workaround to check it
-            Console.WriteLine("Time until Pokeball reset: " + delay);
+            // Log time til next pokeball restock in console - cheeky workaround to check it
+            Console.WriteLine("Time until Pokeball restock: " + delay);
+
+            // Refuse if after WeeklyTimerEnd or before WeeklyTimerStart
+            if (DateTime.Now.DayOfWeek.ToString() == "Sunday")
+            {
+                await RespondAsync("The next weekly Team Championship will open on Monday at 12:00 AM UTC.\n" +
+                                   "To see your overall stats, use /pokescore.");
+            }
 
             // Get a sorted list of players
             var leaders = scoreboardService.GetLeaderboard();

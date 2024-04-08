@@ -60,25 +60,29 @@ namespace PokeCord.SlashCommands
                 string playerTeam = "";
                 List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
                 int catches = caughtPokemon.Count;
-                int averageExp = 0;
+                int weeklyAverageExp = 0;
+                int lifetimeAverageExp = 0;
                 
                 // Get all teams
                 List<Team> allTeams = scoreboardService.GetTeams();
 
-                // Find best catch
+                // Build output
                 if (playerData.CaughtPokemon.Any())
                 {
                     PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
 
-                    // FIX: Calling method with no weekly exp/caught pokemon
+                    // Set lifetime average exp string
+                    lifetimeAverageExp = playerData.Experience / playerData.CaughtPokemon.Count;
+
+                    // Set weekly average exp string
                     if (playerData.WeeklyExperience <= 0 || playerData.WeeklyCaughtPokemon.Count <= 0)
                     {
-                        averageExp = 0;
+                        weeklyAverageExp = 0;
                         rank = "∞";
                     }
                     else
                     {
-                        averageExp = playerData.WeeklyExperience / playerData.WeeklyCaughtPokemon.Count;
+                        weeklyAverageExp = playerData.WeeklyExperience / playerData.WeeklyCaughtPokemon.Count;
                     }
                     bool onTeam = false;
                     if (playerData.TeamId != -1)
@@ -87,9 +91,9 @@ namespace PokeCord.SlashCommands
                         playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
                     }
                     // Format Discord reply
-                    string message = $"{(onTeam ? "Team " : "")}{playerTeam} {username} has caught {catches} Pokémon totalling {lifetimeExperience} exp.\n" +
+                    string message = $"{(onTeam ? "Team " : "")}{playerTeam} {username} has caught {catches} Pokémon totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
                                      $"Weekly Rank: {rank}\n" +
-                                     $"Weekly Experience: {weeklyExperience}, Weekly Average Exp: {averageExp}\n" +
+                                     $"Weekly Experience: {weeklyExperience}, Weekly Average Exp: {weeklyAverageExp}\n" +
                                      $"Pokémon Dollars: {pokemonDollars}\n" +
                                      $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +

@@ -34,7 +34,8 @@ namespace PokeCord.SlashCommands
             // Refuse if after WeeklyTimerEnd or before WeeklyTimerStart
             if (DateTime.Now.DayOfWeek.ToString() == "Sunday")
             {
-                await RespondAsync("The next weekly Team Championship will open at 12:00 AM Monday UTC.");
+                await RespondAsync("The next weekly Team Championship will open on Monday at 12:00 AM UTC.");
+                return;
             }
 
             // Get player data
@@ -45,6 +46,7 @@ namespace PokeCord.SlashCommands
             else
             {
                 // PlayerData does not exist for this userId
+                Console.WriteLine($"PlayerData found for {username} {userId}");
                 await RespondAsync($"No data for {username} found. Have you caught your first Pokémon?");
                 return;
             }

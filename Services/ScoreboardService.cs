@@ -86,31 +86,39 @@ namespace PokeCord.Services
 
         public async Task StartWeeklyTeamsEventAsync(DiscordSocketClient client)
         {
+            Console.WriteLine("*** The weekly event has started *** Time: " + DateTime.UtcNow.ToString());
 
-            string message = $"";
+            // Call method to reset teams
+            await ResetTeamsAsync(null);
 
-            // Make announcement
-            var channel = await client.GetChannelAsync(testingPokeCordChannel) as IMessageChannel;
-
+            // Get channel to post to
+            var channel = await client.GetChannelAsync(felicityPokeCordChannel) as IMessageChannel;
             if (channel == null)
             {
                 Console.WriteLine("Channel not found!");
                 return;
             }
+
+            // Set message
+            string message = $"Attention Trainers! The weekly Team Championship has started! You may now create and join new teams!\n" +
+                             $"The winners will be announced (and prizes handed out) on Sunday at 12:00 AM UTC";
+
+            // Make announcement            
             await channel.SendMessageAsync(message);
         }
 
-
         public async Task EndWeeklyTeamsEventAsync(DiscordSocketClient client)
         {
-            var channel = await client.GetChannelAsync(testingPokeCordChannel) as IMessageChannel;
+            Console.WriteLine("*** The weekly event has ended *** Time: " + DateTime.UtcNow.ToString());
+
+            // Get channel to post to
+            var channel = await client.GetChannelAsync(felicityPokeCordChannel) as IMessageChannel;
             if (channel == null)
             {
                 Console.WriteLine("Channel not found!");
                 return;
             }
 
-            Console.WriteLine("*** The weekly event has ended *** Time: " + DateTime.UtcNow.ToString());
             // Find winning team
             List<Team> teams = GetTeams();
             _winningTeam = new Team();
@@ -186,7 +194,6 @@ namespace PokeCord.Services
             }          
             // Make announcement
             await channel.SendMessageAsync(message);
-            await ResetTeamsAsync(null);
         }
 
         public async Task ResetTeamsAsync(object state)
@@ -258,8 +265,10 @@ namespace PokeCord.Services
             if (!File.Exists(filePath))
             {
                 Console.WriteLine("Team scoreboard data file not found. Creating a new one.");
-                await SaveTeamScoreboardAsync();
                 _teamScoreboard = new List<Team>();
+                //await ResetTeamsAsync(null); // TESTING: Only use to reset teams by deleting the teamScoreboard.json file
+                await SaveTeamScoreboardAsync();
+                
                 return;
             }
             else
