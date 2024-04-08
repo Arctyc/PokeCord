@@ -1,585 +1,141 @@
-﻿using System;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
-
-using Discord;
-using Discord.Net;
+﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using PokeApiNet;
-using Newtonsoft.Json;
-using System.Windows.Input;
-using System.Reflection.Metadata;
+using PokeCord.Services;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 
 namespace PokeCord
 {
     public class Program
     {
-        const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
-        const int shinyRatio = 256; // Chance of catching a shiny
-        private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
-        private static DiscordSocketClient _client;
-        private static IServiceProvider _services;
+        //const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
+        //const int shinyRatio = 256; // Chance of catching a shiny
+        //private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
+        //private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
+        //public const int teamCreateCost = 500; // Cost in poke dollars to create a team
+
+        private static DiscordSocketClient _client = new DiscordSocketClient();
+        private static InteractionService _interactionService;
+        private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
+        private static IServiceProvider _services { get; set; }
+        private static IConfiguration _configuration;
         private static Timer _pokeballResetTimer;
-
-        //TODO: Create a timer to batch save to file every so often
-
-        //TODO: Monthly leaderboard
+        private static Timer _weeklyStartTimer;
+        private static Timer _weeklyEndTimer;
 
         //Cooldown data structure
-        private static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        private static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
+        public static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
 
-        //Scoreboard data structure
-        private static ConcurrentDictionary<ulong, PlayerData> scoreboard;
-        private static List<Badge> badges;
-
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
-            // Load badges
-            badges = LoadBadges();
-            // Load scoreboard
-            scoreboard = LoadScoreboard();
-
-            // Remove duplicate badges
-            scoreboard = RemoveDuplicateBadges(scoreboard);
-
             // FETCH ENVIRONMENT VARIABLE TOKEN
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             //var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
-            // Set up Discord.NET
-            _client = new DiscordSocketClient();
-            _services = ConfigureServices();
-            _client.Log += Log;
-
-            //TODO: Monthly scoreboard reset
-
-            // -- Daily Restock
-            // Calculate the time remaining until the next pokeball restock
-            TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-            _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromDays(1));
-            Console.WriteLine("Time until Pokeball reset: " + delay);
-
-            /*
-            // -- Hourly Restock
-            // Set up Pokemart
-            // Calculate the time remaining until the next pokeball restock (Hourly)
-            DateTime nextHour = DateTime.Now.AddHours(1).AddMinutes(-DateTime.Now.Minute).AddSeconds(-DateTime.Now.Second);
-            TimeSpan delay = nextHour - DateTime.Now;
-            // Call the restock method on the delay
-            _pokeballResetTimer = new Timer(async (e) => await ResetPokeballs(null), null, delay, TimeSpan.FromHours(1));
-            Console.WriteLine("Time until Pokeball reset: " + delay);
-            */
+            _client.Ready += ClientReady;
+            _client.Log += LogAsync;
 
             // Login to Discord
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
-            // Set up interactions
-            _client.SlashCommandExecuted += SlashCommandHandler;
+            _configuration = new ConfigurationBuilder().Build();
 
-            // Additionall ready settings
-            _client.Ready += ClientReady;
+            RunAsync().GetAwaiter().GetResult();
+        }
 
+        static async Task RunAsync()
+        {
             // Keep bot running indefinitely
             await Task.Delay(Timeout.Infinite);
         }
 
         public static async Task ClientReady()
         {
-            // Make sure everyone has a full stock of pokeballs when bot comes online
-            //await ResetPokeballs(null); // Unnecessary for now
+            // Set up Discord.NET
+            _services = ConfigureServices();
+            _interactionService = new InteractionService(_client);
+            _services.GetRequiredService<CommandHandler>();
 
-            // Set up slash commands
-            var catchCommand = new SlashCommandBuilder()
-                .WithName("catch")
-                .WithDescription("Catch a Pokémon!");
+            _client.InteractionCreated += async interaction =>
+            {
+                var context = new SocketInteractionContext(_client, interaction);
+                await _interactionService.ExecuteCommandAsync(context, _services);
+            };
 
-            var scoreCommand = new SlashCommandBuilder()
-                .WithName("pokescore")
-                .WithDescription("View your PokeCord score.");
+            var scoreboardService = _services.GetRequiredService<ScoreboardService>();
+            await scoreboardService.LoadScoreboardAsync();
+            await scoreboardService.LoadTeamScoreboardAsync();
 
-            var leaderboardCommand = new SlashCommandBuilder()
-                .WithName("pokeleaderboard")
-                .WithDescription("Show a list of the trainers with the most exp.");
-            var badgesCommand = new SlashCommandBuilder()
-                .WithName("pokebadges")
-                .WithDescription("Show a list of your earned badges");
+            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _interactionService.RegisterCommandsGloballyAsync();
+            Console.WriteLine("Commands registered in Program.cs.");
+
+            // -- Daily Restock -- KEEP IN program.cs
+            // Calculate the time remaining until the next pokeball restock
+            TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
+            _pokeballResetTimer = new Timer(async (e) => await scoreboardService.RestockPokeballsAsync(null), null, delay, TimeSpan.FromDays(1));
+            Console.WriteLine("Time until Pokeball reset: " + delay);
+
+            // -- Weekly Reset --
+            // Weekly Start Timer
+            DateTime weeklyStartTime = DateTime.UtcNow.AddDays(
+                (DayOfWeek.Monday - DateTime.UtcNow.DayOfWeek) % 7);
+            weeklyStartTime = weeklyStartTime.Date; // Set time to 00:00
+            TimeSpan weeklyStartDelay = weeklyStartTime - DateTime.UtcNow;
+            if (weeklyStartDelay < TimeSpan.Zero)
+            {
+                weeklyStartDelay = weeklyStartDelay.Add(TimeSpan.FromDays(7)); // Add 7 days
+            }
+
+            _weeklyStartTimer = new Timer(async (e) => await scoreboardService.StartWeeklyTeamsEventAsync(_client), null, weeklyStartDelay, TimeSpan.FromDays(7));
+            Console.WriteLine("Time until Weekly Start Timer: " + weeklyStartDelay);
+
+            // Weekly End Timer
+            DateTime weeklyEndTime = DateTime.UtcNow.AddDays((DayOfWeek.Sunday - DateTime.UtcNow.DayOfWeek + 7) % 7);
+            weeklyEndTime = weeklyEndTime.Date; // Set time to 00:00
+            TimeSpan weeklyEndDelay = weeklyEndTime - DateTime.UtcNow;
+            if (weeklyEndDelay < TimeSpan.Zero)
+            {
+                weeklyEndDelay = weeklyEndDelay.Add(TimeSpan.FromDays(7)); // Add 7 days
+            }
+            _weeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
+            Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
             // - /givepokeballs <user> <amount>
             /*
             var givepokeballsCommand = new SlashCommandBuilder()
             */
-
-            try
-            {
-                await _client.CreateGlobalApplicationCommandAsync(catchCommand.Build());
-                Console.WriteLine("Created command: catch");
-                await _client.CreateGlobalApplicationCommandAsync(scoreCommand.Build());
-                Console.WriteLine("Created command: pokescore");
-                await _client.CreateGlobalApplicationCommandAsync(leaderboardCommand.Build());
-                Console.WriteLine("Created command: pokeleaderboard");
-                await _client.CreateGlobalApplicationCommandAsync(badgesCommand.Build());
-                Console.WriteLine("Created command: pokebadges");
-
-            }
-            catch (HttpException ex)
-            {
-                Console.WriteLine("Could not create a command. " + ex.Message);
-            }
         }
 
         private static IServiceProvider ConfigureServices()
         {
-            var services = new ServiceCollection();
-
-            services.AddSingleton<PokeApiClient>(); // Add PokeApiClient as Singleton
-            //services.AddScoped<PokeSelector>(); // Add PokeSelector as Scoped service
-
-            return services.BuildServiceProvider(); // Build and return the service provider
+            return new ServiceCollection()
+                //Discord.NET
+                .AddSingleton(_configuration)
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), _interactionServiceConfig))
+                .AddSingleton<InteractionService>()
+                //PokeCord
+                .AddSingleton<CommandHandler>()
+                .AddSingleton<PokeApiClient>()
+                .AddTransient<ScoreboardService>()
+                .AddTransient<BadgeService>()
+                .AddSingleton<TeamAutocompleter>()
+                //Build Collection
+                .BuildServiceProvider();
         }
 
-        private static async Task SlashCommandHandler(SocketSlashCommand command)
-        {
-            string username = command.User.GlobalName;
-            ulong userId = command.User.Id;
-            PlayerData originalPlayerData = new PlayerData();
-            Console.WriteLine($"{username} used {command.Data.Name}");
-
-            // Get the PlayerData instance from the scoreboard
-            PlayerData playerData = new PlayerData();
-            if (scoreboard.TryGetValue(userId, out originalPlayerData))
-            {
-                // PlayerData exists for this userId
-                playerData = originalPlayerData;
-                Console.WriteLine($"PlayerData found for {username} {userId}");
-            }
-            else
-            {
-                // PlayerData does not exist for this userId, create new
-                playerData = new PlayerData
-                {
-                    UserId = userId,
-                    UserName = username,
-                    Experience = 0,
-                    Pokeballs = pokeballMax,
-                    CaughtPokemon = new List<PokemonData>(),
-                    EarnedBadges = new List<Badge>()
-                    //Badges = new Dictionary<Badge, DateTime>()
-                };
-                if (scoreboard.TryAdd(userId, playerData))
-                {
-                    originalPlayerData = playerData;
-                    Console.WriteLine($"New PlayerData for {username} added with userId {userId}");
-                }
-                else
-                {
-                    Console.WriteLine($"Unable to add PlayerData for {username} with userId {userId}");
-                    await command.RespondAsync($"Something went wrong setting up your player profile.");
-                }
-            }
-
-            //TODO: Update to switch on command.CommandName, split each command into a unique class
-
-            // Catch command section
-            if (command.CommandName == "catch")
-            {
-                // Check cooldown information
-                if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
-                {
-                    Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
-                    TimeSpan elapsed = DateTime.UtcNow - lastUsed;
-                    if (elapsed < _cooldownTime)
-                    {
-                        int timeRemaining = (int)_cooldownTime.TotalSeconds - (int)elapsed.TotalSeconds;
-                        var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                        Console.WriteLine($"{username} catch denied. Cooldown: {cooldownUnixTime} seconds");
-                        await command.RespondAsync($"Easy there, Ash Ketchum! I know you Gotta Catch 'Em All, " +
-                                                   $"but your next Poké Ball will be available <t:{cooldownUnixTime}:R>.");
-                        return;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"No last command usage by {username} with userID {userId}");
-                }
-                // If unable to add new cooldown for user
-                if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
-                {
-                    //Cooldown exists so update existing cooldown
-                    if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
-                    {
-                        Console.WriteLine($"Cooldown updated for {username}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
-                    }
-                }
-                Console.WriteLine($"{username} cooldown entry update attempted: key {username} value {DateTime.UtcNow}");
-
-                // Check for enough Pokeballs
-                if (playerData.Pokeballs > 0)
-                {
-                    // Set up a new PokeSelector
-                    PokeSelector pokeSelector = new PokeSelector(maxPokemonId, shinyRatio);
-                    // Set up PokeApiClient
-                    var pokeApiClient = _services.GetRequiredService<PokeApiClient>();
-                    // Get a new pokemon
-                    PokemonData pokemonData = await pokeSelector.GetRandomPokemon(pokeApiClient);
-
-                    if (pokemonData != null)
-                    {
-                        Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
-
-                        // Update the existing playerData instance
-                        playerData.Experience += (int)pokemonData.BaseExperience;
-                        playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
-                        playerData.Pokeballs -= 1; // subtract one pokeball from user's inventory
-
-                        // Check for new badges
-                        BadgeManager badgeManager = new BadgeManager();
-                        List<Badge> newBadges = badgeManager.UpdateBadgesAsync(playerData, badges, pokemonData);
-                        List<string> newBadgeMessages = new List<string>();
-                        if (newBadges != null)
-                        {
-                            foreach (Badge badge in newBadges)
-                            {
-                                // Add badges to playerData
-                                playerData.EarnedBadges.Add(badge);
-                                playerData.Pokeballs += badge.BonusPokeballs;
-                                //playerData.Badges.Add(badge, DateTime.UtcNow);
-
-                                string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Poké Balls!\n" +
-                                                         $"{badge.Description}\n";
-                                newBadgeMessages.Add(newBadgeMessage);
-                            }
-                        }
-
-                        if (scoreboard.TryUpdate(userId, playerData, originalPlayerData))
-                        {
-                            Console.WriteLine($"Catch written to scoreboard for {username}'s {pokemonData.Name}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
-                        }
-                        // Save the updated scoreboard data
-                        await SaveScoreboardAsync();
-
-                        // Format Discord Reply
-                        string richPokemonName = FixPokemonName(pokemonData.Name);
-                        bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
-                        if (pokemonData.Shiny) { startsWithVowel = false; }
-                        string message = $"{username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                         $"{richPokemonName} worth {pokemonData.BaseExperience} exp! {playerData.Pokeballs}/{pokeballMax} Poké Balls remaining.";
-                        Embed[] embeds = new Embed[]
-                        {
-                            new EmbedBuilder()
-                            .WithImageUrl(pokemonData.ImageUrl)
-                            .Build()
-                        };
-                        if (newBadgeMessages != null)
-                        {
-                            string newMessage = String.Join("\n", newBadgeMessages);
-                            newMessage += "\n" + message;
-                            message = newMessage;
-                        }
-                        // Send Discord reply
-                        await command.RespondAsync(message, embeds);
-                    }
-                    else
-                    {
-                        await command.RespondAsync("Error catching a Pokémon :( @arctycfox What's up?");
-                        Console.WriteLine($"{username}'s command failed at " + DateTime.Now.ToString());
-                    }
-                }
-                else // Not enough pokeballs
-                {
-                    TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-                    int timeRemaining = (int)delay.TotalSeconds;
-                    var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-
-                    await command.RespondAsync($"Sorry, you're out of Poké Balls for now. " +
-                        $"The Poké Mart will automatically send you up to {pokeballMax} new Poké Balls <t:{cooldownUnixTime}:R>. " +
-                        $"Unfortunately, you will not receive a bonus Premier Ball.");
-                }
-            }
-
-            // Pokescore command section
-            if (command.CommandName == "pokescore")
-            {
-                if (playerData != null)
-                {
-                    string score = playerData.Experience.ToString("N0");
-                    List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
-                    int catches = caughtPokemon.Count;
-
-                    // Find best catch
-                    if (playerData.CaughtPokemon.Any())
-                    {
-                        PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
-                        int averageExp = playerData.Experience / playerData.CaughtPokemon.Count;
-                        // Reply in Discord
-                        string message = $"{username} has caught {catches} Pokémon totalling {score} exp. Average exp/catch: {averageExp}\n" +
-                                         //$"Rank: \n" +
-                                         $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
-                                         $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
-                                         $"{FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
-                        Embed[] embeds = new Embed[]
-                            {
-                            new EmbedBuilder()
-                            .WithImageUrl(bestPokemon.ImageUrl)
-                            .Build()
-                            };
-                        await command.RespondAsync(message, embeds);
-                    }
-                    else
-                    {
-                        await command.RespondAsync($"{username} hasn't caught any Pokémon yet.");
-                    }
-                }
-                else
-                {
-                    await command.RespondAsync($"No data for {username}.");
-                }
-            }
-
-            // Leaderboard section
-            if (command.CommandName == "pokeleaderboard")
-            {
-                TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-                // Log time til next pokeball in console - cheeky workaround to check it
-                Console.WriteLine("Time until Pokeball reset: " + delay);
-
-                // Get a sorted list of players
-                var leaders = scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
-                // Add a message line for each of the top 10 from 10 to 1
-                List<string> leaderMessages = new List<string>();
-                int leaderCount = 10;
-                if (leaders.Count < 10)
-                {
-                    leaderCount = leaders.Count;
-                }
-                for (int i = 0; i < leaderCount; i++)
-                {
-                    string leaderName = leaders[i].UserName;
-                    string leaderExp = leaders[i].Experience.ToString("N0");
-                    int averageExp = leaders[i].Experience / leaders[i].CaughtPokemon.Count;
-                    string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Average exp/catch: {averageExp}";
-                    leaderMessages.Add(message);
-                }
-                // Output message to discord
-                string leaderboardMessage = string.Join("\n", leaderMessages);
-                await command.RespondAsync($"Top {leaderCount} trainers:\n" + leaderboardMessage);
-            }
-
-            // Badges section
-            if (command.CommandName == "pokebadges")
-            {
-                string badgeCountMessage;
-
-                //List<Badge> playerBadges = playerData.Badges.Keys.ToList();
-                if (playerData.EarnedBadges == null)
-                {
-                    badgeCountMessage = $"{username} has not yet earned any badges.";
-                }
-                else
-                {
-                    badgeCountMessage = $"{username} has acquired {playerData.EarnedBadges.Count} of {badges.Count} badges.\n";
-                }
-                foreach (Badge badge in playerData.EarnedBadges)
-                {
-                    badgeCountMessage += string.Join(", ", badge.Name);
-                }
-                await command.RespondAsync(badgeCountMessage);
-            }
-        }
-
-        public static string FixPokemonName(string pokemonName)
-        {
-            if (pokemonName.IndexOf('-') != -1)
-            {
-                int hyphenIndex = pokemonName.IndexOf('-');
-                return pokemonName.Substring(0, hyphenIndex) + " " +
-                       char.ToUpper(pokemonName[hyphenIndex + 1]) +
-                       pokemonName.Substring(hyphenIndex + 2);
-            }
-            else
-            {
-                return pokemonName;
-            }
-        }
-
-        private static async Task ResetPokeballs(object state)
-        {
-            // Create a temporary copy of scoreboard to avoid conflicts
-            var playerDataList = scoreboard.Values.ToList();
-
-            // Reset Pokeballs for each player in the copy
-            foreach (var playerData in playerDataList)
-            {
-                if (playerData.Pokeballs < pokeballMax)
-                {
-                    playerData.Pokeballs = pokeballMax;
-                }                
-            }
-
-            // Update the actual scoreboard atomically
-            await Task.Run(() => scoreboard = new ConcurrentDictionary<ulong, PlayerData>(playerDataList.ToDictionary(p => p.UserId, p => p)));
-
-            Console.WriteLine("Pokeballs have been reset for all players!");
-
-            // Save the updated scoreboard
-            await SaveScoreboardAsync();
-        }
-
-        private static ConcurrentDictionary<ulong, PlayerData> LoadScoreboard()
-        {
-            string filePath = "scoreboard.json";
-
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine("Scoreboard data file not found. Creating a new one.");
-                SaveScoreboardAsync();
-                return new ConcurrentDictionary<ulong, PlayerData>();
-            }
-            else
-            {
-                Console.WriteLine($"Scoreboard loaded from {filePath}");
-            }
-
-            try
-            {
-                string jsonData = File.ReadAllText(filePath);
-                ConcurrentDictionary<ulong, PlayerData> loadedScoreboard = JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, PlayerData>>(jsonData);
-
-                // Handle playerData version mismatch here
-                foreach (var playerData in loadedScoreboard.Values)
-                {
-                    if (playerData.Version == 1)
-                    {
-                        // Upgrade to Version 2
-                        playerData.Version = 2;
-                        playerData.EarnedBadges = new List<Badge>();
-                        //playerData.Badges = new Dictionary<Badge, DateTime>();
-                        Console.WriteLine($"{playerData.UserName} upgraded playerData version from 1 to 2");
-                    }
-                }
-                return loadedScoreboard;
-            }
-            catch (Exception ex)
-            {
-                // Handle deserialization errors or file access exceptions
-                Console.WriteLine("Error loading scoreboard data: {0}", ex.Message);
-                return new ConcurrentDictionary<ulong, PlayerData>();
-            }
-        }
-
-        private static async Task SaveScoreboardAsync()
-        {
-            string filePath = "scoreboard.json";
-
-            try
-            {
-                // Serialize the dictionary to JSON string
-                string jsonData = JsonConvert.SerializeObject(scoreboard);
-
-                // Write the JSON string to the file asynchronously
-                await File.WriteAllTextAsync(filePath, jsonData);
-                Console.WriteLine("Scoreboard data saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Handle serialization errors or file access exceptions
-                Console.WriteLine("Error saving scoreboard data: {0}", ex.Message);
-            }
-        }
-
-        private static List<Badge> LoadBadges()
-        {
-            string filePath = "badges.json";
-
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine("Badge data file not found.");
-                return new List<Badge>();
-            }
-            else
-            {
-                try
-                {
-                    string jsonData = File.ReadAllText(filePath);
-                    Console.WriteLine($"Badges loaded from {filePath}");
-                    return JsonConvert.DeserializeObject<List<Badge>>(jsonData);
-                }
-                catch (Exception ex)
-                {
-                    // Handle deserialization errors or file access exceptions
-                    Console.WriteLine("Error loading badge data: {0}", ex.Message);
-                    return new List<Badge>();
-                }
-            }            
-        }
-
-        // Remove duplicate badges
-        public static ConcurrentDictionary<ulong, PlayerData> RemoveDuplicateBadges(ConcurrentDictionary<ulong, PlayerData> scoreboard)
-        {
-            ConcurrentDictionary<ulong, PlayerData> newScoreboard = new ConcurrentDictionary<ulong, PlayerData>();
-
-            foreach (var kvp in scoreboard)
-            {
-                ulong userId = kvp.Key;
-                PlayerData playerData = kvp.Value;
-
-                // Rebuild each playerData object
-                PlayerData newPlayerData = new PlayerData
-                {
-                    Version = playerData.Version,
-                    UserId = playerData.UserId,
-                    UserName = playerData.UserName,
-                    Experience = playerData.Experience,
-                    Pokeballs = playerData.Pokeballs,
-                    CaughtPokemon = playerData.CaughtPokemon,
-                    EarnedBadges = new List<Badge>()              
-                };
-
-                HashSet<int> uniqueBadgeIds = new HashSet<int>();
-
-                foreach (var badge in playerData.EarnedBadges)
-                {
-                    if (!uniqueBadgeIds.Contains(badge.Id))
-                    {
-                        // Badge is unique, add it to the new EarnedBadges list
-                        newPlayerData.EarnedBadges.Add(badge);
-                        uniqueBadgeIds.Add(badge.Id);
-                    }
-                }
-                if(newScoreboard.TryAdd(userId, newPlayerData))
-                {                    
-                }
-                else
-                {
-                    Console.WriteLine($"Unable to remove duplicate badges for {newPlayerData.UserName}. Data lost?");
-                }
-            }
-            return newScoreboard;
-        }
-
-        private static Task Log(LogMessage msg)
+        private static Task LogAsync(LogMessage msg)
         {
             Console.WriteLine(msg.ToString());
-            // TODO: Create a log file and log errors to it.
             return Task.CompletedTask;
         }
     }

@@ -1,11 +1,6 @@
 ﻿using PokeApiNet;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace PokeCord
+namespace PokeCord.Helpers
 {
     public class PokeSelector
     {
@@ -53,7 +48,7 @@ namespace PokeCord
             {
                 // Assign experience and avoid null with default.
                 int experience = pokemon.BaseExperience ?? defaultExperience;
-                pokemon.Name = Char.ToUpper(pokemon.Name[0]) + pokemon.Name.Substring(1);
+                pokemon.Name = char.ToUpper(pokemon.Name[0]) + pokemon.Name.Substring(1);
 
                 string? imageUrl;
                 if (!shiny)
@@ -67,8 +62,15 @@ namespace PokeCord
                     imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
                     experience *= 4;
                 }
-                return new PokemonData { PokedexId = pokemon.Id, Name = pokemon.Name, ImageUrl = imageUrl, 
-                                         BaseExperience = experience, Timestamp = DateTime.UtcNow, Shiny = shiny };
+                return new PokemonData
+                {
+                    PokedexId = pokemon.Id,
+                    Name = pokemon.Name,
+                    ImageUrl = imageUrl,
+                    BaseExperience = experience,
+                    Timestamp = DateTime.UtcNow,
+                    Shiny = shiny
+                };
             }
             else
             {
@@ -81,7 +83,7 @@ namespace PokeCord
     public class PokemonData // Simple data structure for Pokemon information
     {
         public int PokedexId { get; set; }
-        public bool Shiny {  get; set; }
+        public bool Shiny { get; set; }
         public string Name { get; set; }
         public string ImageUrl { get; set; }
         public int? BaseExperience { get; set; }

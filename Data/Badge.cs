@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PokeCord.Helpers;
 
-namespace PokeCord
+namespace PokeCord.Data
 {
     public class Badge
     {
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = 2;
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? ImageAddress { get; set; }
         public int BonusPokeballs { get; set; }
-        public List<PokemonData> GymPokemon {  get; set; }
+        public List<PokemonData>? GymPokemon { get; set; }
     }
 
     public class BadgeManager
@@ -29,15 +26,15 @@ namespace PokeCord
                 if (allBadges.Any(b => b.Id == badge.Id))
                 {
                     // Player has already earned this badge, do not check for it
-                    allBadges.RemoveAll(b => b.Id == badge.Id);                    
+                    allBadges.RemoveAll(b => b.Id == badge.Id);
                 }
             }
             // Check for new acquisitions
-            foreach(Badge badge in allBadges)
+            foreach (Badge badge in allBadges)
             {
                 // Handle non-pokemon specfic badges
                 if (badge.GymPokemon == null)
-                {                    
+                {
                     badge.GymPokemon = new List<PokemonData>();
                 }
                 // Check whether player has caught all pokemon for this badge
