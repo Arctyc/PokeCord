@@ -65,8 +65,10 @@ namespace PokeCord.SlashCommands
                     WeeklyExperience = 0,
                     Pokeballs = ScoreboardService.pokeballRestockAmount,
                     CaughtPokemon = new List<PokemonData>(),
-                    EarnedBadges = new List<Badge>()
-                };
+                    WeeklyCaughtPokemon = new List<PokemonData>(),
+                    EarnedBadges = new List<Badge>(),
+                    TeamId = -1                    
+            };
                 if (_scoreboard.TryAddPlayerData(userId, playerData))
                 {
                     originalPlayerData = playerData;
