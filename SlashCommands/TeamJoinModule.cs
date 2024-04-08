@@ -30,7 +30,11 @@ namespace PokeCord.SlashCommands
             ulong userId = Context.User.Id;
             string username = Context.User.GlobalName;
 
-            //TODO: Refuse if after WeeklyTimerEnd or before WeeklyTimerStart
+            // Refuse if Sunday i.e. After weekly end, before weekly start
+            if (DateTime.Now.DayOfWeek.ToString() == "Sunday")
+            {
+                await RespondAsync("The next weekly Team Championship will open at 12:00 AM Monday UTC.");
+            }
 
 
             // Get player data

@@ -15,8 +15,7 @@ namespace PokeCord.SlashCommands
     public class TeamCreateModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly ScoreboardService scoreboardService;
-        //public const int teamCreateCost = 500; // Cost in poke dollars to create a team
-        public const int teamCreateCost = 5; // TESTING
+        public const int teamCreateCost = 500; // Cost in poke dollars to create a team
 
         public TeamCreateModule(IServiceProvider services)
         {
@@ -32,7 +31,11 @@ namespace PokeCord.SlashCommands
             ulong userId = Context.User.Id;
             string username = Context.User.GlobalName;
 
-            //TODO: Refuse if after WeeklyTimerEnd or before WeeklyTimerStart
+            // Refuse if after WeeklyTimerEnd or before WeeklyTimerStart
+            if (DateTime.Now.DayOfWeek.ToString() == "Sunday")
+            {
+                await RespondAsync("The next weekly Team Championship will open at 12:00 AM Monday UTC.");
+            }
 
             // Get player data
             PlayerData playerData = new PlayerData();

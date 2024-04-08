@@ -17,7 +17,7 @@ namespace PokeCord
         //const int shinyRatio = 256; // Chance of catching a shiny
         //private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
         //private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
-        public const int teamCreateCost = 0; // Cost in poke dollars to create a team
+        //public const int teamCreateCost = 500; // Cost in poke dollars to create a team
 
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService;
@@ -36,8 +36,8 @@ namespace PokeCord
         public static async Task Main()
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            //var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             _client.Ready += ClientReady;
             _client.Log += LogAsync;
@@ -109,12 +109,15 @@ namespace PokeCord
             _weeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
             Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
 
+
+            /*
             //TODO: FIX: TESTING: REMOVE!!!
             await scoreboardService.ResetTeamsAsync(null);
             // 30 second timer to call EndWeeklyTeamsEventAsync
             TimeSpan thirtySecondDelay = TimeSpan.FromSeconds(30);
             _quickWeeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, thirtySecondDelay, Timeout.InfiniteTimeSpan);
             Console.WriteLine("Time until Weekly Teams Event: " + thirtySecondDelay);
+            */
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
             // - /givepokeballs <user> <amount>
