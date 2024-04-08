@@ -57,6 +57,7 @@ namespace PokeCord.SlashCommands
             else
             {
                 // PlayerData does not exist for this userId, create new
+                // TODO: Update this with new player data each version. Current version: 3
                 playerData = new PlayerData
                 {
                     UserId = userId,
