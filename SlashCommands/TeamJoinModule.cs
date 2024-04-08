@@ -93,7 +93,7 @@ namespace PokeCord.SlashCommands
             if (playerData.PokemonDollars < teamJoinCost)
             {
                 int remaining = teamJoinCost - playerData.PokemonDollars;
-                await RespondAsync($"You need {remaining.ToString()} more Pokémon Dollars to create a team.");
+                await RespondAsync($"You need {remaining.ToString()} more Pokémon Dollars to join a team.");
                 return;
             }
 
