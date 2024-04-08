@@ -81,7 +81,7 @@ namespace PokeCord
             // -- Daily Restock -- KEEP IN program.cs
             // Calculate the time remaining until the next pokeball restock
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-            _pokeballResetTimer = new Timer(async (e) => await scoreboardService.ResetPokeballsAsync(null), null, delay, TimeSpan.FromDays(1));
+            _pokeballResetTimer = new Timer(async (e) => await scoreboardService.RestockPokeballsAsync(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
             // -- Weekly Reset --
@@ -89,8 +89,11 @@ namespace PokeCord
             DateTime weeklyStartTime = DateTime.UtcNow.AddDays(
                 (DayOfWeek.Monday - DateTime.UtcNow.DayOfWeek) % 7);
             weeklyStartTime = weeklyStartTime.Date; // Set time to 00:00
-
             TimeSpan weeklyStartDelay = weeklyStartTime - DateTime.UtcNow;
+            if (weeklyStartDelay < TimeSpan.Zero)
+            {
+                weeklyStartDelay = weeklyStartDelay.Add(TimeSpan.FromDays(7)); // Add 7 days
+            }
 
             _weeklyStartTimer = new Timer(async (e) => await scoreboardService.StartWeeklyTeamsEventAsync(_client), null, weeklyStartDelay, TimeSpan.FromDays(7));
             Console.WriteLine("Time until Weekly Start Timer: " + weeklyStartDelay);
@@ -107,9 +110,10 @@ namespace PokeCord
             Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
 
             //TODO: FIX: TESTING: REMOVE!!!
+            await scoreboardService.ResetTeamsAsync(null);
             // 30 second timer to call EndWeeklyTeamsEventAsync
-            TimeSpan thirtySecondDelay = TimeSpan.FromSeconds(60);
-            _quickWeeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, thirtySecondDelay, TimeSpan.FromSeconds(60));
+            TimeSpan thirtySecondDelay = TimeSpan.FromSeconds(30);
+            _quickWeeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, thirtySecondDelay, Timeout.InfiniteTimeSpan);
             Console.WriteLine("Time until Weekly Teams Event: " + thirtySecondDelay);
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord

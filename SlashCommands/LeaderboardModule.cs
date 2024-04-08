@@ -36,15 +36,23 @@ namespace PokeCord.SlashCommands
             }
             for (int i = 0; i < leaderCount; i++)
             {
+                int averageExp = 0;
                 string leaderName = leaders[i].UserName;
-                string leaderExp = leaders[i].Experience.ToString("N0");
-                int averageExp = leaders[i].Experience / leaders[i].CaughtPokemon.Count;
+                string leaderExp = leaders[i].WeeklyExperience.ToString("N0");
+                if (leaders[i].WeeklyExperience <= 0)
+                {
+                    averageExp = 0;
+                }
+                else
+                {
+                    averageExp = leaders[i].WeeklyExperience / leaders[i].WeeklyCaughtPokemon.Count;
+                }
                 string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Average exp/catch: {averageExp}";
                 leaderMessages.Add(message);
             }
             // Output message to discord
             string leaderboardMessage = string.Join("\n", leaderMessages);
-            await RespondAsync($"Top {leaderCount} trainers:\n" + leaderboardMessage);
+            await RespondAsync($"Weekly top {leaderCount} trainers:\n" + leaderboardMessage);
         }
     }
 }

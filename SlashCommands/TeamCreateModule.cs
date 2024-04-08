@@ -15,8 +15,8 @@ namespace PokeCord.SlashCommands
     public class TeamCreateModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly ScoreboardService scoreboardService;
-        //public const int teamCreateCost = 1000; // Cost in poke dollars to create a team
-        public const int teamCreateCost = 0;
+        //public const int teamCreateCost = 500; // Cost in poke dollars to create a team
+        public const int teamCreateCost = 5; // TESTING
 
         public TeamCreateModule(IServiceProvider services)
         {
@@ -79,6 +79,8 @@ namespace PokeCord.SlashCommands
                 await RespondAsync($"Team {newTeamName} already exists! Did you mean to use /teamjoin?");
                 return;
             }
+
+
 
             // Build team
             Team team = new Team

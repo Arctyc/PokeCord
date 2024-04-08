@@ -11,7 +11,7 @@ namespace PokeCord.SlashCommands
     public class TeamJoinModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly ScoreboardService scoreboardService;
-        public const int teamJoinCost = 0; // Cost in poke dollars to join a team
+        public const int teamJoinCost = TeamCreateModule.teamCreateCost; // Set team join cost to equal team create cost
         public const int teamCap = 4; // Maximum number of players per team
 
         public TeamJoinModule(IServiceProvider services)
@@ -102,8 +102,16 @@ namespace PokeCord.SlashCommands
             // Join Team
             await scoreboardService.TryAddPlayerToTeamAsync(userId, team.Id);
 
+            // Adjust playerData
+            playerData.PokemonDollars -= teamJoinCost;
+            playerData.TeamId = team.Id;
+
+            // Save data
+            await scoreboardService.SaveTeamScoreboardAsync();
+            await scoreboardService.SaveScoreboardAsync();
+
             // Reply in Discord
-            await RespondAsync($"You are now a member of Team {teamToJoin}");
+            await RespondAsync($"{username} is now a member of Team {teamToJoin}");
         }
     }
 }

@@ -20,6 +20,7 @@ namespace PokeCord.SlashCommands
         const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         const int shinyRatio = 256; // Chance of catching a shiny
         private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars
+        private const int currencyCap = 5000; // Maximum amount of pokemondollars a player can have
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = Program._lastCommandUsage;
@@ -62,7 +63,7 @@ namespace PokeCord.SlashCommands
                     UserName = username,
                     Experience = 0,
                     WeeklyExperience = 0,
-                    Pokeballs = ScoreboardService.pokeballMax,
+                    Pokeballs = ScoreboardService.pokeballRestockAmount,
                     CaughtPokemon = new List<PokemonData>(),
                     EarnedBadges = new List<Badge>()
                 };
@@ -123,12 +124,13 @@ namespace PokeCord.SlashCommands
                 if (pokemonData != null)
                 {
                     Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
-
+                    int pokemonDollarValue = (int)pokemonData.BaseExperience / pokemonDollarRatio;
                     // Update the existing playerData instance
                     playerData.Experience += (int)pokemonData.BaseExperience;// Award overall experience points
                     playerData.WeeklyExperience += (int)pokemonData.BaseExperience;// Award weekly experience points
                     playerData.Pokeballs -= 1; // subtract one pokeball from user's inventory
-                    playerData.PokemonDollars += (int)pokemonData.BaseExperience / pokemonDollarRatio; // award pokemon dollars
+                    playerData.PokemonDollars += pokemonDollarValue; // award pokemon dollars
+                    if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; } // Cap player pokemondollars
                     playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                     playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
 
@@ -166,7 +168,8 @@ namespace PokeCord.SlashCommands
                     bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
                     if (pokemonData.Shiny) { startsWithVowel = false; }
                     string message = $"{username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                     $"{richPokemonName} worth {pokemonData.BaseExperience} exp! {playerData.Pokeballs}/{ScoreboardService.pokeballMax} Poké Balls remaining.";
+                                     $"{richPokemonName} worth {pokemonData.BaseExperience} exp and {pokemonDollarValue} Pokémon Dollars\n" +
+                                     $"{playerData.Pokeballs} Poké Balls remaining.";
                     Embed[] embeds = new Embed[]
                     {
                             new EmbedBuilder()
@@ -195,7 +198,7 @@ namespace PokeCord.SlashCommands
                 var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
 
                 await RespondAsync($"Sorry, you're out of Poké Balls for now. " +
-                    $"The Poké Mart will automatically send you up to {ScoreboardService.pokeballMax} new Poké Balls <t:{cooldownUnixTime}:R>. " +
+                    $"The Poké Mart will automatically send you up to {ScoreboardService.pokeballRestockAmount} new Poké Balls <t:{cooldownUnixTime}:R>. " +
                     $"Unfortunately, you will not receive a bonus Premier Ball.");
             }
         }

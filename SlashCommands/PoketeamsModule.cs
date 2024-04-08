@@ -48,8 +48,8 @@ namespace PokeCord.SlashCommands
                         }
                     }
                     string membersList = string.Join(", ", members);
-                    viewMessage = $"{i + 1}. Team {teams[i].Name}: {teamExp} exp.\n" +
-                                  $"Trainers: {membersList}";
+                    viewMessage += $"{i + 1}. Team {teams[i].Name}: {teamExp} exp.\n" +
+                                  $"Trainers: {membersList}\n";
                 }
             }
             
