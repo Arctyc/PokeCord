@@ -54,9 +54,11 @@ namespace PokeCord.SlashCommands
                     rank = (playerRank + 1).ToString();
                 }
 
+                // Format ints as numerical string
                 string lifetimeExperience = playerData.Experience.ToString("N0");
                 string weeklyExperience = playerData.WeeklyExperience.ToString("N0");
                 string pokemonDollars = playerData.PokemonDollars.ToString("N0");
+                // Initialize and set output variables
                 string playerTeam = "";
                 List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
                 int catches = caughtPokemon.Count;

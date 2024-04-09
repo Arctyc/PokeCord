@@ -156,6 +156,7 @@ namespace PokeCord.SlashCommands
                         }
                     }
 
+                    // Update Scoreboard in memory
                     if (_scoreboard.TryUpdatePlayerData(userId, playerData, originalPlayerData))
                     {
                         Console.WriteLine($"Catch written to scoreboard for {username}'s {pokemonData.Name}");
@@ -164,14 +165,27 @@ namespace PokeCord.SlashCommands
                     {
                         Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                     }
+
                     // Save the updated scoreboard data
                     await _scoreboard.SaveScoreboardAsync();
 
-                    // Format Discord Reply
+                    // Clean up output variables
                     string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);
                     bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
                     if (pokemonData.Shiny) { startsWithVowel = false; }
-                    string message = $"{username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
+
+                    // Get team name if player is on team
+                    List<Team> allTeams = _scoreboard.GetTeams();
+                    bool onTeam = false;
+                    string playerTeam = "";
+                    if (playerData.TeamId != -1)
+                    {
+                        onTeam = true;
+                        playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
+                    }
+
+                    // Format Discord output
+                    string message = $"{(onTeam ? "Team " : "")}{playerTeam} {username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
                                      $"{richPokemonName} worth {pokemonData.BaseExperience} exp and {pokemonDollarValue} Pokémon Dollars!\n" +
                                      $"{playerData.Pokeballs} Poké Balls remaining.";
                     Embed[] embeds = new Embed[]
