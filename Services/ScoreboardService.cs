@@ -20,6 +20,7 @@ namespace PokeCord.Services
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
         private const ulong testingPokeCordChannel = 1223317230431895673;
+        private const ulong pokecordChannel = testingPokeCordChannel; // FIX: use felicity for release
 
         // Individual scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> _scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
@@ -93,7 +94,7 @@ namespace PokeCord.Services
             await ResetTeamsAsync(null);
 
             // Get channel to post to
-            var channel = await client.GetChannelAsync(felicityPokeCordChannel) as IMessageChannel;
+            var channel = await client.GetChannelAsync(pokecordChannel) as IMessageChannel;
             if (channel == null)
             {
                 Console.WriteLine("Channel not found!");
@@ -113,7 +114,7 @@ namespace PokeCord.Services
             Console.WriteLine("*** The weekly event has ended *** Time: " + DateTime.UtcNow.ToString());
 
             // Get channel to post to
-            var channel = await client.GetChannelAsync(felicityPokeCordChannel) as IMessageChannel;
+            var channel = await client.GetChannelAsync(pokecordChannel) as IMessageChannel;
             if (channel == null)
             {
                 Console.WriteLine("Channel not found! *** Bailed out of EndWeeklyTeamsEventAsync() method!!! ***");

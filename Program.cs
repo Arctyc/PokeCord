@@ -13,12 +13,6 @@ namespace PokeCord
 {
     public class Program
     {
-        //const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
-        //const int shinyRatio = 256; // Chance of catching a shiny
-        //private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
-        //private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
-        //public const int teamCreateCost = 500; // Cost in poke dollars to create a team
-
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService;
         private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
