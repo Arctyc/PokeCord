@@ -4,17 +4,18 @@ namespace PokeCord.Data
 {
     public class PlayerData
     {
-        public int Version { get; set; } = 3;
+        public int Version { get; set; } = 4;
         public ulong UserId { get; set; }
         public string UserName { get; set; }
         public int Experience { get; set; }
-        public int WeeklyExperience { get; set; } // New!
-        public int TeamId { get; set; } = -1; // New!
+        public int WeeklyExperience { get; set; }
+        public int TeamId { get; set; } = -1;
         public int Pokeballs { get; set; }
-        public int PokemonDollars { get; set; } // New!
+        public int PokemonDollars { get; set; }
         public List<PokemonData> CaughtPokemon { get; set; }
-        public List<PokemonData> WeeklyCaughtPokemon { get; set; } // New!
+        public List<PokemonData> WeeklyCaughtPokemon { get; set; }
         public List<Badge> EarnedBadges { get; set; }
+        public Dictionary<string, int> PokeMartItems { get; set; } // New!
 
         public PlayerData()
         {

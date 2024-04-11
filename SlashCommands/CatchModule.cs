@@ -82,43 +82,44 @@ namespace PokeCord.SlashCommands
                 }
             }
 
-            // Check cooldown information
-            if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
-            {
-                Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
-                TimeSpan elapsed = DateTime.UtcNow - lastUsed;
-                if (elapsed < _cooldownTime)
-                {
-                    int timeRemaining = (int)_cooldownTime.TotalSeconds - (int)elapsed.TotalSeconds;
-                    var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                    Console.WriteLine($"{username} catch denied. Cooldown: {cooldownUnixTime} seconds");
-                    await RespondAsync($"Easy there, Ash Ketchum! I know you Gotta Catch 'Em All, " +
-                                               $"but your next Poké Ball will be available <t:{cooldownUnixTime}:R>.");
-                    return;
-                }
-            }
-            else
-            {
-                Console.WriteLine($"No last command usage by {username} with userID {userId}");
-            }
-            // If unable to add new cooldown for user
-            if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
-            {
-                //Cooldown exists so update existing cooldown
-                if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
-                {
-                    Console.WriteLine($"Cooldown updated for {username}");
-                }
-                else
-                {
-                    Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
-                }
-            }
-            Console.WriteLine($"{username} cooldown entry update attempted: key {username} value {DateTime.UtcNow}");
-
             // Check for enough Pokeballs
             if (playerData.Pokeballs > 0)
             {
+                // Check cooldown information
+                if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
+                {
+                    Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
+                    TimeSpan elapsed = DateTime.UtcNow - lastUsed;
+                    if (elapsed < _cooldownTime)
+                    {
+                        int timeRemaining = (int)_cooldownTime.TotalSeconds - (int)elapsed.TotalSeconds;
+                        var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+                        Console.WriteLine($"{username} catch denied. Cooldown: {cooldownUnixTime} seconds");
+                        await RespondAsync($"Easy there, Ash Ketchum! I know you Gotta Catch 'Em All, " +
+                                                   $"but your next Poké Ball will be available <t:{cooldownUnixTime}:R>.");
+                        return;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"No last command usage by {username} with userID {userId}");
+                }
+                // If unable to add new cooldown for user
+                if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
+                {
+                    //Cooldown exists so update existing cooldown
+                    if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
+                    {
+                        Console.WriteLine($"Cooldown updated for {username}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
+                    }
+                }
+                Console.WriteLine($"{username} cooldown entry update attempted: key {username} value {DateTime.UtcNow}");
+
+
                 // Set up a new PokeSelector
                 PokeSelector pokeSelector = new PokeSelector(maxPokemonId, shinyRatio);
                 // Get a new pokemon

@@ -21,6 +21,9 @@ namespace PokeCord
         private static Timer _pokeballResetTimer;
         private static Timer _weeklyStartTimer;
         private static Timer _weeklyEndTimer;
+        //Testing
+        private static Timer _quickStartTimer;
+        private static Timer _quickEndTimer;
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
@@ -79,8 +82,7 @@ namespace PokeCord
 
             // -- Weekly Reset --
             // Weekly Start Timer
-            DateTime weeklyStartTime = DateTime.UtcNow.AddDays(
-                (DayOfWeek.Monday - DateTime.UtcNow.DayOfWeek) % 7);
+            DateTime weeklyStartTime = DateTime.UtcNow.AddDays((DayOfWeek.Monday - DateTime.UtcNow.DayOfWeek) % 7);
             weeklyStartTime = weeklyStartTime.Date; // Set time to 00:00
             TimeSpan weeklyStartDelay = weeklyStartTime - DateTime.UtcNow;
             if (weeklyStartDelay < TimeSpan.Zero)
@@ -101,6 +103,20 @@ namespace PokeCord
             }
             _weeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
             Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
+
+            /*
+            // Quick Test Timer
+            DateTime testStartTime = DateTime.UtcNow.AddSeconds(10);
+            DateTime testEndTime = DateTime.UtcNow.AddSeconds(30);
+            TimeSpan testStartDelay = testStartTime - DateTime.UtcNow;
+            TimeSpan testEndDelay = testEndTime - DateTime.UtcNow;
+            if (testStartDelay < TimeSpan.Zero) { testStartDelay = testStartDelay.Add(TimeSpan.FromSeconds(60));}
+            if (testEndDelay < TimeSpan.Zero) { testEndDelay = testEndDelay.Add(TimeSpan.FromSeconds(60));}
+            _quickStartTimer = new Timer(async (e) => await scoreboardService.StartWeeklyTeamsEventAsync(_client), null, testStartDelay, Timeout.InfiniteTimeSpan);
+            _quickEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, testEndDelay, TimeSpan.FromSeconds(30));
+            Console.WriteLine("Time until Test Start Timer: " + testStartDelay);
+            Console.WriteLine("Time until Test End Timer: " + testEndDelay);
+            */
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
             // - /givepokeballs <user> <amount>

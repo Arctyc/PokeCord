@@ -16,7 +16,6 @@ namespace PokeCord.Services
     {
         public const int pokeballRestockAmount = 50; // Amount of Pokeballs given per restock (currently daily)
         private const int refund = TeamCreateModule.teamCreateCost; // 500
-        public const int weeklyReward = 1000; // Amount of PokemonDollars to award each player of the winning team
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
         private const ulong testingPokeCordChannel = 1223317230431895673;
@@ -130,7 +129,10 @@ namespace PokeCord.Services
             string message = GetEndWeeklyCompetitionHeader(numTeams);
 
             // Distribute the rewards to the top teams
-            message += await DistributeRewardsToTeams(teams, totalReward);
+            if (numTeams > 0)
+            {
+                message += await DistributeRewardsToTeams(teams, totalReward);
+            }
 
             // Update the scoreboard
             await SaveScoreboardAsync();
@@ -165,13 +167,23 @@ namespace PokeCord.Services
 
         private int GetTeamReward(int teamRank, int numTeams, int totalReward)
         {
-            if (teamRank == 0) // Top team
+            if (numTeams == 1)
             {
-                return (int)(totalReward * 0.5); // 50% of the total reward
+                return (int)totalReward;
             }
-            else // Lower-ranked teams
+
+            switch (teamRank)
             {
-                return (int)((totalReward * 0.5) / (numTeams - 1)); // Split the remaining 50% equally among the other teams
+                case 0:
+                    return (int)(totalReward * 0.5); // 50% of the total reward
+
+                case 1:
+                    return (int)((totalReward * 0.3) / (numTeams - 1)); // Split the remaining 50% equally among the other teams
+                case 2:
+                    return (int)((totalReward * 0.2) / (numTeams - 1)); // Split the remaining 50% equally among the other teams
+                default:
+                    Console.WriteLine($"Attempted to get reward for a {teamRank + 1}th place team.");
+                    return 0;
             }
         }
 
@@ -199,6 +211,7 @@ namespace PokeCord.Services
             int maxRetries = 3;
             int retryDelay = 1000; // 1 second
 
+            // Loop through each player on the team
             foreach (ulong playerId in team.Players)
             {
                 int retryCount = 0;
@@ -208,10 +221,12 @@ namespace PokeCord.Services
                 {
                     try
                     {
-                        if (_scoreboard.TryGetValue(playerId, out var playerData))
+                        if (_scoreboard.TryGetValue(playerId, out var originalPlayerData))
                         {
+                            // Add pokemondollars in the amount of the team reward divided evenly amongst the team members
+                            PlayerData playerData = originalPlayerData;
                             playerData.PokemonDollars += teamReward / team.Players.Count;
-                            updateSuccessful = await SavePlayerDataAsync(playerData);
+                            updateSuccessful = await SavePlayerDataAsync(playerData, originalPlayerData);
                         }
                     }
                     catch (Exception ex)
@@ -293,10 +308,10 @@ namespace PokeCord.Services
             return teams;
         }
 
-        private async Task<bool> SavePlayerDataAsync(PlayerData playerData)
+        public async Task<bool> SavePlayerDataAsync(PlayerData playerData, PlayerData originalPlayerData)
         {
             // Update the player's data in the scoreboard
-            if (_scoreboard.TryUpdate(playerData.UserId, playerData, playerData))
+            if (_scoreboard.TryUpdate(playerData.UserId, playerData, originalPlayerData))
             {
                 // Save the updated scoreboard
                 await SaveScoreboardAsync();
@@ -405,6 +420,11 @@ namespace PokeCord.Services
                         playerData.WeeklyExperience = 0;
                         playerData.TeamId = -1;
                         playerData.WeeklyCaughtPokemon = new List<PokemonData>();
+                    }
+                    // Version 3 => 4
+                    if (playerData.Version == 3)
+                    {
+                        playerData.PokeMartItems = new Dictionary<string, int>();
                     }
                 }
 
