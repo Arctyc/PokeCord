@@ -29,9 +29,9 @@ namespace PokeCord.Helpers
         public async Task<String> GetMenu()
         {
             return $"Poké Balls: {AmountPokeballs} for P{CostPokeballs}\n" +
-                   $"Amulet Coin - Doubles Pokémon Dollars from catches: {AmountAmuletCoin} charges for P{CostAmuletCoin}\n" +
+                   $"Amulet Coin - 2x Pokémon Dollars from catches: {AmountAmuletCoin} charges for P{CostAmuletCoin}\n" +
                    $"Exp. Share - Team members also gain Exp. from your catches: {AmountExpShare} charges for P{CostExpShare}\n" +
-                   $"Lucky Egg - Double Exp. from low Exp. Pokémon: {AmountLuckyEgg} charges for P{CostLuckyEgg}\n" +
+                   $"Lucky Egg - 2x Exp. from low Exp. Pokémon: {AmountLuckyEgg} charges for P{CostLuckyEgg}\n" +
                    $"Shiny Charm - 2x shiny chance until consumed. {AmountShinyCharm} for P{CostShinyCharm}\n" +
                    $"X Speed - Half cooldown time. {AmountXSpeed} charges for P{CostXSpeed}\n" +
                    "You may only have 1 of each item at a time.";
@@ -169,6 +169,7 @@ namespace PokeCord.Helpers
 
                 // Add item to player's inventory
                 // TODO: left off here
+                // check dict for key, if not, add, either way, update value
 
                 await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
                 message = $"{username} has purchased a Lucky Egg!";

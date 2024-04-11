@@ -171,6 +171,16 @@ namespace PokeCord.Services
             {
                 return (int)totalReward;
             }
+            if (numTeams == 2)
+            {
+                switch (teamRank)
+                {
+                    case 0:
+                        return (int)(totalReward * 0.7); // 70% if only 2 teams compete
+                    case 1:
+                        return (int)(totalReward * 0.3); // 30% if only 2 teams compete
+                }
+            }
 
             switch (teamRank)
             {
