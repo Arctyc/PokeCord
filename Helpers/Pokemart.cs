@@ -13,17 +13,17 @@ namespace PokeCord.Helpers
     {
         private readonly ScoreboardService scoreboardService;
         // Poke Mart Menu
-        private const int CostPokeballs = 250;
+        private const int CostPokeballs = 500;
         private const int AmountPokeballs = 10;
-        private const int CostAmuletCoin = 500;
+        private const int CostAmuletCoin = 250;
         private const int AmountAmuletCoin = 50;
-        private const int CostExpShare = 1000;
+        private const int CostExpShare = 1500;
         private const int AmountExpShare = 10;
         private const int CostLuckyEgg = 500;
-        private const int AmountLuckyEgg = 5;
+        private const int AmountLuckyEgg = 20;
         private const int CostShinyCharm = 1000;
         private const int AmountShinyCharm = 1;
-        private const int CostXSpeed = 250;
+        private const int CostXSpeed = 500;
         private const int AmountXSpeed = 10;
 
         public async Task<String> GetMenu()
@@ -51,12 +51,12 @@ namespace PokeCord.Helpers
                 {
                     return $"You need {playerData.PokemonDollars - CostPokeballs} more Pokémon Dollars to purchase Poké Balls.";
                 }
-
-                // Charge cost
-                playerData.PokemonDollars -= CostPokeballs;
-                // Add item to player's inventory
-                playerData.Pokeballs += AmountPokeballs;
-
+                else // Complete transaction
+                {
+                    playerData.PokemonDollars -= CostPokeballs;
+                    playerData.Pokeballs += AmountPokeballs;
+                }
+                // Save
                 await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
                 message = $"{username} has purchased Poké Balls!";
             }
@@ -86,15 +86,14 @@ namespace PokeCord.Helpers
                 playerData.PokeMartItems.TryGetValue(key, out int onHand);
                 if (onHand > 0)
                 {
-                    return "You need to use your * before you can purchase more";
+                    return $"You still have {onHand} charges on your Amulet Coin. Please use those before purchasing another.";
                 }
-
-                // Charge cost
-                playerData.PokemonDollars -= CostAmuletCoin;
-
-                // Add item to player's inventory
-                
-
+                else // Complete transaction
+                {
+                    playerData.PokeMartItems[key] = AmountAmuletCoin;
+                    playerData.PokemonDollars -= CostAmuletCoin;
+                }
+                // Save
                 await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
                 message = $"{username} has purchased an Amulet Coin!";
             }
@@ -124,14 +123,14 @@ namespace PokeCord.Helpers
                 playerData.PokeMartItems.TryGetValue(key, out int onHand);
                 if (onHand > 0)
                 {
-                    return "You need to use your * before you can purchase more";
+                    return $"You still have {onHand} charges on your Exp Share. Please use those before purchasing another.";
                 }
-                // Charge cost
-                playerData.PokemonDollars -= CostExpShare;
-
-                // Add item to player's inventory
-
-
+                else // Complete transaction
+                {
+                    playerData.PokeMartItems[key] = AmountExpShare;
+                    playerData.PokemonDollars -= CostExpShare;
+                }
+                // Save
                 await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
                 message = $"{username} has purchased an Exp. Share!";
             }
@@ -161,16 +160,14 @@ namespace PokeCord.Helpers
                 playerData.PokeMartItems.TryGetValue(key, out int onHand);
                 if (onHand > 0)
                 {
-                    return "You need to use your * before you can purchase more";
+                    return $"You still have {onHand} charges on your Lucky Egg. Please use those before purchasing another.";
                 }
-
-                // Charge cost
-                playerData.PokemonDollars -= CostLuckyEgg;
-
-                // Add item to player's inventory
-                // TODO: left off here
-                // check dict for key, if not, add, either way, update value
-
+                else // Complete transaction
+                {
+                    playerData.PokeMartItems[key] = AmountLuckyEgg;
+                    playerData.PokemonDollars -= CostLuckyEgg;
+                }
+                // Save
                 await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
                 message = $"{username} has purchased a Lucky Egg!";
             }
@@ -200,15 +197,14 @@ namespace PokeCord.Helpers
                 playerData.PokeMartItems.TryGetValue(key, out int onHand);
                 if (onHand > 0)
                 {
-                    return "You need to use your * before you can purchase more";
+                    return $"You already have a Shiny Charm.";
                 }
-
-                // Charge cost
-                playerData.PokemonDollars -= CostShinyCharm;
-
-                // Add item to player's inventory
-
-
+                else // Complete transaction
+                {
+                    playerData.PokeMartItems[key] = AmountShinyCharm;
+                    playerData.PokemonDollars -= CostShinyCharm;
+                }
+                // Save
                 await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
                 message = $"{username} has purchased a Shiny Charm!";
             }
@@ -238,15 +234,14 @@ namespace PokeCord.Helpers
                 playerData.PokeMartItems.TryGetValue(key, out int onHand);
                 if (onHand > 0)
                 {
-                    return "You need to use your * before you can purchase more";
+                    return $"You still have {onHand} charges on your X Speed. Please use those before purchasing another.";
                 }
-
-                // Charge cost
-                playerData.PokemonDollars -= CostXSpeed;
-
-                // Add item to player's inventory
-
-
+                else // Complete transaction
+                {
+                    playerData.PokeMartItems[key] = AmountXSpeed;
+                    playerData.PokemonDollars -= CostXSpeed;
+                }
+                // Save
                 await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
                 message = $"{username} has purchased an X Speed!";
             }
