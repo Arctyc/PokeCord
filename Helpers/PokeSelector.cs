@@ -1,10 +1,11 @@
 ﻿using PokeApiNet;
+using System.Security.Cryptography;
 
 namespace PokeCord.Helpers
 {
     public class PokeSelector
     {
-        private readonly Random _random;
+        //private readonly Random _random; // Old LCG Random
 
         //TODO: Collect a range of alternate forms (10001-10277) that have artwork, give them a chance to be caught
         /*
@@ -19,28 +20,24 @@ namespace PokeCord.Helpers
 
         public PokeSelector(int maxPokemonId, int shinyRatio)
         {
-            _random = new Random();
+            //_random = new Random(); // Old LCG Random
             _maxPokemonId = maxPokemonId;
             _shinyRatio = shinyRatio;
         }
 
         public async Task<PokemonData> GetRandomPokemon(PokeApiClient pokeApiClient)
         {
-            int randomId = _random.Next(1, _maxPokemonId + 1); // Generate random ID within range
-            int shinyCheck = _random.Next(1, _shinyRatio + 1); // Check for a shiny catch
-            bool shiny = false;
-            if (shinyCheck == _shinyRatio)
-            {
-                shiny = true;
-            }
 
-            /*
-             * TODO:
-             * 1: Check for a local cache
-             * 2: If there is one, check if randomId is part of it
-             * 3: If it is, use cache to display result
-             * 4: If not, use rest of method
-             */
+            /* // LCG Random
+            int randomId = _rng.Next(1, _maxPokemonId + 1); // Generate random ID within range
+            int shinyCheck = _rng.Next(1, _shinyRatio + 1); // Check for a shiny catch
+            */
+
+            //CSPRNG Random
+            int randomId = RandomNumberGenerator.GetInt32(1, _maxPokemonId + 1);
+            int shinyCheck = RandomNumberGenerator.GetInt32(1, _shinyRatio + 1);
+            bool shiny = shinyCheck == _shinyRatio;
+            Console.WriteLine($"CSPRNG Randoms - PokemonID: {randomId}, Shiny Check: {shinyCheck}");
 
             Pokemon pokemon = await pokeApiClient.GetResourceAsync<Pokemon>(randomId);
 
