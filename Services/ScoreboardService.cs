@@ -306,12 +306,10 @@ namespace PokeCord.Services
                 {
                     if (_scoreboard.TryGetValue(playerId, out var playerData))
                     {
-                        Console.WriteLine($"GetTeams() {playerData.UserName} has {playerData.WeeklyExperience} exp");
                         teamExperience += playerData.WeeklyExperience;
                     }
                 }
                 team.TeamExperience = teamExperience;
-                Console.WriteLine($"Team {team.Name} has {teamExperience} exp");
             }
             // Order list by team experience before returning
             teams = teams.OrderByDescending(t => t.TeamExperience).ToList();
@@ -329,6 +327,7 @@ namespace PokeCord.Services
             }
             else
             {
+                Console.WriteLine($"Unable to save playerdata for {playerData.UserName}");
                 return false;
             }
         }
@@ -409,7 +408,7 @@ namespace PokeCord.Services
             {
                 string jsonData = await File.ReadAllTextAsync(_scoreboardFilePath);
                 _scoreboard = JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, PlayerData>>(jsonData);
-
+                int countUpdated = 0;
                 // Handle playerData version mismatch
                 foreach (var playerData in _scoreboard.Values)
                 {
@@ -421,6 +420,7 @@ namespace PokeCord.Services
                         playerData.EarnedBadges = new List<Badge>();
                         //playerData.Badges = new Dictionary<Badge, DateTime>();
                         Console.WriteLine($"{playerData.UserName} upgraded playerData version from 1 to 2");
+                        countUpdated++;
                     }
                     // Version 2 => 3
                     if (playerData.Version == 2)
@@ -430,15 +430,21 @@ namespace PokeCord.Services
                         playerData.WeeklyExperience = 0;
                         playerData.TeamId = -1;
                         playerData.WeeklyCaughtPokemon = new List<PokemonData>();
+                        countUpdated++;
                     }
                     // Version 3 => 4
-                    if (playerData.Version == 3)
+                    if (playerData.Version == 4)
                     {
                         playerData.PokeMartItems = new Dictionary<string, int>();
+                        countUpdated++;
                     }
                 }
-
                 Console.WriteLine($"Scoreboard loaded from {_scoreboardFilePath}");
+                if (countUpdated > 0)
+                {
+                    await SaveScoreboardAsync();
+                    Console.WriteLine($"{countUpdated} players updated version");
+                }
             }
             catch (Exception ex)
             {

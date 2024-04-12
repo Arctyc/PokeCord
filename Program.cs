@@ -143,6 +143,11 @@ namespace PokeCord
                 .BuildServiceProvider();
         }
 
+        public static IServiceProvider GetServices()
+        {
+            return _services;
+        }
+
         private static Task LogAsync(LogMessage msg)
         {
             Console.WriteLine(msg.ToString());

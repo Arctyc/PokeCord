@@ -1,4 +1,5 @@
 ﻿using Discord.Interactions;
+using Microsoft.Extensions.DependencyInjection;
 using PokeCord.Data;
 using PokeCord.Services;
 using System;
@@ -11,7 +12,8 @@ namespace PokeCord.Helpers
 {
     public class Pokemart
     {
-        private readonly ScoreboardService scoreboardService;
+        private readonly IServiceProvider _services = Program.GetServices();
+        private readonly ScoreboardService _scoreboard;
         // Poke Mart Menu
         private const int CostPokeballs = 500;
         private const int AmountPokeballs = 10;
@@ -26,6 +28,10 @@ namespace PokeCord.Helpers
         private const int CostXSpeed = 500;
         private const int AmountXSpeed = 10;
 
+        public Pokemart()
+        {
+            _scoreboard = _services.GetRequiredService<ScoreboardService>();
+        }
         public async Task<String> GetMenu()
         {
             return $"Poké Balls: {AmountPokeballs} for P{CostPokeballs}\n" +
@@ -37,19 +43,38 @@ namespace PokeCord.Helpers
                    "You may only have 1 of each item at a time.";
         }
 
-        public async Task<String> PurchasePokeballs(SocketInteractionContext Context, string key)
+        public async Task<string> GetUserItems(SocketInteractionContext context)
+        {
+            string username = context.User.GlobalName;
+            ulong userId = context.User.Id;
+            string message = string.Empty;
+            if (_scoreboard.TryGetPlayerData(userId, out var playerData))
+            {
+                message += $"{username} has: ";
+                foreach(var key in playerData.PokeMartItems)
+                {
+                    message += $"{key}";
+                }
+            }
+            else
+            {
+                message = $"Error accessing player data.";
+            }            
+            return message;
+        }
+        public async Task<String> PurchasePokeballs(SocketInteractionContext context, string key)
         {
             string message;
-            string username = Context.User.GlobalName;
-            ulong userId = Context.User.Id;
+            string username = context.User.GlobalName;
+            ulong userId = context.User.Id;
             // Get player data
-            if (scoreboardService.TryGetPlayerData(userId, out PlayerData originalPlayerData))
+            if (_scoreboard.TryGetPlayerData(userId, out PlayerData originalPlayerData))
             {
                 PlayerData playerData = originalPlayerData;
                 // Check player for funds
                 if (playerData.PokemonDollars < CostPokeballs)
                 {
-                    return $"You need {playerData.PokemonDollars - CostPokeballs} more Pokémon Dollars to purchase Poké Balls.";
+                    return $"You need {CostPokeballs - playerData.PokemonDollars} more Pokémon Dollars to purchase Poké Balls.";
                 }
                 else // Complete transaction
                 {
@@ -57,199 +82,101 @@ namespace PokeCord.Helpers
                     playerData.Pokeballs += AmountPokeballs;
                 }
                 // Save
-                await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
-                message = $"{username} has purchased Poké Balls!";
+                await _scoreboard.SavePlayerDataAsync(playerData, originalPlayerData);
+                message = $"{username} has purchased {AmountPokeballs} Poké Balls!";
             }
             else
             {
-                return $"There was an error in the Poké Mart. You have not been charged.";
+                return $"Error accessing player data. You have not been charged.";
             }
             return message;
         }
 
-        public async Task<String> PurchaseAmuletCoin(SocketInteractionContext Context, string key)
+        public async Task<string> PurchaseAmuletCoin(SocketInteractionContext context, string key)
         {
-            string message;
-            string username = Context.User.GlobalName;
-            ulong userId = Context.User.Id;
-            // Get player data
-            if (scoreboardService.TryGetPlayerData(userId, out PlayerData originalPlayerData))
-            {
-                PlayerData playerData = originalPlayerData;
-                // Check player for funds
-                if (playerData.PokemonDollars < CostAmuletCoin)
-                {
-                    return $"You need {playerData.PokemonDollars - CostAmuletCoin} more Pokémon Dollars to purchase an Amulet Coin.";
-                }
-
-                // Check player doesn't already have item
-                playerData.PokeMartItems.TryGetValue(key, out int onHand);
-                if (onHand > 0)
-                {
-                    return $"You still have {onHand} charges on your Amulet Coin. Please use those before purchasing another.";
-                }
-                else // Complete transaction
-                {
-                    playerData.PokeMartItems[key] = AmountAmuletCoin;
-                    playerData.PokemonDollars -= CostAmuletCoin;
-                }
-                // Save
-                await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
-                message = $"{username} has purchased an Amulet Coin!";
-            }
-            else
-            {
-                message = $"There was an error in the Poké Mart. You have not been charged.";
-            }
-            return message;
+            return await PurchaseItem(
+                context,
+                key,
+                CostAmuletCoin,
+                AmountAmuletCoin,
+                "an Amulet Coin");
         }
 
-        public async Task<String> PurchaseExpShare(SocketInteractionContext Context, string key)
+        public async Task<String> PurchaseExpShare(SocketInteractionContext context, string key)
         {
-            string message;
-            string username = Context.User.GlobalName;
-            ulong userId = Context.User.Id;
-            // Get player data
-            if (scoreboardService.TryGetPlayerData(userId, out PlayerData originalPlayerData))
-            {
-                PlayerData playerData = originalPlayerData;
-                // Check player for funds
-                if (playerData.PokemonDollars < CostExpShare)
-                {
-                    return $"You need {playerData.PokemonDollars - CostExpShare} more Pokémon Dollars to purchase an Exp. Share.";
-                }
-
-                // Check player doesn't already have item
-                playerData.PokeMartItems.TryGetValue(key, out int onHand);
-                if (onHand > 0)
-                {
-                    return $"You still have {onHand} charges on your Exp Share. Please use those before purchasing another.";
-                }
-                else // Complete transaction
-                {
-                    playerData.PokeMartItems[key] = AmountExpShare;
-                    playerData.PokemonDollars -= CostExpShare;
-                }
-                // Save
-                await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
-                message = $"{username} has purchased an Exp. Share!";
-            }
-            else
-            {
-                message = $"There was an error in the Poké Mart. You have not been charged.";
-            }
-            return message;
+            return await PurchaseItem(
+                context,
+                key,
+                CostExpShare,
+                AmountExpShare,
+                "an Exp. Share");
         }
 
-        public async Task<String> PurchaseLuckyEgg(SocketInteractionContext Context, string key)
+        public async Task<String> PurchaseLuckyEgg(SocketInteractionContext context, string key)
         {
-            string message;
-            string username = Context.User.GlobalName;
-            ulong userId = Context.User.Id;
-            // Get player data
-            if (scoreboardService.TryGetPlayerData(userId, out PlayerData originalPlayerData))
-            {
-                PlayerData playerData = originalPlayerData;
-                // Check player for funds
-                if (playerData.PokemonDollars < CostLuckyEgg)
-                {
-                    return $"You need {playerData.PokemonDollars - CostLuckyEgg} more Pokémon Dollars to purchase a Lucky Egg.";
-                }
-
-                // Check player doesn't already have item
-                playerData.PokeMartItems.TryGetValue(key, out int onHand);
-                if (onHand > 0)
-                {
-                    return $"You still have {onHand} charges on your Lucky Egg. Please use those before purchasing another.";
-                }
-                else // Complete transaction
-                {
-                    playerData.PokeMartItems[key] = AmountLuckyEgg;
-                    playerData.PokemonDollars -= CostLuckyEgg;
-                }
-                // Save
-                await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
-                message = $"{username} has purchased a Lucky Egg!";
-            }
-            else
-            {
-                message = $"There was an error in the Poké Mart. You have not been charged.";
-            }
-            return message;
+            return await PurchaseItem(
+                context,
+                key,
+                CostLuckyEgg,
+                AmountLuckyEgg,
+                "a Lucky Egg");
         }
 
-        public async Task<String> PurchaseShinyCharm(SocketInteractionContext Context, string key)
+        public async Task<String> PurchaseShinyCharm(SocketInteractionContext context, string key)
         {
-            string message;
-            string username = Context.User.GlobalName;
-            ulong userId = Context.User.Id;
-            // Get player data
-            if (scoreboardService.TryGetPlayerData(userId, out PlayerData originalPlayerData))
-            {
-                PlayerData playerData = originalPlayerData;
-                // Check player for funds
-                if (playerData.PokemonDollars < CostShinyCharm)
-                {
-                    return $"You need {playerData.PokemonDollars - CostShinyCharm} more Pokémon Dollars to purchase a Shiny Charm.";
-                }
-
-                // Check player doesn't already have item
-                playerData.PokeMartItems.TryGetValue(key, out int onHand);
-                if (onHand > 0)
-                {
-                    return $"You already have a Shiny Charm.";
-                }
-                else // Complete transaction
-                {
-                    playerData.PokeMartItems[key] = AmountShinyCharm;
-                    playerData.PokemonDollars -= CostShinyCharm;
-                }
-                // Save
-                await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
-                message = $"{username} has purchased a Shiny Charm!";
-            }
-            else
-            {
-                message = $"There was an error in the Poké Mart. You have not been charged.";
-            }
-            return message;
+            return await PurchaseItem(
+                context,
+                key,
+                CostShinyCharm,
+                AmountShinyCharm,
+                "a Shiny Charm");
         }
 
-        public async Task<String> PurchaseXSpeed(SocketInteractionContext Context, string key)
+        public async Task<String> PurchaseXSpeed(SocketInteractionContext context, string key)
         {
-            string message;
-            string username = Context.User.GlobalName;
-            ulong userId = Context.User.Id;
-            // Get player data
-            if (scoreboardService.TryGetPlayerData(userId, out PlayerData originalPlayerData))
+            return await PurchaseItem(
+                context,
+                key,
+                CostXSpeed,
+                AmountXSpeed,
+                "an X Speed");
+        }
+
+        private async Task<string> PurchaseItem(SocketInteractionContext context, string itemKey, int itemCost, int itemCharges, string richItemName)
+        {
+            string username = context.User.GlobalName;
+            ulong userId = context.User.Id;
+            PlayerData originalPlayerData = new PlayerData();
+            if (_scoreboard.TryGetPlayerData(userId, out originalPlayerData))
             {
                 PlayerData playerData = originalPlayerData;
-                // Check player for funds
-                if (playerData.PokemonDollars < CostXSpeed)
-                {
-                    return $"You need {playerData.PokemonDollars - CostXSpeed} more Pokémon Dollars to purchase an X Speed.";
-                }
 
-                // Check player doesn't already have item
-                playerData.PokeMartItems.TryGetValue(key, out int onHand);
+                // Check if player already has item
+                playerData.PokeMartItems.TryGetValue(itemKey, out int onHand);
                 if (onHand > 0)
                 {
-                    return $"You still have {onHand} charges on your X Speed. Please use those before purchasing another.";
+                    return $"You still have {onHand} charges on this item. Please use those before purchasing another.";
                 }
-                else // Complete transaction
+
+                // Check that player can afford item
+                if (playerData.PokemonDollars < itemCost)
                 {
-                    playerData.PokeMartItems[key] = AmountXSpeed;
-                    playerData.PokemonDollars -= CostXSpeed;
+                    return $"You need {itemCost - playerData.PokemonDollars} more Pokémon Dollars to purchase this item.";
                 }
+                
+                // Complete Transaction
+                playerData.PokemonDollars -= itemCost;
+                playerData.PokeMartItems[itemKey] = itemCharges;
+
                 // Save
-                await scoreboardService.SavePlayerDataAsync(playerData, originalPlayerData);
-                message = $"{username} has purchased an X Speed!";
+                await _scoreboard.SavePlayerDataAsync(playerData, originalPlayerData);
+                await _scoreboard.SaveScoreboardAsync();
+                return $"{username} has purchased {richItemName}!";
             }
             else
             {
-                message = $"There was an error in the Poké Mart. You have not been charged.";
+                return $"Error accessing player data. You have not been charged.";
             }
-            return message;
         }
     }
 }

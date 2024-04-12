@@ -11,49 +11,40 @@ namespace PokeCord.SlashCommands
 {
     public class PokemartModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private enum PokemartItem
-        {
-            Menu,
-            Pokeballs,
-            AmuletCoin,
-            ExpShare,
-            LuckyEgg,
-            ShinyCharm,
-            XSpeed
-        }
-
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
         [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
         [SlashCommand("pokemart", "Spend your hard earned Pokémon Dollars on neat items!")]
         public async Task PokemartCommand(
             [Summary("item", "The item you would like to buy.")]
-            [Autocomplete(typeof(PokemartItem))] string pokemartItem)
+            [Autocomplete(typeof(PokemartAutocompleter))] string pokemartItem)
         {
-            pokemartItem = pokemartItem.ToLower();
             string message;
             Pokemart pokemart = new Pokemart();
-
+            Console.WriteLine($"{Context.User.GlobalName} has used /pokemart {pokemartItem}");
             switch (pokemartItem)
             {
-                case "menu":
+                case "My Items":
+                    await RespondAsync(await pokemart.GetUserItems(Context));
+                    return;
+                case "Menu":
                     await RespondAsync(await pokemart.GetMenu());
                     return;
-                case "pokeballs":
+                case "Poké Balls":
                     message = await pokemart.PurchasePokeballs(Context, pokemartItem);
                     break;
-                case "amuletcoin":
+                case "Amulet Coin":
                     message = await pokemart.PurchaseAmuletCoin(Context, pokemartItem);
                     break;
-                case "expshare":
+                case "Exp. Share":
                     message = await pokemart.PurchaseExpShare(Context, pokemartItem);
                     break;
-                case "luckyegg":
+                case "Lucky Egg":
                     message = await pokemart.PurchaseLuckyEgg(Context, pokemartItem);
                     break;
-                case "shinycharm":
+                case "Shiny Charm":
                     message = await pokemart.PurchaseShinyCharm(Context, pokemartItem);
                     break;
-                case "xspeed":
+                case "X Speed":
                     message = await pokemart.PurchaseXSpeed(Context, pokemartItem);
                     break;
                 default:
