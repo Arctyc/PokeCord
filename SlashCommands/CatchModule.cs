@@ -181,19 +181,7 @@ namespace PokeCord.SlashCommands
                 {
                     playerData.PokeMartItems.Remove(amuletCoinKey);
                     Console.WriteLine($"{amuletCoinKey} consumed by {username}");
-                }
-                // Consume Exp. Share
-                if (hasExpShare && expShareCharges > 0 && playerData.TeamId > 0)
-                {
-                    GiveExpToTeamMembers(userId, playerData.TeamId, pokemonExperienceValue);
-                    expShareCharges--;
-                    playerData.PokeMartItems[expShareKey]--;
-                }
-                if (hasExpShare && expShareCharges == 0)
-                {
-                    playerData.PokeMartItems.Remove(expShareKey);
-                    Console.WriteLine($"{expShareKey} consumed by {username}");
-                }                
+                }             
                 // Consume Lucky Egg
                 if (hasLuckyEgg && luckyEggCharges > 0)
                 {
@@ -208,6 +196,18 @@ namespace PokeCord.SlashCommands
                 {
                     playerData.PokeMartItems.Remove(luckyEggKey);
                     Console.WriteLine($"{luckyEggKey} consumed by {username}");
+                }
+                // Consume Exp. Share
+                if (hasExpShare && expShareCharges > 0 && playerData.TeamId > 0)
+                {
+                    GiveExpToTeamMembers(userId, playerData.TeamId, pokemonExperienceValue);
+                    expShareCharges--;
+                    playerData.PokeMartItems[expShareKey]--;
+                }
+                if (hasExpShare && expShareCharges == 0)
+                {
+                    playerData.PokeMartItems.Remove(expShareKey);
+                    Console.WriteLine($"{expShareKey} consumed by {username}");
                 }
                 // Consume Shiny Charm
                 if (hasShinyCharm && pokemonData.Shiny)
