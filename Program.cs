@@ -27,7 +27,9 @@ namespace PokeCord
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        public static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        public static readonly TimeSpan _standardCooldown = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        public static readonly TimeSpan _xSpeedCooldown = TimeSpan.FromSeconds(60); // X Speed cooldown time in seconds
+        public static readonly TimeSpan _testingCooldown = TimeSpan.FromSeconds(3); // Testing only!
 
         public static async Task Main()
         {
@@ -105,7 +107,7 @@ namespace PokeCord
             Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
 
             /*
-            // Quick Test Timer
+            // Quick Championship Test Timer
             DateTime testStartTime = DateTime.UtcNow.AddSeconds(10);
             DateTime testEndTime = DateTime.UtcNow.AddSeconds(30);
             TimeSpan testStartDelay = testStartTime - DateTime.UtcNow;

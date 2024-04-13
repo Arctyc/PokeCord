@@ -5,8 +5,6 @@ namespace PokeCord.Services
 {
     public class PokemartAutocompleter : AutocompleteHandler
     {
-        private readonly ScoreboardService scoreboardService;
-
         public PokemartAutocompleter()
         {
 

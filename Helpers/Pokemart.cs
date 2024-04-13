@@ -15,18 +15,18 @@ namespace PokeCord.Helpers
         private readonly IServiceProvider _services = Program.GetServices();
         private readonly ScoreboardService _scoreboard;
         // Poke Mart Menu
-        private const int CostPokeballs = 500;
-        private const int AmountPokeballs = 10;
-        private const int CostAmuletCoin = 250;
-        private const int AmountAmuletCoin = 50;
-        private const int CostExpShare = 1500;
-        private const int AmountExpShare = 10;
-        private const int CostLuckyEgg = 500;
-        private const int AmountLuckyEgg = 20;
-        private const int CostShinyCharm = 1000;
-        private const int AmountShinyCharm = 1;
-        private const int CostXSpeed = 500;
-        private const int AmountXSpeed = 10;
+        public const int CostPokeballs = 500;
+        public const int AmountPokeballs = 10;
+        public const int CostAmuletCoin = 250;
+        public const int AmountAmuletCoin = 50;
+        public const int CostExpShare = 1500;
+        public const int AmountExpShare = 10;
+        public const int CostLuckyEgg = 500;
+        public const int AmountLuckyEgg = 20;
+        public const int CostShinyCharm = 1000;
+        public const int AmountShinyCharm = 1;
+        public const int CostXSpeed = 500;
+        public const int AmountXSpeed = 10;
 
         public Pokemart()
         {
