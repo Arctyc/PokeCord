@@ -15,17 +15,15 @@ namespace PokeCord.Services
     public class ScoreboardService
     {
         public const int pokeballRestockAmount = 50; // Amount of Pokeballs given per restock (currently daily)
-        private const int refund = TeamCreateModule.teamCreateCost; // 500
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
-        private const ulong testingPokeCordChannel = 1223317230431895673;
+        //private const ulong testingPokeCordChannel = 1223317230431895673;
         private const ulong pokecordChannel = felicityPokeCordChannel; // FIX: use felicity for release
 
         // Individual scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> _scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
         // Team scoreboard data structure
         private static List<Team> _teamScoreboard = new List<Team>();
-        private static Team _winningTeam;
         private readonly string _scoreboardFilePath = "scoreboard.json";
         private readonly string _teamScoreboardFilePath = "teamscoreboard.json";
 
