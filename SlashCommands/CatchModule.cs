@@ -237,7 +237,6 @@ namespace PokeCord.SlashCommands
                 if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; } // Cap player pokemondollars
                 playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                 playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
-
                 // Check for new badges
                 BadgeManager badgeManager = new BadgeManager();
                 List<Badge> newBadges = badgeManager.UpdateBadgesAsync(playerData, badges, pokemonData);
@@ -265,7 +264,6 @@ namespace PokeCord.SlashCommands
                 {
                     Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                 }
-
                 // Save the updated scoreboard data
                 await _scoreboard.SaveScoreboardAsync();
 

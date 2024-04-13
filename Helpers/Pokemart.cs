@@ -36,7 +36,7 @@ namespace PokeCord.Helpers
         {
             return $"Poké Balls: {AmountPokeballs} for P{CostPokeballs}\n" +
                    $"Amulet Coin - 2x Pokémon Dollars from catches: {AmountAmuletCoin} charges for P{CostAmuletCoin}\n" +
-                   $"Exp. Share - Team members also gain Exp. from your catches: {AmountExpShare} charges for P{CostExpShare}\n" +
+                   $"Exp. Share - Team members also gain weekly Exp. from your catches: {AmountExpShare} charges for P{CostExpShare}\n" +
                    $"Lucky Egg - 2x Exp. from low Exp. Pokémon: {AmountLuckyEgg} charges for P{CostLuckyEgg}\n" +
                    $"Shiny Charm - 2x shiny chance until consumed. {AmountShinyCharm} for P{CostShinyCharm}\n" +
                    $"X Speed - Half cooldown time. {AmountXSpeed} charges for P{CostXSpeed}\n" +
