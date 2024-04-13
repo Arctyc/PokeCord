@@ -32,7 +32,7 @@ namespace PokeCord.SlashCommands
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = Program._lastCommandUsage;
-        public static readonly TimeSpan _standardCooldownTime = Program._testingCooldown;// Program._standardCooldownTime; // Cooldown time in seconds (120)
+        public static readonly TimeSpan _standardCooldownTime = Program._standardCooldown; // Cooldown time in seconds (120)
         public static readonly TimeSpan _xSpeedCooldownTime = Program._xSpeedCooldown; // X Speed cooldown time in seconds (60)
 
         public CatchModule(IServiceProvider services)

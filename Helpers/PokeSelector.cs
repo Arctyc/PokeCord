@@ -6,8 +6,6 @@ namespace PokeCord.Helpers
 {
     public class PokeSelector
     {
-        //private readonly Random _random; // Old LCG Random
-
         //TODO: Collect a range of alternate forms (10001-10277) that have artwork, give them a chance to be caught
         /*
         private readonly int _minPokemonIdStandard = 1;
@@ -17,7 +15,7 @@ namespace PokeCord.Helpers
         */
         private readonly int _maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         private readonly int _shinyRatio = 256; // Chance of catching a shiny
-        private readonly int _charmShinyRatio = 2;
+        private readonly int _charmShinyRatio = 128;
         private int defaultExperience = new Random().Next(75, 126); // exp to be used in the case that there is no base exp provided
 
         public PokeSelector()

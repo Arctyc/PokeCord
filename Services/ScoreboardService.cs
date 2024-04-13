@@ -19,7 +19,7 @@ namespace PokeCord.Services
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
         private const ulong testingPokeCordChannel = 1223317230431895673;
-        private const ulong pokecordChannel = testingPokeCordChannel; // FIX: use felicity for release
+        private const ulong pokecordChannel = felicityPokeCordChannel; // FIX: use felicity for release
 
         // Individual scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> _scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
