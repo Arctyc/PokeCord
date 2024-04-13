@@ -286,7 +286,7 @@ namespace PokeCord.SlashCommands
                 string message = $"{(onTeam ? "Team " : "")}{playerTeam} {username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
                                  $"{richPokemonName} worth {pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}exp and " +
                                  $"{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars!\n" +
-                                 $"{(pokemonData.Shiny ? "+10 Poké Balls!" : "" )} {playerData.Pokeballs} Poké Balls remaining.";
+                                 $"{(pokemonData.Shiny ? "+10 Poké Balls!" : "" )} {playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
                 Embed[] embeds = new Embed[]
                 {
                             new EmbedBuilder()
