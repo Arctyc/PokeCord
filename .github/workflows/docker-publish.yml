@@ -2,7 +2,7 @@ name: Build, publish, and deploy main Docker image
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.actor }}/pokecord:stable
+  TAG: stable
 
 on:
   push:
@@ -22,10 +22,13 @@ jobs:
     - name: Login
       run: |
         echo ${{ secrets.PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: downcase REPO
+      run: |
+        echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
     - name: Build and Publish
       run: |
         docker build . --file Dockerfile --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
   deploy:
     needs: publish
