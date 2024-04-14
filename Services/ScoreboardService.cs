@@ -436,8 +436,9 @@ namespace PokeCord.Services
                         countUpdated++;
                     }
                     // Version 3 => 4
-                    if (playerData.Version == 4)
+                    if (playerData.Version == 3)
                     {
+                        playerData.Version = 4;
                         playerData.PokeMartItems = new Dictionary<string, int>();
                         countUpdated++;
                     }
