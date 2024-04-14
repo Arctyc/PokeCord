@@ -20,4 +20,6 @@ COPY --from=build /PokeCord/app .
 # Switch to non-root user in chiseled image
 # USER app
 
+ENV DISCORD_TOKEN=DISCORD_TOKEN
+
 ENTRYPOINT ["./PokeCord"]
