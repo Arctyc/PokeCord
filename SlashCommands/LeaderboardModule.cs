@@ -60,7 +60,7 @@ namespace PokeCord.SlashCommands
             }
             // Output message to discord
             string leaderboardMessage = string.Join("\n", leaderMessages);
-            await RespondAsync($"Weekly top {leaderCount} trainers:\n" + leaderboardMessage);
+            await RespondAsync($"Weekly Top {leaderCount} Trainers:\n" + leaderboardMessage);
         }
     }
 }

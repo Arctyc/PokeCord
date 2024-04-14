@@ -54,9 +54,11 @@ namespace PokeCord.SlashCommands
                     rank = (playerRank + 1).ToString();
                 }
 
+                // Format ints as numerical string
                 string lifetimeExperience = playerData.Experience.ToString("N0");
                 string weeklyExperience = playerData.WeeklyExperience.ToString("N0");
                 string pokemonDollars = playerData.PokemonDollars.ToString("N0");
+                // Initialize and set output variables
                 string playerTeam = "";
                 List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
                 int catches = caughtPokemon.Count;
@@ -96,7 +98,7 @@ namespace PokeCord.SlashCommands
                                      $"Weekly Experience: {weeklyExperience}, Weekly Average Exp: {weeklyAverageExp}\n" +
                                      $"Pokémon Dollars: {pokemonDollars}\n" +
                                      $"They have earned {playerData.EarnedBadges.Count} out of {badges.Count} badges.\n" +
-                                     $"Their best catch was this {(bestPokemon.Shiny ? "SHINY " : "")}" +
+                                     $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
                                      $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
 
                     Embed[] embeds = new Embed[]

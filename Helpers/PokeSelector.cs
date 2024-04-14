@@ -1,11 +1,11 @@
 ﻿using PokeApiNet;
+using PokeCord.Data;
+using System.Security.Cryptography;
 
 namespace PokeCord.Helpers
 {
     public class PokeSelector
     {
-        private readonly Random _random;
-
         //TODO: Collect a range of alternate forms (10001-10277) that have artwork, give them a chance to be caught
         /*
         private readonly int _minPokemonIdStandard = 1;
@@ -15,32 +15,28 @@ namespace PokeCord.Helpers
         */
         private readonly int _maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         private readonly int _shinyRatio = 256; // Chance of catching a shiny
+        private readonly int _charmShinyRatio = 128;
         private int defaultExperience = new Random().Next(75, 126); // exp to be used in the case that there is no base exp provided
 
-        public PokeSelector(int maxPokemonId, int shinyRatio)
+        public PokeSelector()
         {
-            _random = new Random();
-            _maxPokemonId = maxPokemonId;
-            _shinyRatio = shinyRatio;
         }
 
-        public async Task<PokemonData> GetRandomPokemon(PokeApiClient pokeApiClient)
+        public async Task<PokemonData> GetRandomPokemon(PokeApiClient pokeApiClient, PlayerData playerData)
         {
-            int randomId = _random.Next(1, _maxPokemonId + 1); // Generate random ID within range
-            int shinyCheck = _random.Next(1, _shinyRatio + 1); // Check for a shiny catch
-            bool shiny = false;
-            if (shinyCheck == _shinyRatio)
+            int playerShinyRatio = _shinyRatio;
+            // Check for shiny charm
+            if (CheckPlayerShinyCharm(playerData))
             {
-                shiny = true;
+                playerShinyRatio = _charmShinyRatio;
             }
+            //CSPRNG Random
+            int randomId = RandomNumberGenerator.GetInt32(1, _maxPokemonId + 1);
+            int shinyCheck = RandomNumberGenerator.GetInt32(1, playerShinyRatio + 1);
+            Console.WriteLine($"Used shiny ratio of 1:{playerShinyRatio}");
 
-            /*
-             * TODO:
-             * 1: Check for a local cache
-             * 2: If there is one, check if randomId is part of it
-             * 3: If it is, use cache to display result
-             * 4: If not, use rest of method
-             */
+            bool shiny = shinyCheck == playerShinyRatio;
+            Console.WriteLine($"CSPRNG Randoms - PokemonID: {randomId}, Shiny Check: {shinyCheck}");
 
             Pokemon pokemon = await pokeApiClient.GetResourceAsync<Pokemon>(randomId);
 
@@ -77,6 +73,15 @@ namespace PokeCord.Helpers
                 Console.WriteLine($"Error fetching data for Pokemon ID: {randomId}");
                 return null;
             }
+        }
+
+        private bool CheckPlayerShinyCharm(PlayerData playerData)
+        {
+            if (playerData.PokeMartItems.TryGetValue("Shiny Charm", out int playerShinyCharm))
+            {
+                return true;
+            }
+            return false;
         }
     }
 

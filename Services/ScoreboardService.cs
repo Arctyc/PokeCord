@@ -15,17 +15,16 @@ namespace PokeCord.Services
     public class ScoreboardService
     {
         public const int pokeballRestockAmount = 50; // Amount of Pokeballs given per restock (currently daily)
-        private const int refund = TeamCreateModule.teamCreateCost; // 500
-        public const int weeklyReward = 1000; // Amount of PokemonDollars to award each player of the winning team
+        public const int currencyCap = 5000; // Max amount of pokemon dollars a player can have
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
-        private const ulong testingPokeCordChannel = 1223317230431895673;
+        //private const ulong testingPokeCordChannel = 1223317230431895673;
+        private const ulong pokecordChannel = felicityPokeCordChannel; // FIX: use felicity for release
 
         // Individual scoreboard data structure
         private static ConcurrentDictionary<ulong, PlayerData> _scoreboard = new ConcurrentDictionary<ulong, PlayerData>();
         // Team scoreboard data structure
         private static List<Team> _teamScoreboard = new List<Team>();
-        private static Team _winningTeam;
         private readonly string _scoreboardFilePath = "scoreboard.json";
         private readonly string _teamScoreboardFilePath = "teamscoreboard.json";
 
@@ -84,6 +83,7 @@ namespace PokeCord.Services
             await SaveScoreboardAsync();
         }
 
+        // TODO: Move Weekly Teams Competition event methods to a unique class
         public async Task StartWeeklyTeamsEventAsync(DiscordSocketClient client)
         {
             Console.WriteLine("*** The weekly event has started *** Time: " + DateTime.UtcNow.ToString());
@@ -92,7 +92,7 @@ namespace PokeCord.Services
             await ResetTeamsAsync(null);
 
             // Get channel to post to
-            var channel = await client.GetChannelAsync(felicityPokeCordChannel) as IMessageChannel;
+            var channel = await client.GetChannelAsync(pokecordChannel) as IMessageChannel;
             if (channel == null)
             {
                 Console.WriteLine("Channel not found!");
@@ -100,7 +100,7 @@ namespace PokeCord.Services
             }
 
             // Set message
-            string message = $"Attention Trainers! The weekly Team Championship has started! You may now create and join new teams!\n" +
+            string message = $"\nAttention Trainers! The weekly Team Championship has started! You may now create and join new teams!\n" +
                              $"The winners will be announced (and prizes handed out) on Sunday at 12:00 AM UTC";
 
             // Make announcement            
@@ -112,88 +112,149 @@ namespace PokeCord.Services
             Console.WriteLine("*** The weekly event has ended *** Time: " + DateTime.UtcNow.ToString());
 
             // Get channel to post to
-            var channel = await client.GetChannelAsync(felicityPokeCordChannel) as IMessageChannel;
+            var channel = await client.GetChannelAsync(pokecordChannel) as IMessageChannel;
             if (channel == null)
             {
-                Console.WriteLine("Channel not found!");
+                Console.WriteLine("Channel not found! *** Bailed out of EndWeeklyTeamsEventAsync() method!!! ***");
                 return;
             }
 
-            // Find winning team
+            // Find the top 3 teams (or all teams if fewer than 3)
             List<Team> teams = GetTeams();
-            _winningTeam = new Team();
-            
-            if (teams.Count != 0)
+            int numTeams = teams.Count;
+            int totalPlayers = teams.SelectMany(t => t.Players).Distinct().Count();
+            int totalReward = totalPlayers * 500;
+
+            string message = GetEndWeeklyCompetitionHeader(numTeams);
+
+            // Distribute the rewards to the top teams
+            if (numTeams > 0)
             {
-                _winningTeam = teams.First();
+                message += await DistributeRewardsToTeams(teams, totalReward);
             }
-            string teamExp = "";
-            string reward = weeklyReward.ToString("N0");
-            string message = $"Attention Trainers! The weekly Team Championship has ended! The results are...\n";
-            if (teams.Count == 0)
-            {
-                message += $"There were no teams created during this event, or something went horribly wrong.";
-            }
-            for (int i = 0; i < teams.Count; i++)
-            {
 
-                // Use Switch case team.count
-                switch (teams.Count)
-                {
-                    case 0:
-                        Console.WriteLine($"--- ScoreboardService.EndWeeklyTeamsEventAsync() Switch hit case 0. This should not happen!");
-                        break;
-                    case 1:
+            // Update the scoreboard
+            await SaveScoreboardAsync();
 
-                        message += $"Team {_winningTeam.Name} did not compete against anyone this week. The trainers will have their entry fee refunded.\n";
-                        foreach (ulong player in _winningTeam.Players)
-                        {
-                            if (_scoreboard.TryGetValue(player, out var playerData))
-                            {
-                                playerData.PokemonDollars += refund;
-                                Console.WriteLine($"{playerData.UserName} has been refunded {refund} pokemondollars");
-                            }
-                        }
-                        break;
-
-                    default:
-                        
-                        // Format team experience
-                        teamExp = teams[i].TeamExperience.ToString("N0");
-
-                        // Get list of team members names
-                        List<String> teamMemberNames = new List<string>();
-
-                        foreach (ulong key in teams[i].Players)
-                        {
-                            if (_scoreboard.TryGetValue(key, out var playerData))
-                            {
-                                teamMemberNames.Add(playerData.UserName);
-                                Console.WriteLine($"-=-=-==-=- {playerData.UserName} in {teams[i].Name}");
-                            }
-                        }
-
-                        string membersList = string.Join(", ", teamMemberNames);
-                        message += $"{i + 1}. Team {teams[i].Name}: {teamExp} exp.\n" +
-                                  $"Trainers: {membersList}\n";
-                        message += $"\nEach member of the winning team is awarded {reward} Pokémon Dollars!";
-                        // Dish out rewards
-                        foreach (ulong player in _winningTeam.Players)
-                        {
-                            if (_scoreboard.TryGetValue(player, out var playerData))
-                            {
-                                playerData.PokemonDollars += weeklyReward;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Could not give award to user: {player}");
-                            }
-                        }
-                        break;
-                }
-            }          
             // Make announcement
             await channel.SendMessageAsync(message);
+        }
+
+        private string GetEndWeeklyCompetitionHeader(int numTeams)
+        {
+            return numTeams == 0
+                ? "\nAttention Trainers! The weekly Team Championship has ended!\n" +
+                  "There were no teams created during this event, or something went horribly wrong."
+                : "\nAttention Trainers! The weekly Team Championship has ended! The results are...\n";
+        }
+
+        private async Task<string> DistributeRewardsToTeams(List<Team> teams, int totalReward)
+        {
+            string message = string.Empty;
+
+            for (int i = 0; i < Math.Min(teams.Count, 3); i++)
+            {
+                Team team = teams[i];
+                int teamReward = GetTeamReward(i, teams.Count, totalReward);
+                message += GetTeamResultMessage(i + 1, team, teamReward);
+
+                await UpdatePlayerScores(team, teamReward);
+            }
+
+            return message;
+        }
+
+        private int GetTeamReward(int teamRank, int numTeams, int totalReward)
+        {
+            if (numTeams == 1)
+            {
+                return (int)totalReward;
+            }
+            if (numTeams == 2)
+            {
+                switch (teamRank)
+                {
+                    case 0:
+                        return (int)(totalReward * 0.7); // 70% if only 2 teams compete
+                    case 1:
+                        return (int)(totalReward * 0.3); // 30% if only 2 teams compete
+                }
+            }
+
+            switch (teamRank)
+            {
+                case 0:
+                    return (int)(totalReward * 0.5); // 50% of the total reward
+
+                case 1:
+                    return (int)((totalReward * 0.3) / (numTeams - 1)); // Split the remaining 50% equally among the other teams
+                case 2:
+                    return (int)((totalReward * 0.2) / (numTeams - 1)); // Split the remaining 50% equally among the other teams
+                default:
+                    Console.WriteLine($"Attempted to get reward for a {teamRank + 1}th place team.");
+                    return 0;
+            }
+        }
+
+        private string GetTeamResultMessage(int rank, Team team, int teamReward)
+        {
+            string teamExp = team.TeamExperience.ToString("N0");
+            List<string> teamMemberNames = new List<string>();
+
+            foreach (ulong playerId in team.Players)
+            {
+                if (_scoreboard.TryGetValue(playerId, out var playerData))
+                {
+                    teamMemberNames.Add(playerData.UserName);
+                }
+            }
+
+            string membersList = string.Join(", ", teamMemberNames);
+            return $"{rank}. Team {team.Name}: {teamExp} exp.\n" +
+                   $"Trainers: {membersList}\n" +
+                   $"Each member of this team is awarded {(teamReward / team.Players.Count).ToString("N0")} Pokémon Dollars!\n\n";
+        }
+
+        private async Task UpdatePlayerScores(Team team, int teamReward)
+        {
+            int maxRetries = 3;
+            int retryDelay = 500; // 0.5 seconds
+
+            // Loop through each player on the team
+            foreach (ulong playerId in team.Players)
+            {
+                int retryCount = 0;
+                bool updateSuccessful = false;
+
+                while (retryCount < maxRetries && !updateSuccessful)
+                {
+                    try
+                    {
+                        if (_scoreboard.TryGetValue(playerId, out var originalPlayerData))
+                        {
+                            // Add pokemondollars in the amount of the team reward divided evenly amongst the team members
+                            PlayerData playerData = originalPlayerData;
+                            playerData.PokemonDollars += teamReward / team.Players.Count;
+                            if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; }
+                            updateSuccessful = await SavePlayerDataAsync(playerData, originalPlayerData);
+                            if (updateSuccessful) // Log for tracking
+                            {
+                                Console.WriteLine($"Prize of {teamReward / team.Players.Count} successfully awarded to {playerData.UserName}.");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error updating player score for user {playerId}: {ex.Message}");
+                        retryCount++;
+                        await Task.Delay(retryDelay);
+                    }
+                }
+                if (!updateSuccessful)
+                {
+                    Console.WriteLine($"Failed to update player score for user {playerId} after {maxRetries} retries.");
+                }
+            }
         }
 
         public async Task ResetTeamsAsync(object state)
@@ -227,6 +288,12 @@ namespace PokeCord.Services
             return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyExperience).ToList();
         }
 
+        public async void AddTeam(Team team)
+        {
+            _teamScoreboard.Add(team);
+            await SaveScoreboardAsync();
+        }
+
         public List<Team> GetTeams()
         {
             List<Team> teams = _teamScoreboard;
@@ -242,20 +309,30 @@ namespace PokeCord.Services
                 {
                     if (_scoreboard.TryGetValue(playerId, out var playerData))
                     {
-                        Console.WriteLine($"GetTeams() {playerData.UserName} has {playerData.WeeklyExperience} exp");
                         teamExperience += playerData.WeeklyExperience;
                     }
                 }
                 team.TeamExperience = teamExperience;
-                Console.WriteLine($"Team {team.Name} has {teamExperience} exp");
             }
+            // Order list by team experience before returning
             teams = teams.OrderByDescending(t => t.TeamExperience).ToList();
             return teams;
         }
-        public async void AddTeam(Team team)
+
+        public async Task<bool> SavePlayerDataAsync(PlayerData playerData, PlayerData originalPlayerData)
         {
-            _teamScoreboard.Add(team);
-            await SaveScoreboardAsync();
+            // Update the player's data in the scoreboard
+            if (_scoreboard.TryUpdate(playerData.UserId, playerData, originalPlayerData))
+            {
+                // Save the updated scoreboard
+                await SaveScoreboardAsync();
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"Unable to save playerdata for {playerData.UserName}");
+                return false;
+            }
         }
 
         public async Task LoadTeamScoreboardAsync()
@@ -334,7 +411,7 @@ namespace PokeCord.Services
             {
                 string jsonData = await File.ReadAllTextAsync(_scoreboardFilePath);
                 _scoreboard = JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, PlayerData>>(jsonData);
-
+                int countUpdated = 0;
                 // Handle playerData version mismatch
                 foreach (var playerData in _scoreboard.Values)
                 {
@@ -346,6 +423,7 @@ namespace PokeCord.Services
                         playerData.EarnedBadges = new List<Badge>();
                         //playerData.Badges = new Dictionary<Badge, DateTime>();
                         Console.WriteLine($"{playerData.UserName} upgraded playerData version from 1 to 2");
+                        countUpdated++;
                     }
                     // Version 2 => 3
                     if (playerData.Version == 2)
@@ -355,10 +433,21 @@ namespace PokeCord.Services
                         playerData.WeeklyExperience = 0;
                         playerData.TeamId = -1;
                         playerData.WeeklyCaughtPokemon = new List<PokemonData>();
+                        countUpdated++;
+                    }
+                    // Version 3 => 4
+                    if (playerData.Version == 4)
+                    {
+                        playerData.PokeMartItems = new Dictionary<string, int>();
+                        countUpdated++;
                     }
                 }
-
                 Console.WriteLine($"Scoreboard loaded from {_scoreboardFilePath}");
+                if (countUpdated > 0)
+                {
+                    await SaveScoreboardAsync();
+                    Console.WriteLine($"{countUpdated} players updated version");
+                }
             }
             catch (Exception ex)
             {

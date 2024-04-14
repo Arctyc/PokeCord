@@ -13,12 +13,6 @@ namespace PokeCord
 {
     public class Program
     {
-        //const int maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
-        //const int shinyRatio = 256; // Chance of catching a shiny
-        //private const int pokeballMax = 50; // Maximum catches per restock (currently hourly)
-        //private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars 
-        //public const int teamCreateCost = 500; // Cost in poke dollars to create a team
-
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService;
         private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
@@ -27,10 +21,15 @@ namespace PokeCord
         private static Timer _pokeballResetTimer;
         private static Timer _weeklyStartTimer;
         private static Timer _weeklyEndTimer;
+        //Testing
+        private static Timer _quickStartTimer;
+        private static Timer _quickEndTimer;
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        public static readonly TimeSpan _cooldownTime = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        public static readonly TimeSpan _standardCooldown = TimeSpan.FromSeconds(120); // Cooldown time in seconds
+        public static readonly TimeSpan _xSpeedCooldown = TimeSpan.FromSeconds(60); // X Speed cooldown time in seconds
+        public static readonly TimeSpan _testingCooldown = TimeSpan.FromSeconds(3); // Testing only!
 
         public static async Task Main()
         {
@@ -85,8 +84,7 @@ namespace PokeCord
 
             // -- Weekly Reset --
             // Weekly Start Timer
-            DateTime weeklyStartTime = DateTime.UtcNow.AddDays(
-                (DayOfWeek.Monday - DateTime.UtcNow.DayOfWeek) % 7);
+            DateTime weeklyStartTime = DateTime.UtcNow.AddDays((DayOfWeek.Monday - DateTime.UtcNow.DayOfWeek) % 7);
             weeklyStartTime = weeklyStartTime.Date; // Set time to 00:00
             TimeSpan weeklyStartDelay = weeklyStartTime - DateTime.UtcNow;
             if (weeklyStartDelay < TimeSpan.Zero)
@@ -107,6 +105,20 @@ namespace PokeCord
             }
             _weeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
             Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
+
+            /*
+            // Quick Championship Test Timer
+            DateTime testStartTime = DateTime.UtcNow.AddSeconds(10);
+            DateTime testEndTime = DateTime.UtcNow.AddSeconds(30);
+            TimeSpan testStartDelay = testStartTime - DateTime.UtcNow;
+            TimeSpan testEndDelay = testEndTime - DateTime.UtcNow;
+            if (testStartDelay < TimeSpan.Zero) { testStartDelay = testStartDelay.Add(TimeSpan.FromSeconds(60));}
+            if (testEndDelay < TimeSpan.Zero) { testEndDelay = testEndDelay.Add(TimeSpan.FromSeconds(60));}
+            _quickStartTimer = new Timer(async (e) => await scoreboardService.StartWeeklyTeamsEventAsync(_client), null, testStartDelay, Timeout.InfiniteTimeSpan);
+            _quickEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, testEndDelay, TimeSpan.FromSeconds(30));
+            Console.WriteLine("Time until Test Start Timer: " + testStartDelay);
+            Console.WriteLine("Time until Test End Timer: " + testEndDelay);
+            */
 
             //TODO - add command to give pokeballs to a specific user | set permissions for command in Discord
             // - /givepokeballs <user> <amount>
@@ -131,6 +143,11 @@ namespace PokeCord
                 .AddSingleton<TeamAutocompleter>()
                 //Build Collection
                 .BuildServiceProvider();
+        }
+
+        public static IServiceProvider GetServices()
+        {
+            return _services;
         }
 
         private static Task LogAsync(LogMessage msg)

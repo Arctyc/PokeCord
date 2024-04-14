@@ -16,6 +16,7 @@ namespace PokeCord.SlashCommands
     {
         private readonly ScoreboardService scoreboardService;
         public const int teamCreateCost = 500; // Cost in poke dollars to create a team
+        private const int maxTeamNameLength = 24;
 
         public TeamCreateModule(IServiceProvider services)
         {
@@ -35,6 +36,13 @@ namespace PokeCord.SlashCommands
             if (DateTime.Now.DayOfWeek.ToString() == "Sunday")
             {
                 await RespondAsync("The next weekly Team Championship will open on Monday at 12:00 AM UTC.");
+                return;
+            }
+
+            // Refuse if team name is too long
+            if (newTeamName.Length > maxTeamNameLength)
+            {
+                await RespondAsync($"Team names may only be up to {maxTeamNameLength} characters long.");
                 return;
             }
 

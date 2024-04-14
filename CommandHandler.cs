@@ -62,6 +62,7 @@ namespace PokeCord
                     {
                         case InteractionCommandError.UnmetPrecondition:
                             // implement
+                            Console.WriteLine($"Unhandled error in CommandHandler.HandleInteraction: {result.Error}");
                             break;
                         default:
                             break;
@@ -84,6 +85,7 @@ namespace PokeCord
                 {
                     case InteractionCommandError.UnmetPrecondition:
                         // implement
+                        Console.WriteLine($"Unhandled error in CommandHandler.HandleInteractionExecute: {result.Error}");
                         break;
                     default:
                         break;

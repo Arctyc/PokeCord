@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.Interactions;
-using Microsoft.VisualBasic;
 
 namespace PokeCord.Services
 {
