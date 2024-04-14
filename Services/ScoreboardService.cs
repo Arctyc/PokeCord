@@ -100,7 +100,7 @@ namespace PokeCord.Services
             }
 
             // Set message
-            string message = $"Attention Trainers! The weekly Team Championship has started! You may now create and join new teams!\n" +
+            string message = $"\nAttention Trainers! The weekly Team Championship has started! You may now create and join new teams!\n" +
                              $"The winners will be announced (and prizes handed out) on Sunday at 12:00 AM UTC";
 
             // Make announcement            
@@ -143,9 +143,9 @@ namespace PokeCord.Services
         private string GetEndWeeklyCompetitionHeader(int numTeams)
         {
             return numTeams == 0
-                ? "Attention Trainers! The weekly Team Championship has ended!\n" +
+                ? "\nAttention Trainers! The weekly Team Championship has ended!\n" +
                   "There were no teams created during this event, or something went horribly wrong."
-                : "Attention Trainers! The weekly Team Championship has ended! The results are...\n";
+                : "\nAttention Trainers! The weekly Team Championship has ended! The results are...\n";
         }
 
         private async Task<string> DistributeRewardsToTeams(List<Team> teams, int totalReward)
@@ -212,7 +212,7 @@ namespace PokeCord.Services
             string membersList = string.Join(", ", teamMemberNames);
             return $"{rank}. Team {team.Name}: {teamExp} exp.\n" +
                    $"Trainers: {membersList}\n" +
-                   $"Each member of this team is awarded {(teamReward / team.Players.Count).ToString("N0")} Pokémon Dollars!\n";
+                   $"Each member of this team is awarded {(teamReward / team.Players.Count).ToString("N0")} Pokémon Dollars!\n\n";
         }
 
         private async Task UpdatePlayerScores(Team team, int teamReward)
