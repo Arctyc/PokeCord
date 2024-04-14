@@ -62,6 +62,7 @@ namespace PokeCord.SlashCommands
             {
                 // PlayerData exists for this userId
                 playerData = originalPlayerData;
+                Console.WriteLine($"Got PlayerData for {username}");
             }
             else
             {
