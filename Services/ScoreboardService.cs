@@ -15,6 +15,7 @@ namespace PokeCord.Services
     public class ScoreboardService
     {
         public const int pokeballRestockAmount = 50; // Amount of Pokeballs given per restock (currently daily)
+        public const int currencyCap = 5000; // Max amount of pokemon dollars a player can have
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
         //private const ulong testingPokeCordChannel = 1223317230431895673;
@@ -217,7 +218,7 @@ namespace PokeCord.Services
         private async Task UpdatePlayerScores(Team team, int teamReward)
         {
             int maxRetries = 3;
-            int retryDelay = 1000; // 1 second
+            int retryDelay = 500; // 0.5 seconds
 
             // Loop through each player on the team
             foreach (ulong playerId in team.Players)
@@ -234,7 +235,9 @@ namespace PokeCord.Services
                             // Add pokemondollars in the amount of the team reward divided evenly amongst the team members
                             PlayerData playerData = originalPlayerData;
                             playerData.PokemonDollars += teamReward / team.Players.Count;
+                            if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; }
                             updateSuccessful = await SavePlayerDataAsync(playerData, originalPlayerData);
+                            if (updateSuccessful) { Console.WriteLine($"Prize of {teamReward / team.Players.Count} successfully awarded to {playerData.UserName}."); }
                         }
                     }
                     catch (Exception ex)
@@ -244,7 +247,6 @@ namespace PokeCord.Services
                         await Task.Delay(retryDelay);
                     }
                 }
-
                 if (!updateSuccessful)
                 {
                     Console.WriteLine($"Failed to update player score for user {playerId} after {maxRetries} retries.");
