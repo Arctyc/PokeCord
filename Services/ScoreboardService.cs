@@ -237,7 +237,10 @@ namespace PokeCord.Services
                             playerData.PokemonDollars += teamReward / team.Players.Count;
                             if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; }
                             updateSuccessful = await SavePlayerDataAsync(playerData, originalPlayerData);
-                            if (updateSuccessful) { Console.WriteLine($"Prize of {teamReward / team.Players.Count} successfully awarded to {playerData.UserName}."); }
+                            if (updateSuccessful) // Log for tracking
+                            {
+                                Console.WriteLine($"Prize of {teamReward / team.Players.Count} successfully awarded to {playerData.UserName}.");
+                            }
                         }
                     }
                     catch (Exception ex)
