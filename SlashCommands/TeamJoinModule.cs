@@ -77,7 +77,7 @@ namespace PokeCord.SlashCommands
                 Team? existingTeam = scoreboardService.GetTeams().FirstOrDefault(t => t.Id == playerData.TeamId);
                 if (existingTeam != null)
                 {
-                    await RespondAsync($"You are already on Team {existingTeam.Name}");
+                    await RespondAsync($"You are already on Team {existingTeam.Name}!");
                 }
                 else
                 {
