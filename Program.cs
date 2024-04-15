@@ -125,6 +125,7 @@ namespace PokeCord
             /*
             var givepokeballsCommand = new SlashCommandBuilder()
             */
+
         }
 
         private static IServiceProvider ConfigureServices()

@@ -62,6 +62,8 @@ namespace PokeCord.Services
         }
         public async Task RestockPokeballsAsync(object state)
         {
+            await Task.Delay(3000); // Wait 3 seconds.
+
             // Create a temporary copy of scoreboard to avoid conflicts
             var playerDataList = _scoreboard.Values.ToList();
 
