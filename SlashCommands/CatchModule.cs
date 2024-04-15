@@ -172,6 +172,7 @@ namespace PokeCord.SlashCommands
                 int pokemonDollarValue = pokemonExperienceValue / pokemonDollarRatio;
                 int adjustedPokemonDollarValue = pokemonDollarValue;
 
+                List<string> consumptionMessages = new List<string>();
                 // Consume Amulet Coin
                 if (hasAmuletCoin && amuletCoinCharges > 0)
                 {
@@ -182,6 +183,8 @@ namespace PokeCord.SlashCommands
                 if (hasAmuletCoin && amuletCoinCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(amuletCoinKey);
+                    string conMessage = $"{amuletCoinKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{amuletCoinKey} consumed by {username}");
                 }             
                 // Consume Lucky Egg
@@ -197,6 +200,8 @@ namespace PokeCord.SlashCommands
                 if (hasLuckyEgg && luckyEggCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(luckyEggKey);
+                    string conMessage = $"{luckyEggKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{luckyEggKey} consumed by {username}");
                 }
                 // Consume Exp. Share
@@ -209,12 +214,16 @@ namespace PokeCord.SlashCommands
                 if (hasExpShare && expShareCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(expShareKey);
+                    string conMessage = $"{expShareKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{expShareKey} consumed by {username}");
                 }
                 // Consume Shiny Charm
                 if (hasShinyCharm && pokemonData.Shiny)
                 {
                     playerData.PokeMartItems.Remove(shinyCharmKey);
+                    string conMessage = $"{shinyCharmKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{shinyCharmKey} consumed by {username}");
                 }
                 // Consume X Speed
@@ -227,6 +236,8 @@ namespace PokeCord.SlashCommands
                 {
                     // Remove X Speed
                     playerData.PokeMartItems.Remove(xSpeedKey);
+                    string conMessage = $"{xSpeedKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"Removed {xSpeedKey} from {username}");
                 }
 
@@ -284,6 +295,8 @@ namespace PokeCord.SlashCommands
                     playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
                 }
 
+                //TODO: Append catch countdown to the following message
+
                 // Format Discord output
                 string message = $"{(onTeam ? "Team " : "")}{playerTeam} {username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
                                  $"{richPokemonName} worth {pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}exp and " +
@@ -295,12 +308,17 @@ namespace PokeCord.SlashCommands
                             .WithImageUrl(pokemonData.ImageUrl)
                             .Build()
                 };
+
+                // Append additional messages
                 if (newBadgeMessages != null)
                 {
-                    string newMessage = String.Join("\n", newBadgeMessages);
-                    newMessage += "\n" + message;
-                    message = newMessage;
+                    AppendListMessages(newBadgeMessages, message);
                 }
+                if (consumptionMessages != null)
+                {
+                    AppendListMessages(consumptionMessages, message);
+                }
+
                 // Send Discord reply
                 await RespondAsync(message, embeds);
             }
@@ -309,6 +327,13 @@ namespace PokeCord.SlashCommands
                 await RespondAsync("Error catching a Pokémon :( @arctycfox What's up?");
                 Console.WriteLine($"{username}'s command failed at " + DateTime.Now.ToString());
             }
+        }
+
+        private string AppendListMessages(List<string> messages, string originalMessage)
+        {
+            string newMessage = String.Join("\n", messages);
+            originalMessage += "\n" + newMessage;
+            return originalMessage;
         }
 
         private void GiveExpToTeamMembers(ulong user, int teamId, int pokemonExperience)
