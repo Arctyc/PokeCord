@@ -45,6 +45,10 @@ namespace PokeCord.Data
                     // Add the badge to the player's new badges
                     newBadges.Add(badge);
                 }
+                else
+                {
+                    Console.WriteLine($"{playerData.UserName} does not qualify for {badge.Name}");
+                }
                 // Check shiny badge
                 if (badge.Id == 2 && (pokemonData.Shiny || playerData.CaughtPokemon.Any(p => p.Shiny)))
                 {

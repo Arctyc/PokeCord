@@ -250,6 +250,7 @@ namespace PokeCord.SlashCommands
                 if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; } // Cap player pokemondollars
                 playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                 playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
+
                 // Check for new badges
                 BadgeManager badgeManager = new BadgeManager();
                 List<Badge> newBadges = badgeManager.UpdateBadgesAsync(playerData, badges, pokemonData);
@@ -312,11 +313,11 @@ namespace PokeCord.SlashCommands
                 // Append additional messages
                 if (newBadgeMessages != null)
                 {
-                    AppendListMessages(newBadgeMessages, message);
+                    message = AppendListMessages(newBadgeMessages, message);
                 }
                 if (consumptionMessages != null)
                 {
-                    AppendListMessages(consumptionMessages, message);
+                    message = AppendListMessages(consumptionMessages, message);
                 }
 
                 // Send Discord reply
