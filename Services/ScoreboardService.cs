@@ -186,12 +186,11 @@ namespace PokeCord.Services
             switch (teamRank)
             {
                 case 0:
-                    return (int)(totalReward * 0.5); // 50% of the total reward
-
+                    return (int)(totalReward * 0.5); // 50% to Team 1
                 case 1:
-                    return (int)((totalReward * 0.3) / (numTeams - 1)); // Split the remaining 50% equally among the other teams
+                    return (int)(totalReward * 0.3); // 30% to Team 2
                 case 2:
-                    return (int)((totalReward * 0.2) / (numTeams - 1)); // Split the remaining 50% equally among the other teams
+                    return (int)(totalReward * 0.2); // 20% to Team 3
                 default:
                     Console.WriteLine($"Attempted to get reward for a {teamRank + 1}th place team.");
                     return 0;
