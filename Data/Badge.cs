@@ -38,7 +38,9 @@ namespace PokeCord.Data
                     badge.GymPokemon = new List<PokemonData>();
                 }
                 // Check whether player has caught all pokemon for this badge
-                if (badge.GymPokemon.All(gymPokemon => playerData.CaughtPokemon.Contains(gymPokemon)) && badge.Id != 2)
+                if (badge.GymPokemon.All(gymPokemon => playerData.CaughtPokemon.Any(
+                                         ownPokemon => ownPokemon.PokedexId == gymPokemon.PokedexId))
+                                         && badge.Id != 2)
                 {
                     // Add the badge to the player's new badges
                     newBadges.Add(badge);

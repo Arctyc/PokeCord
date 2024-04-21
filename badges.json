@@ -20,16 +20,16 @@
         "Description": "This badge is awarded for catching all of the Pewter Gym Pokémon. You Brock!",
         "BonusPokeballs":  20,
         "GymPokemon": [
-          { "Id": 27, "Name": "Sandshrew" },
-          { "Id": 50, "Name": "Diglett" },
-          { "Id": 74, "Name": "Geodude" },
-          { "Id": 75, "Name": "Graveler" },
-          { "Id": 76, "Name": "Golem" },
-          { "Id": 95, "Name": "Onix" },
-          { "Id": 111, "Name": "Rhyhorn" },
-          { "Id": 112, "Name": "Rhydon" },
-          { "Id": 139, "Name": "Omastar" },
-          { "Id": 141, "Name": "Kabutops" }
+          { "PokedexId": 27, "Name": "Sandshrew" },
+          { "PokedexId": 50, "Name": "Diglett" },
+          { "PokedexId": 74, "Name": "Geodude" },
+          { "PokedexId": 75, "Name": "Graveler" },
+          { "PokedexId": 76, "Name": "Golem" },
+          { "PokedexId": 95, "Name": "Onix" },
+          { "PokedexId": 111, "Name": "Rhyhorn" },
+          { "PokedexId": 112, "Name": "Rhydon" },
+          { "PokedexId": 139, "Name": "Omastar" },
+          { "PokedexId": 141, "Name": "Kabutops" }
         ]
       },
     {
@@ -39,17 +39,17 @@
       "Description": "This badge is awarded for catching all of the Cerulean Gym Pokémon. I'm getting Misty-eyed!",
       "BonusPokeballs":  20,
       "GymPokemon": [
-        { "Id": 55, "Name": "Golduck" },
-        { "Id": 90, "Name": "Shellder" },
-        { "Id": 91, "Name": "Cloyster" },
-        { "Id": 116, "Name": "Horsea" },
-        { "Id": 118, "Name": "Goldeen" },
-        { "Id": 119, "Name": "Seaking" },
-        { "Id": 120, "Name": "Staryu" },
-        { "Id": 121, "Name": "Starmie" },
-        { "Id": 131, "Name": "Lapras" },
-        { "Id": 184, "Name": "Azumarill" },
-        { "Id": 195, "Name": "Quagsire" }
+        { "PokedexId": 55, "Name": "Golduck" },
+        { "PokedexId": 90, "Name": "Shellder" },
+        { "PokedexId": 91, "Name": "Cloyster" },
+        { "PokedexId": 116, "Name": "Horsea" },
+        { "PokedexId": 118, "Name": "Goldeen" },
+        { "PokedexId": 119, "Name": "Seaking" },
+        { "PokedexId": 120, "Name": "Staryu" },
+        { "PokedexId": 121, "Name": "Starmie" },
+        { "PokedexId": 131, "Name": "Lapras" },
+        { "PokedexId": 184, "Name": "Azumarill" },
+        { "PokedexId": 195, "Name": "Quagsire" }
       ]
     },
     {
@@ -59,16 +59,16 @@
       "Description": "This badge is awarded for catching all of the Vermilion Gym Pokémon. You're on a Surge!",
       "BonusPokeballs":  20,
       "GymPokemon": [
-        { "Id": 25, "Name": "Pikachu" },
-        { "Id": 26, "Name": "Raichu" },
-        { "Id": 81, "Name": "Magnemite" },
-        { "Id": 82, "Name": "Magneton" },
-        { "Id": 100, "Name": "Voltorb" },
-        { "Id": 101, "Name": "Electrode" },
-        { "Id": 125, "Name": "Electabuzz" },
-        { "Id": 135, "Name": "Jolteon" },
-        { "Id": 180, "Name": "Flaaffy" },
-        { "Id": 309, "Name": "Electrike" }
+        { "PokedexId": 25, "Name": "Pikachu" },
+        { "PokedexId": 26, "Name": "Raichu" },
+        { "PokedexId": 81, "Name": "Magnemite" },
+        { "PokedexId": 82, "Name": "Magneton" },
+        { "PokedexId": 100, "Name": "Voltorb" },
+        { "PokedexId": 101, "Name": "Electrode" },
+        { "PokedexId": 125, "Name": "Electabuzz" },
+        { "PokedexId": 135, "Name": "Jolteon" },
+        { "PokedexId": 180, "Name": "Flaaffy" },
+        { "PokedexId": 309, "Name": "Electrike" }
       ]
     },
     {
@@ -78,16 +78,16 @@
       "Description": "This badge is awarded for catching all of the Celadon Gym Pokémon. You passed with flying colors!",
       "BonusPokeballs":  20,
       "GymPokemon": [
-        { "Id": 1, "Name": "Bulbasaur" },
-        { "Id": 2, "Name": "Ivysaur" },
-        { "Id": 43, "Name": "Oddish" },
-        { "Id": 44, "Name": "Gloom" },
-        { "Id": 45, "Name": "Vileplume" },
-        { "Id": 69, "Name": "Bellsprout" },
-        { "Id": 70, "Name": "Weepinbell" },
-        { "Id": 71, "Name": "Victreebell" },
-        { "Id": 102, "Name": "Exeggcute" },
-        { "Id": 114, "Name": "Tangela" }
+        { "PokedexId": 1, "Name": "Bulbasaur" },
+        { "PokedexId": 2, "Name": "Ivysaur" },
+        { "PokedexId": 43, "Name": "Oddish" },
+        { "PokedexId": 44, "Name": "Gloom" },
+        { "PokedexId": 45, "Name": "Vileplume" },
+        { "PokedexId": 69, "Name": "Bellsprout" },
+        { "PokedexId": 70, "Name": "Weepinbell" },
+        { "PokedexId": 71, "Name": "Victreebell" },
+        { "PokedexId": 102, "Name": "Exeggcute" },
+        { "PokedexId": 114, "Name": "Tangela" }
       ]
     },
     {
@@ -97,16 +97,16 @@
       "Description": "This badge is awarded for catching all of the Fuchsia Gym Pokémon. Insert clever pun here!",
       "BonusPokeballs":  20,
       "GymPokemon": [
-        { "Id": 24, "Name": "Arbok" },
-        { "Id": 31, "Name": "Nidoqueen" },
-        { "Id": 34, "Name": "Nidoking" },
-        { "Id": 48, "Name": "Venonat" },
-        { "Id": 49, "Name": "Venomoth" },
-        { "Id": 89, "Name": "Muk" },
-        { "Id": 109, "Name": "Koffing" },
-        { "Id": 110, "Name": "Weezing" },
-        { "Id": 168, "Name": "Ariados" },
-        { "Id": 169, "Name": "Crobat" }
+        { "PokedexId": 24, "Name": "Arbok" },
+        { "PokedexId": 31, "Name": "Nidoqueen" },
+        { "PokedexId": 34, "Name": "Nidoking" },
+        { "PokedexId": 48, "Name": "Venonat" },
+        { "PokedexId": 49, "Name": "Venomoth" },
+        { "PokedexId": 89, "Name": "Muk" },
+        { "PokedexId": 109, "Name": "Koffing" },
+        { "PokedexId": 110, "Name": "Weezing" },
+        { "PokedexId": 168, "Name": "Ariados" },
+        { "PokedexId": 169, "Name": "Crobat" }
       ]
     },
     {
@@ -116,16 +116,16 @@
       "Description": "This badge is awarded for catching all of the Saffron Gym Pokémon. Good thing you weren't turned into a doll!",
       "BonusPokeballs":  20,
       "GymPokemon": [
-        { "Id": 63, "Name": "Abra" },
-        { "Id": 64, "Name": "Kadabra" },
-        { "Id": 65, "Name": "Alakazam" },
-        { "Id": 79, "Name": "Slowpoke" },
-        { "Id": 80, "Name": "Slowbro" },
-        { "Id": 92, "Name": "Gastly" },
-        { "Id": 93, "Name": "Haunter" },
-        { "Id": 96, "Name": "Drowzee" },
-        { "Id": 97, "Name": "Hypno" },
-        { "Id": 122, "Name": "Mr. Mime" }
+        { "PokedexId": 63, "Name": "Abra" },
+        { "PokedexId": 64, "Name": "Kadabra" },
+        { "PokedexId": 65, "Name": "Alakazam" },
+        { "PokedexId": 79, "Name": "Slowpoke" },
+        { "PokedexId": 80, "Name": "Slowbro" },
+        { "PokedexId": 92, "Name": "Gastly" },
+        { "PokedexId": 93, "Name": "Haunter" },
+        { "PokedexId": 96, "Name": "Drowzee" },
+        { "PokedexId": 97, "Name": "Hypno" },
+        { "PokedexId": 122, "Name": "Mr. Mime" }
       ]
     },
     {
@@ -135,17 +135,17 @@
       "Description": "This badge is awarded for catching all of the Cinnabar Gym Pokémon. You're just Blaine better!",
       "BonusPokeballs":  20,
       "GymPokemon": [        
-        { "Id": 5, "Name": "Charmeleon" },
-        { "Id": 37, "Name": "Vulpix" },
-        { "Id": 38, "Name": "Ninetales" },
-        { "Id": 58, "Name": "Growlithe" },
-        { "Id": 59, "Name": "Arcanine" },
-        { "Id": 77, "Name": "Ponyta" },
-        { "Id": 78, "Name": "Rapidash" },
-        { "Id": 126, "Name": "Magmar" },
-        { "Id": 219, "Name": "Magcargo" },
-        { "Id": 322, "Name": "Numel" },
-        { "Id": 324, "Name": "Torkoal" }
+        { "PokedexId": 5, "Name": "Charmeleon" },
+        { "PokedexId": 37, "Name": "Vulpix" },
+        { "PokedexId": 38, "Name": "Ninetales" },
+        { "PokedexId": 58, "Name": "Growlithe" },
+        { "PokedexId": 59, "Name": "Arcanine" },
+        { "PokedexId": 77, "Name": "Ponyta" },
+        { "PokedexId": 78, "Name": "Rapidash" },
+        { "PokedexId": 126, "Name": "Magmar" },
+        { "PokedexId": 219, "Name": "Magcargo" },
+        { "PokedexId": 322, "Name": "Numel" },
+        { "PokedexId": 324, "Name": "Torkoal" }
       ]
     },
     {
@@ -155,16 +155,17 @@
       "Description": "This badge is awarded for catching all of the Viridian Gym Pokémon. Giovanni-der how you did that!",
       "BonusPokeballs":  20,
       "GymPokemon": [
-        { "Id": 28, "Name": "Sandslash" },
-        { "Id": 51, "Name": "Dugtrio" },
-        { "Id": 53, "Name": "Persian" },
-        { "Id": 66, "Name": "Machop" },
-        { "Id": 67, "Name": "Machoke" },
-        { "Id": 75, "Name": "Graveler" },
-        { "Id": 82, "Name": "Nidorino" },
-        { "Id": 95, "Name": "Onix" },
-        { "Id": 105, "Name": "Marowak" },
-        { "Id": 128, "Name": "Tauros" }
+        { "PokedexId": 28, "Name": "Sandslash" },
+        { "PokedexId": 51, "Name": "Dugtrio" },
+        { "PokedexId": 53, "Name": "Persian" },
+        { "PokedexId": 66, "Name": "Machop" },
+        { "PokedexId": 67, "Name": "Machoke" },
+        { "PokedexId": 75, "Name": "Graveler" },
+        { "PokedexId": 82, "Name": "Nidorino" },
+        { "PokedexId": 95, "Name": "Onix" },
+        { "PokedexId": 105, "Name": "Marowak" },
+        { "PokedexId": 128, "Name": "Tauros" }
       ]
     }
   ]
+
