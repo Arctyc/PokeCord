@@ -50,7 +50,7 @@ namespace PokeCord.Helpers
             string message = string.Empty;
             if (_scoreboard.TryGetPlayerData(userId, out var playerData))
             {
-                message += $"{username} has: ";
+                message += $"You have: ";
                 foreach(var key in playerData.PokeMartItems)
                 {
                     message += $"{key}";
