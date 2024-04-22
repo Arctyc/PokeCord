@@ -24,10 +24,10 @@ namespace PokeCord.SlashCommands
             switch (pokemartItem)
             {
                 case "My Items":
-                    await RespondAsync(await pokemart.GetUserItems(Context));
+                    await RespondAsync(await pokemart.GetUserItems(Context), ephemeral: true);
                     return;
                 case "Menu":
-                    await RespondAsync(await pokemart.GetMenu());
+                    await RespondAsync(await pokemart.GetMenu(), ephemeral: true);
                     return;
                 case "Poké Balls":
                     message = await pokemart.PurchasePokeballs(Context, pokemartItem);
