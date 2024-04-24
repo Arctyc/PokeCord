@@ -6,6 +6,7 @@ using PokeCord.Data;
 using PokeCord.Helpers;
 using PokeCord.Services;
 using System.Collections.Concurrent;
+using System.Timers;
 
 
 namespace PokeCord.SlashCommands
@@ -115,21 +116,13 @@ namespace PokeCord.SlashCommands
             bool hasShinyCharm = playerData.PokeMartItems.TryGetValue(shinyCharmKey, out int shinyCharmCharges);
             bool hasXSpeed = playerData.PokeMartItems.TryGetValue(xSpeedKey, out xSpeedCharges);
 
-            // Check cooldown information
-            if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
+            // NEW COOLDOWN CHECK
+            TimeSpan elapsed;
+            TimeSpan playerCDT;
+            (bool notFirstCatch, DateTime lastUsed) = GetLastUsedTime(userId);
+            if (notFirstCatch)
             {
-                Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
-                TimeSpan elapsed = DateTime.UtcNow - lastUsed;
-                TimeSpan playerCDT = _standardCooldownTime;
-
-                // Check if player has X Speed
-                if (hasXSpeed && xSpeedCharges < 10)
-                {
-                    Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
-                    playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown
-                }
-
-                // Compare time since last catch to player cooldown
+                (elapsed, playerCDT) = GetPlayerCooldown(userId, username, hasXSpeed, xSpeedCharges);
                 if (elapsed < playerCDT)
                 {
                     int timeRemaining = (int)playerCDT.TotalSeconds - (int)elapsed.TotalSeconds;
@@ -140,12 +133,11 @@ namespace PokeCord.SlashCommands
                                        ephemeral: true);
                     return;
                 }
-            }
+            }            
             else
             {
                 Console.WriteLine($"No last command usage by {username} with userID {userId}");
             }
-
             // Player is not on cooldown
 
             // Try to add a new lastUsed time for the user, if it returns false, it exists, so update
@@ -323,6 +315,8 @@ namespace PokeCord.SlashCommands
                 // Append pokeballs remaining with += to avoid having to pass the message.
                 message += AppendPokeballsRemaining(playerData);
 
+                message += AppendNextCatch(userId, username, hasXSpeed, xSpeedCharges);
+
                 // Send Discord reply
                 await RespondAsync(message, embeds);
             }
@@ -343,6 +337,51 @@ namespace PokeCord.SlashCommands
         private string AppendPokeballsRemaining(PlayerData playerData)
         {
             return $"{playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
+        }
+
+        private string AppendNextCatch(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
+        {
+            (TimeSpan elapsed, TimeSpan playerCDT) = GetPlayerCooldown(userId, username, hasXSpeed, xSpeedCharges);
+            int timeRemaining = (int)playerCDT.TotalSeconds - (int)elapsed.TotalSeconds;
+            var cooldownUnixTime = (long)DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            return $" Next catch <t:{cooldownUnixTime}:R>.";
+        }
+
+        private (TimeSpan, TimeSpan) GetPlayerCooldown(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
+        {
+            (bool notFirstCatch, DateTime lastUsed) = GetLastUsedTime(userId);
+            if (notFirstCatch)
+            {
+                Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
+                TimeSpan elapsed = DateTime.UtcNow - lastUsed;
+                TimeSpan playerCDT = _standardCooldownTime;
+
+                // Check if player has X Speed
+                if (hasXSpeed && xSpeedCharges < 10)
+                {
+                    Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
+                    playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown
+                }
+
+                return (elapsed, playerCDT);
+            }
+            else
+            {
+                Console.WriteLine($"No last command usage by {username} with userID {userId}");
+                return (TimeSpan.FromSeconds(-1), TimeSpan.FromSeconds(-1));
+            }
+        }
+
+        private (bool, DateTime) GetLastUsedTime(ulong userId)
+        {
+            if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
+            {
+                return (true, lastUsed);
+            }
+            else
+            {
+                return (false, DateTime.MinValue);
+            }
         }
 
         private void GiveExpToTeamMembers(ulong user, int teamId, int pokemonExperience)
