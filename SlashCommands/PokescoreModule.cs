@@ -93,7 +93,7 @@ namespace PokeCord.SlashCommands
                         playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
                     }
                     // Format Discord reply
-                    string message = $"{(onTeam ? $"[Team {playerTeam} {username}]" : $"{username}")} has caught {catches} Pokémon totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
+                    string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} has caught {catches} Pokémon totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
                                      $"Weekly Rank: {rank}. Lifetime Rank: {playerRank}\n" +
                                      $"Weekly Experience: {weeklyExperience}. Weekly Average Exp: {weeklyAverageExp}\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
