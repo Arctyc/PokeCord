@@ -265,7 +265,7 @@ namespace PokeCord.SlashCommands
                         playerData.Pokeballs += badge.BonusPokeballs;
 
                         string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Poké Balls!\n" +
-                                                 $"{badge.Description}\n";
+                                                 $"{badge.Description}";
                         newBadgeMessages.Add(newBadgeMessage);
                     }
                 }
@@ -300,10 +300,10 @@ namespace PokeCord.SlashCommands
                 //TODO: Append catch countdown to the following message
 
                 // Format Discord output
-                string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                 $"{richPokemonName} worth {pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}exp and " +
-                                 $"{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars!\n" +
-                                 $"{(pokemonData.Shiny ? "+10 Poké Balls!" : "" )} {playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
+                string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} " +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
+                                 $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
+                                 $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
                 Embed[] embeds = new Embed[]
                 {
                             new EmbedBuilder()
@@ -320,6 +320,8 @@ namespace PokeCord.SlashCommands
                 {
                     message = AppendListMessages(consumptionMessages, message);
                 }
+                // Append pokeballs remaining with += to avoid having to pass the message.
+                message += AppendPokeballsRemaining(playerData);
 
                 // Send Discord reply
                 await RespondAsync(message, embeds);
@@ -336,6 +338,11 @@ namespace PokeCord.SlashCommands
             string newMessage = String.Join("\n", messages);
             originalMessage += "\n" + newMessage;
             return originalMessage;
+        }
+
+        private string AppendPokeballsRemaining(PlayerData playerData)
+        {
+            return $"{playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
         }
 
         private void GiveExpToTeamMembers(ulong user, int teamId, int pokemonExperience)
