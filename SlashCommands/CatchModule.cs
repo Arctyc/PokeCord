@@ -304,12 +304,14 @@ namespace PokeCord.SlashCommands
                 };
 
                 // Append additional messages
-                if (newBadgeMessages != null)
+                if (newBadgeMessages.Count > 0)
                 {
+                    Console.WriteLine($"Appending new badge messages");
                     message = AppendListMessages(newBadgeMessages, message);
                 }
-                if (consumptionMessages != null)
+                if (consumptionMessages.Count > 0)
                 {
+                    Console.WriteLine($"Appending consumption messages");
                     message = AppendListMessages(consumptionMessages, message);
                 }
                 // Append pokeballs remaining with += to avoid having to pass the message.
@@ -336,7 +338,7 @@ namespace PokeCord.SlashCommands
 
         private string AppendPokeballsRemaining(PlayerData playerData)
         {
-            return $"{playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
+            return $"\n{playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
         }
 
         private string AppendNextCatch(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
