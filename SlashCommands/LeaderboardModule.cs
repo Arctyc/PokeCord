@@ -33,7 +33,7 @@ namespace PokeCord.SlashCommands
             }
 
             // Get a sorted list of players
-            var leaders = scoreboardService.GetLeaderboard();
+            var leaders = scoreboardService.GetWeeklyLeaderboard();
 
             // Add a message line for each of the top 10
             List<string> leaderMessages = new List<string>();
@@ -47,14 +47,15 @@ namespace PokeCord.SlashCommands
                 int averageExp = 0;
                 string leaderName = leaders[i].UserName;
                 //FIX: Only count WeeklyCaughtPokemon exp for averaging, instead of weeklyexp which includes exp share
-                string leaderExp = leaders[i].WeeklyExperience.ToString("N0");
-                if (leaders[i].WeeklyExperience <= 0)
+                int leaderWeeklyExp = leaders[i].WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0);
+                string leaderExp = leaderWeeklyExp.ToString("N0");
+                if (leaderWeeklyExp <= 0)
                 {
                     averageExp = 0;
                 }
                 else
                 {
-                    averageExp = leaders[i].WeeklyExperience / leaders[i].WeeklyCaughtPokemon.Count;
+                    averageExp = leaderWeeklyExp / leaders[i].WeeklyCaughtPokemon.Count;
                 }
                 string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Average exp/catch: {averageExp}";
                 leaderMessages.Add(message);

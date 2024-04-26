@@ -284,7 +284,12 @@ namespace PokeCord.Services
             Console.WriteLine("Teams have been reset at UTC: " + DateTime.UtcNow.ToString());
         }
 
-        public List<PlayerData> GetLeaderboard()
+        public List<PlayerData> GetLifetimeLeaderboard()
+        {
+            return _scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
+        }
+
+        public List<PlayerData> GetWeeklyLeaderboard()
         {
             return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyExperience).ToList();
         }
