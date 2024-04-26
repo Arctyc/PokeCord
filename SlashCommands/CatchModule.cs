@@ -28,6 +28,7 @@ namespace PokeCord.SlashCommands
         public const string expShareKey = "Exp. Share";
         public const string luckyEggKey = "Lucky Egg";
         public const int luckyEggMultiplier = 2;
+        public const int luckyEggMaximumExp = 100;
         public const string shinyCharmKey = "Shiny Charm";
         public const string xSpeedKey = "X Speed";
 
@@ -183,7 +184,7 @@ namespace PokeCord.SlashCommands
                 // Consume Lucky Egg
                 if (hasLuckyEgg && luckyEggCharges > 0)
                 {
-                    if (pokemonExperienceValue < 150)
+                    if (pokemonExperienceValue < luckyEggMaximumExp)
                     {
                         pokemonExperienceValue *= luckyEggMultiplier;
                         luckyEggCharges--;
@@ -392,13 +393,14 @@ namespace PokeCord.SlashCommands
             if (team != null)
             {
                 var otherTeamMembers = team.Players.Where(p => p != user);
+                int sharedExp = pokemonExperience / otherTeamMembers.Count(); // Split 1x exp among other team members
                 foreach (var player in otherTeamMembers)
                 {
                     if (_scoreboard.TryGetPlayerData(player, out var playerData))
                     {
-                        playerData.WeeklyExperience += pokemonExperience;
+                        playerData.WeeklyExperience += sharedExp;
                         _scoreboard.TryUpdatePlayerData(player, playerData, playerData);
-                        Console.WriteLine($"Added {pokemonExperience} Exp to {playerData.UserName} due to {expShareKey}");
+                        Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
                     }
                 }
             }
