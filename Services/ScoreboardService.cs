@@ -14,7 +14,7 @@ namespace PokeCord.Services
 {
     public class ScoreboardService
     {
-        public const int pokeballRestockAmount = 50; // Amount of Pokeballs given per restock (currently daily)
+        public const int pokeballRestockAmount = 30; // Amount of Pokeballs given per restock (currently daily)
         public const int currencyCap = 5000; // Max amount of pokemon dollars a player can have
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
