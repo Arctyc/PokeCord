@@ -17,8 +17,8 @@ namespace PokeCord.Helpers
         // Poke Mart Menu
         public const int CostPokeballs = 500;
         public const int AmountPokeballs = 10;
-        public const int CostAmuletCoin = 500; // Was 250
-        public const int AmountAmuletCoin = 50;
+        public const int CostAmuletCoin = 400;
+        public const int AmountAmuletCoin = 40;
         public const int CostExpShare = 1500;
         public const int AmountExpShare = 10;
         public const int CostLuckyEgg = 500;
