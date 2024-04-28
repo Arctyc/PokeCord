@@ -6,6 +6,7 @@ using PokeCord.Data;
 using PokeCord.Helpers;
 using PokeCord.Services;
 using System.Collections.Concurrent;
+using System.Timers;
 
 
 namespace PokeCord.SlashCommands
@@ -27,6 +28,7 @@ namespace PokeCord.SlashCommands
         public const string expShareKey = "Exp. Share";
         public const string luckyEggKey = "Lucky Egg";
         public const int luckyEggMultiplier = 2;
+        public const int luckyEggMaximumExp = 100;
         public const string shinyCharmKey = "Shiny Charm";
         public const string xSpeedKey = "X Speed";
 
@@ -115,21 +117,13 @@ namespace PokeCord.SlashCommands
             bool hasShinyCharm = playerData.PokeMartItems.TryGetValue(shinyCharmKey, out int shinyCharmCharges);
             bool hasXSpeed = playerData.PokeMartItems.TryGetValue(xSpeedKey, out xSpeedCharges);
 
-            // Check cooldown information
-            if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
+            // NEW COOLDOWN CHECK
+            TimeSpan elapsed;
+            TimeSpan playerCDT;
+            (bool notFirstCatch, DateTime lastUsed) = GetLastUsedTime(userId);
+            if (notFirstCatch)
             {
-                Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
-                TimeSpan elapsed = DateTime.UtcNow - lastUsed;
-                TimeSpan playerCDT = _standardCooldownTime;
-
-                // Check if player has X Speed
-                if (hasXSpeed && xSpeedCharges < 10)
-                {
-                    Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
-                    playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown
-                }
-
-                // Compare time since last catch to player cooldown
+                (elapsed, playerCDT) = GetPlayerCooldown(userId, username, hasXSpeed, xSpeedCharges);
                 if (elapsed < playerCDT)
                 {
                     int timeRemaining = (int)playerCDT.TotalSeconds - (int)elapsed.TotalSeconds;
@@ -140,12 +134,11 @@ namespace PokeCord.SlashCommands
                                        ephemeral: true);
                     return;
                 }
-            }
+            }            
             else
             {
                 Console.WriteLine($"No last command usage by {username} with userID {userId}");
             }
-
             // Player is not on cooldown
 
             // Try to add a new lastUsed time for the user, if it returns false, it exists, so update
@@ -173,6 +166,7 @@ namespace PokeCord.SlashCommands
                 int pokemonDollarValue = pokemonExperienceValue / pokemonDollarRatio;
                 int adjustedPokemonDollarValue = pokemonDollarValue;
 
+                List<string> consumptionMessages = new List<string>();
                 // Consume Amulet Coin
                 if (hasAmuletCoin && amuletCoinCharges > 0)
                 {
@@ -183,12 +177,14 @@ namespace PokeCord.SlashCommands
                 if (hasAmuletCoin && amuletCoinCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(amuletCoinKey);
+                    string conMessage = $"{amuletCoinKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{amuletCoinKey} consumed by {username}");
                 }             
                 // Consume Lucky Egg
                 if (hasLuckyEgg && luckyEggCharges > 0)
                 {
-                    if (pokemonExperienceValue < 150)
+                    if (pokemonExperienceValue < luckyEggMaximumExp)
                     {
                         pokemonExperienceValue *= luckyEggMultiplier;
                         luckyEggCharges--;
@@ -198,6 +194,8 @@ namespace PokeCord.SlashCommands
                 if (hasLuckyEgg && luckyEggCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(luckyEggKey);
+                    string conMessage = $"{luckyEggKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{luckyEggKey} consumed by {username}");
                 }
                 // Consume Exp. Share
@@ -210,12 +208,16 @@ namespace PokeCord.SlashCommands
                 if (hasExpShare && expShareCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(expShareKey);
+                    string conMessage = $"{expShareKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{expShareKey} consumed by {username}");
                 }
                 // Consume Shiny Charm
                 if (hasShinyCharm && pokemonData.Shiny)
                 {
                     playerData.PokeMartItems.Remove(shinyCharmKey);
+                    string conMessage = $"{shinyCharmKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{shinyCharmKey} consumed by {username}");
                 }
                 // Consume X Speed
@@ -228,6 +230,8 @@ namespace PokeCord.SlashCommands
                 {
                     // Remove X Speed
                     playerData.PokeMartItems.Remove(xSpeedKey);
+                    string conMessage = $"{xSpeedKey} consumed.";
+                    consumptionMessages.Add(conMessage);
                     Console.WriteLine($"Removed {xSpeedKey} from {username}");
                 }
 
@@ -240,6 +244,7 @@ namespace PokeCord.SlashCommands
                 if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; } // Cap player pokemondollars
                 playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                 playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
+
                 // Check for new badges
                 BadgeManager badgeManager = new BadgeManager();
                 List<Badge> newBadges = badgeManager.UpdateBadgesAsync(playerData, badges, pokemonData);
@@ -253,7 +258,7 @@ namespace PokeCord.SlashCommands
                         playerData.Pokeballs += badge.BonusPokeballs;
 
                         string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Poké Balls!\n" +
-                                                 $"{badge.Description}\n";
+                                                 $"{badge.Description}";
                         newBadgeMessages.Add(newBadgeMessage);
                     }
                 }
@@ -285,23 +290,36 @@ namespace PokeCord.SlashCommands
                     playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
                 }
 
+                //TODO: Append catch countdown to the following message
+
                 // Format Discord output
-                string message = $"{(onTeam ? "Team " : "")}{playerTeam} {username} caught {(startsWithVowel ? "an" : "a")} {(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                 $"{richPokemonName} worth {pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}exp and " +
-                                 $"{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars!\n" +
-                                 $"{(pokemonData.Shiny ? "+10 Poké Balls!" : "" )} {playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
+                string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} " +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
+                                 $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
+                                 $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
                 Embed[] embeds = new Embed[]
                 {
                             new EmbedBuilder()
                             .WithImageUrl(pokemonData.ImageUrl)
                             .Build()
                 };
-                if (newBadgeMessages != null)
+
+                // Append additional messages
+                if (newBadgeMessages.Count > 0)
                 {
-                    string newMessage = String.Join("\n", newBadgeMessages);
-                    newMessage += "\n" + message;
-                    message = newMessage;
+                    Console.WriteLine($"Appending new badge messages");
+                    message = AppendListMessages(newBadgeMessages, message);
                 }
+                if (consumptionMessages.Count > 0)
+                {
+                    Console.WriteLine($"Appending consumption messages");
+                    message = AppendListMessages(consumptionMessages, message);
+                }
+                // Append pokeballs remaining with += to avoid having to pass the message.
+                message += AppendPokeballsRemaining(playerData);
+
+                message += AppendNextCatch(userId, username, hasXSpeed, xSpeedCharges);
+
                 // Send Discord reply
                 await RespondAsync(message, embeds);
             }
@@ -312,19 +330,77 @@ namespace PokeCord.SlashCommands
             }
         }
 
+        private string AppendListMessages(List<string> messages, string originalMessage)
+        {
+            string newMessage = String.Join("\n", messages);
+            originalMessage += "\n" + newMessage;
+            return originalMessage;
+        }
+
+        private string AppendPokeballsRemaining(PlayerData playerData)
+        {
+            return $"\n{playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
+        }
+
+        private string AppendNextCatch(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
+        {
+            (TimeSpan elapsed, TimeSpan playerCDT) = GetPlayerCooldown(userId, username, hasXSpeed, xSpeedCharges);
+            int timeRemaining = (int)playerCDT.TotalSeconds - (int)elapsed.TotalSeconds;
+            var cooldownUnixTime = (long)DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            return $" Next catch <t:{cooldownUnixTime}:R>.";
+        }
+
+        private (TimeSpan, TimeSpan) GetPlayerCooldown(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
+        {
+            (bool notFirstCatch, DateTime lastUsed) = GetLastUsedTime(userId);
+            if (notFirstCatch)
+            {
+                Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
+                TimeSpan elapsed = DateTime.UtcNow - lastUsed;
+                TimeSpan playerCDT = _standardCooldownTime;
+
+                // Check if player has X Speed
+                if (hasXSpeed && xSpeedCharges < 10)
+                {
+                    Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
+                    playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown
+                }
+
+                return (elapsed, playerCDT);
+            }
+            else
+            {
+                Console.WriteLine($"No last command usage by {username} with userID {userId}");
+                return (TimeSpan.FromSeconds(-1), TimeSpan.FromSeconds(-1));
+            }
+        }
+
+        private (bool, DateTime) GetLastUsedTime(ulong userId)
+        {
+            if (_lastCommandUsage.TryGetValue(userId, out DateTime lastUsed))
+            {
+                return (true, lastUsed);
+            }
+            else
+            {
+                return (false, DateTime.MinValue);
+            }
+        }
+
         private void GiveExpToTeamMembers(ulong user, int teamId, int pokemonExperience)
         {
             var team = _scoreboard.GetTeams().FirstOrDefault(t => t.Id == teamId);
             if (team != null)
             {
                 var otherTeamMembers = team.Players.Where(p => p != user);
+                int sharedExp = pokemonExperience / otherTeamMembers.Count(); // Split 1x exp among other team members
                 foreach (var player in otherTeamMembers)
                 {
                     if (_scoreboard.TryGetPlayerData(player, out var playerData))
                     {
-                        playerData.WeeklyExperience += pokemonExperience;
+                        playerData.WeeklyExperience += sharedExp;
                         _scoreboard.TryUpdatePlayerData(player, playerData, playerData);
-                        Console.WriteLine($"Added {pokemonExperience} Exp to {playerData.UserName} due to {expShareKey}");
+                        Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
                     }
                 }
             }

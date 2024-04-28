@@ -48,7 +48,7 @@ namespace PokeCord.SlashCommands
                     message = await pokemart.PurchaseXSpeed(Context, pokemartItem);
                     break;
                 default:
-                    message = $"Sorry, the Poké Mart doesn't sell {pokemartItem}";
+                    message = $"Sorry, the Poké Mart doesn't sell {pokemartItem}. Use the command options to select an item.";
                     break;
             }
             // Respond in Discord

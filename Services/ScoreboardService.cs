@@ -14,7 +14,7 @@ namespace PokeCord.Services
 {
     public class ScoreboardService
     {
-        public const int pokeballRestockAmount = 50; // Amount of Pokeballs given per restock (currently daily)
+        public const int pokeballRestockAmount = 40; // Amount of Pokeballs given per restock (currently daily)
         public const int currencyCap = 5000; // Max amount of pokemon dollars a player can have
 
         private const ulong felicityPokeCordChannel = 1224090596801511494;
@@ -284,7 +284,12 @@ namespace PokeCord.Services
             Console.WriteLine("Teams have been reset at UTC: " + DateTime.UtcNow.ToString());
         }
 
-        public List<PlayerData> GetLeaderboard()
+        public List<PlayerData> GetLifetimeLeaderboard()
+        {
+            return _scoreboard.Values.ToList().OrderByDescending(p => p.Experience).ToList();
+        }
+
+        public List<PlayerData> GetWeeklyLeaderboard()
         {
             return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyExperience).ToList();
         }

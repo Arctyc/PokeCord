@@ -21,15 +21,16 @@ namespace PokeCord
         private static Timer _pokeballResetTimer;
         private static Timer _weeklyStartTimer;
         private static Timer _weeklyEndTimer;
+        private const int standardCooldownSeconds = 120;
+        private const int xSpeedCooldownSeconds = 10;
         //Testing
         private static Timer _quickStartTimer;
         private static Timer _quickEndTimer;
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
-        public static readonly TimeSpan _standardCooldown = TimeSpan.FromSeconds(120); // Cooldown time in seconds
-        public static readonly TimeSpan _xSpeedCooldown = TimeSpan.FromSeconds(60); // X Speed cooldown time in seconds
-        public static readonly TimeSpan _testingCooldown = TimeSpan.FromSeconds(3); // Testing only!
+        public static readonly TimeSpan _standardCooldown = TimeSpan.FromSeconds(standardCooldownSeconds); // Cooldown time in seconds
+        public static readonly TimeSpan _xSpeedCooldown = TimeSpan.FromSeconds(xSpeedCooldownSeconds); // X Speed cooldown time in seconds
 
         public static async Task Main()
         {
