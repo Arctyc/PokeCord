@@ -291,7 +291,7 @@ namespace PokeCord.Services
 
         public List<PlayerData> GetWeeklyLeaderboard()
         {
-            return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyExperience).ToList();
+            return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0)).ToList();
         }
 
         public async void AddTeam(Team team)
