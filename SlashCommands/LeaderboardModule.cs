@@ -57,7 +57,7 @@ namespace PokeCord.SlashCommands
                 {
                     averageExp = leaderWeeklyExp / leaders[i].WeeklyCaughtPokemon.Count;
                 }
-                string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Average exp/catch: {averageExp}";
+                string message = $"{i + 1}. {leaderName} - {leaderExp} exp. Avg: {averageExp}";
                 leaderMessages.Add(message);
             }
             // Output message to discord
