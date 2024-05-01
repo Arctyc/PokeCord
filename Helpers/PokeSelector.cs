@@ -15,7 +15,10 @@ namespace PokeCord.Helpers
         */
         private readonly int _maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         private readonly int _shinyRatio = 256; // Chance of catching a shiny
-        private readonly int _charmShinyRatio = 128;
+        private readonly int _charmShinyRatio = 128; // Chance of catching a shiny with shiny charm item
+
+        private const int shinyExpMultiplier = 4; // Amount to multiply base exp by if shiny
+
         private int defaultExperience = new Random().Next(75, 126); // exp to be used in the case that there is no base exp provided
 
         public PokeSelector()
@@ -56,7 +59,7 @@ namespace PokeCord.Helpers
                 {
                     // Assign shiny image
                     imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
-                    experience *= 4;
+                    experience *= shinyExpMultiplier; // Add shiny exp
                 }
                 return new PokemonData
                 {
