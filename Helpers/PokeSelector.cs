@@ -36,10 +36,9 @@ namespace PokeCord.Helpers
             //CSPRNG Random
             int randomId = RandomNumberGenerator.GetInt32(1, _maxPokemonId + 1);
             int shinyCheck = RandomNumberGenerator.GetInt32(1, playerShinyRatio + 1);
-            Console.WriteLine($"Used shiny ratio of 1:{playerShinyRatio}");
 
             bool shiny = shinyCheck == playerShinyRatio;
-            Console.WriteLine($"CSPRNG Randoms - PokemonID: {randomId}, Shiny Check: {shinyCheck}");
+            Console.WriteLine($"PokeSelector Values - PokemonID: {randomId}, Shiny Roll: {shinyCheck}/{playerShinyRatio}");
 
             Pokemon pokemon = await pokeApiClient.GetResourceAsync<Pokemon>(randomId);
 

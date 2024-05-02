@@ -52,7 +52,6 @@ namespace PokeCord.Services
         }
         public bool TryGetPlayerData(ulong userId, out PlayerData playerData)
         {
-            Console.WriteLine($"Scoreboard is trying to get PlayerData ID: {userId}");
             return _scoreboard.TryGetValue(userId, out playerData);
         }
 

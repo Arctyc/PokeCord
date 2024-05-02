@@ -39,7 +39,7 @@ namespace PokeCord.SlashCommands
 
         public CatchModule(IServiceProvider services)
         {
-            Console.Write("Loaded command: catch\n");
+            Console.Write("\n----------Loaded command: catch\n");
             _scoreboard = services.GetRequiredService<ScoreboardService>();
             _badgeService = services.GetRequiredService<BadgeService>();
             _pokeApiClient = services.GetRequiredService<PokeApiClient>();
@@ -56,7 +56,7 @@ namespace PokeCord.SlashCommands
 
             PlayerData originalPlayerData = new PlayerData();
             List<Badge> badges = _badgeService.GetBadges();
-            Console.WriteLine($"{username} used catch");
+            Console.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {username} used catch");
 
             // Get the PlayerData instance from the scoreboard
             PlayerData playerData = new PlayerData();
@@ -140,20 +140,6 @@ namespace PokeCord.SlashCommands
                 Console.WriteLine($"No last command usage by {username} with userID {userId}");
             }
             // Player is not on cooldown
-
-            // Try to add a new lastUsed time for the user, if it returns false, it exists, so update
-            if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
-            {
-                //Cooldown exists so update existing cooldown
-                if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
-                {
-                    Console.WriteLine($"Cooldown updated for {username}");
-                }
-                else
-                {
-                    Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
-                }
-            }
 
             // Generate a new pokemon
             PokeSelector pokeSelector = new PokeSelector();
@@ -274,8 +260,11 @@ namespace PokeCord.SlashCommands
                 {
                     Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                 }
+                
                 // Save the updated scoreboard data
                 await _scoreboard.SaveScoreboardAsync();
+
+                UpdatePlayerCooldown(userId, username, lastUsed);
 
                 // Clean up output variables
                 string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);
@@ -291,8 +280,6 @@ namespace PokeCord.SlashCommands
                     onTeam = true;
                     playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
                 }
-
-                //TODO: Append catch countdown to the following message
 
                 // Format Discord output
                 string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} " +
@@ -352,12 +339,29 @@ namespace PokeCord.SlashCommands
             return $" Next catch <t:{cooldownUnixTime}:R>.";
         }
 
+        private void UpdatePlayerCooldown(ulong userId, string username, DateTime lastUsed)
+        {
+            // Try to add a new lastUsed time for the user, if it returns false, it exists, so update
+            if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
+            {
+                //Cooldown exists so update existing cooldown
+                if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
+                {
+                    Console.WriteLine($"Cooldown updated for {username}");
+                }
+                else
+                {
+                    Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
+                }
+            }
+        }
+
         private (TimeSpan, TimeSpan) GetPlayerCooldown(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
         {
             (bool notFirstCatch, DateTime lastUsed) = GetLastUsedTime(userId);
             if (notFirstCatch)
             {
-                Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
+                Console.WriteLine($"Cooldown entry read: key {username} value {lastUsed}");
                 TimeSpan elapsed = DateTime.UtcNow - lastUsed;
                 TimeSpan playerCDT = _standardCooldownTime;
 
