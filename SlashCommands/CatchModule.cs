@@ -223,13 +223,15 @@ namespace PokeCord.SlashCommands
                 // Consume X Speed
                 if (hasXSpeed && xSpeedCharges > 0)
                 {
-                    playerData.PokeMartItems[xSpeedKey]--; // Remove 1 charge
-                    Console.WriteLine($"{xSpeedKey} used for {username}. {xSpeedCharges - 1} charges remaining.");
+                    xSpeedCharges--;
+                    playerData.PokeMartItems[xSpeedKey]--; // Remove 1 charge                    
+                    Console.WriteLine($"{xSpeedKey} used for {username}. {xSpeedCharges} charges remaining.");
                 }
                 if (hasXSpeed && xSpeedCharges == 0) // If this was the last X Speed, remove the key.
                 {
                     // Remove X Speed
                     playerData.PokeMartItems.Remove(xSpeedKey);
+                    hasXSpeed = false;
                     string conMessage = $"{xSpeedKey} consumed.";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"Removed {xSpeedKey} from {username}");
@@ -360,12 +362,11 @@ namespace PokeCord.SlashCommands
                 TimeSpan playerCDT = _standardCooldownTime;
 
                 // Check if player has X Speed
-                if (hasXSpeed && xSpeedCharges < 10)
+                if (hasXSpeed)
                 {
                     Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
                     playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown
                 }
-
                 return (elapsed, playerCDT);
             }
             else
