@@ -286,7 +286,7 @@ namespace PokeCord.SlashCommands
 
                 // Format Discord output
                 string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} " +
-                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(isCaught ? " 🆕" : "")}" +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(isCaught ? "" : " 🆕")}" +
                                  $"{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
