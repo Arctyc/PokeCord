@@ -22,7 +22,7 @@ namespace PokeCord.Helpers
         public const int CostExpShare = 1500;
         public const int AmountExpShare = 10;
         public const int CostLuckyEgg = 500;
-        public const int AmountLuckyEgg = 20;
+        public const int AmountLuckyEgg = 25;
         public const int CostShinyCharm = 1000;
         public const int AmountShinyCharm = 1;
         public const int CostXSpeed = 500;
