@@ -223,6 +223,9 @@ namespace PokeCord.SlashCommands
                     Console.WriteLine($"Removed {xSpeedKey} from {username}");
                 }
 
+                // Check if new
+                var isCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == pokemonData.PokedexId);
+
                 // Update the existing playerData instance
                 playerData.Experience += pokemonExperienceValue;// Award overall experience points
                 playerData.WeeklyExperience += pokemonExperienceValue;// Award weekly experience points
@@ -283,7 +286,8 @@ namespace PokeCord.SlashCommands
 
                 // Format Discord output
                 string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} " +
-                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(isCaught ? " 🆕" : "")}" +
+                                 $"{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
                 Embed[] embeds = new Embed[]
