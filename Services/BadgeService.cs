@@ -47,8 +47,6 @@ namespace PokeCord.Services
                         badge.BonusPokeballs = badge.BonusPokeballs;
                         badge.GymPokemon = badge.GymPokemon;
                     }
-
-                    Console.WriteLine($"Badges loaded from {filePath}");
                     return badges;
                 }
                 catch (Exception ex)

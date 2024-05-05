@@ -39,7 +39,7 @@ namespace PokeCord.SlashCommands
 
         public CatchModule(IServiceProvider services)
         {
-            Console.Write("Loaded command: catch\n");
+            Console.Write("\n----------Loaded command: catch\n");
             _scoreboard = services.GetRequiredService<ScoreboardService>();
             _badgeService = services.GetRequiredService<BadgeService>();
             _pokeApiClient = services.GetRequiredService<PokeApiClient>();
@@ -56,7 +56,7 @@ namespace PokeCord.SlashCommands
 
             PlayerData originalPlayerData = new PlayerData();
             List<Badge> badges = _badgeService.GetBadges();
-            Console.WriteLine($"{username} used catch");
+            Console.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {username} used catch");
 
             // Get the PlayerData instance from the scoreboard
             PlayerData playerData = new PlayerData();
@@ -141,20 +141,6 @@ namespace PokeCord.SlashCommands
             }
             // Player is not on cooldown
 
-            // Try to add a new lastUsed time for the user, if it returns false, it exists, so update
-            if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
-            {
-                //Cooldown exists so update existing cooldown
-                if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
-                {
-                    Console.WriteLine($"Cooldown updated for {username}");
-                }
-                else
-                {
-                    Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
-                }
-            }
-
             // Generate a new pokemon
             PokeSelector pokeSelector = new PokeSelector();
             PokemonData pokemonData = await pokeSelector.GetRandomPokemon(_pokeApiClient, playerData);
@@ -177,7 +163,7 @@ namespace PokeCord.SlashCommands
                 if (hasAmuletCoin && amuletCoinCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(amuletCoinKey);
-                    string conMessage = $"{amuletCoinKey} consumed.";
+                    string conMessage = $"{amuletCoinKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{amuletCoinKey} consumed by {username}");
                 }             
@@ -194,7 +180,7 @@ namespace PokeCord.SlashCommands
                 if (hasLuckyEgg && luckyEggCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(luckyEggKey);
-                    string conMessage = $"{luckyEggKey} consumed.";
+                    string conMessage = $"{luckyEggKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{luckyEggKey} consumed by {username}");
                 }
@@ -208,7 +194,7 @@ namespace PokeCord.SlashCommands
                 if (hasExpShare && expShareCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(expShareKey);
-                    string conMessage = $"{expShareKey} consumed.";
+                    string conMessage = $"{expShareKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{expShareKey} consumed by {username}");
                 }
@@ -216,24 +202,29 @@ namespace PokeCord.SlashCommands
                 if (hasShinyCharm && pokemonData.Shiny)
                 {
                     playerData.PokeMartItems.Remove(shinyCharmKey);
-                    string conMessage = $"{shinyCharmKey} consumed.";
+                    string conMessage = $"{shinyCharmKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{shinyCharmKey} consumed by {username}");
                 }
                 // Consume X Speed
                 if (hasXSpeed && xSpeedCharges > 0)
                 {
-                    playerData.PokeMartItems[xSpeedKey]--; // Remove 1 charge
-                    Console.WriteLine($"{xSpeedKey} used for {username}. {xSpeedCharges - 1} charges remaining.");
+                    xSpeedCharges--;
+                    playerData.PokeMartItems[xSpeedKey]--; // Remove 1 charge                    
+                    Console.WriteLine($"{xSpeedKey} used for {username}. {xSpeedCharges} charges remaining.");
                 }
                 if (hasXSpeed && xSpeedCharges == 0) // If this was the last X Speed, remove the key.
                 {
                     // Remove X Speed
                     playerData.PokeMartItems.Remove(xSpeedKey);
-                    string conMessage = $"{xSpeedKey} consumed.";
+                    hasXSpeed = false;
+                    string conMessage = $"{xSpeedKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"Removed {xSpeedKey} from {username}");
                 }
+
+                // Check if new
+                var isCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == pokemonData.PokedexId);
 
                 // Update the existing playerData instance
                 playerData.Experience += pokemonExperienceValue;// Award overall experience points
@@ -272,8 +263,11 @@ namespace PokeCord.SlashCommands
                 {
                     Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                 }
+                
                 // Save the updated scoreboard data
                 await _scoreboard.SaveScoreboardAsync();
+
+                UpdatePlayerCooldown(userId, username, lastUsed);
 
                 // Clean up output variables
                 string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);
@@ -290,11 +284,10 @@ namespace PokeCord.SlashCommands
                     playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
                 }
 
-                //TODO: Append catch countdown to the following message
-
                 // Format Discord output
                 string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} " +
-                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(isCaught ? " 🆕" : "")}" +
+                                 $"{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
                 Embed[] embeds = new Embed[]
@@ -350,22 +343,38 @@ namespace PokeCord.SlashCommands
             return $" Next catch <t:{cooldownUnixTime}:R>.";
         }
 
+        private void UpdatePlayerCooldown(ulong userId, string username, DateTime lastUsed)
+        {
+            // Try to add a new lastUsed time for the user, if it returns false, it exists, so update
+            if (!_lastCommandUsage.TryAdd(userId, DateTime.UtcNow))
+            {
+                //Cooldown exists so update existing cooldown
+                if (_lastCommandUsage.TryUpdate(userId, DateTime.UtcNow, lastUsed))
+                {
+                    Console.WriteLine($"Cooldown updated for {username}");
+                }
+                else
+                {
+                    Console.WriteLine($"Unable to update cooldown for {username} with data {userId}:{DateTime.UtcNow}");
+                }
+            }
+        }
+
         private (TimeSpan, TimeSpan) GetPlayerCooldown(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
         {
             (bool notFirstCatch, DateTime lastUsed) = GetLastUsedTime(userId);
             if (notFirstCatch)
             {
-                Console.WriteLine($"{username} cooldown entry read: key {username} value {lastUsed}");
+                Console.WriteLine($"Cooldown entry read: key {username} value {lastUsed}");
                 TimeSpan elapsed = DateTime.UtcNow - lastUsed;
                 TimeSpan playerCDT = _standardCooldownTime;
 
                 // Check if player has X Speed
-                if (hasXSpeed && xSpeedCharges < 10)
+                if (hasXSpeed)
                 {
                     Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
                     playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown
                 }
-
                 return (elapsed, playerCDT);
             }
             else
