@@ -163,7 +163,7 @@ namespace PokeCord.SlashCommands
                 if (hasAmuletCoin && amuletCoinCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(amuletCoinKey);
-                    string conMessage = $"{amuletCoinKey} consumed.";
+                    string conMessage = $"{amuletCoinKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{amuletCoinKey} consumed by {username}");
                 }             
@@ -180,7 +180,7 @@ namespace PokeCord.SlashCommands
                 if (hasLuckyEgg && luckyEggCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(luckyEggKey);
-                    string conMessage = $"{luckyEggKey} consumed.";
+                    string conMessage = $"{luckyEggKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{luckyEggKey} consumed by {username}");
                 }
@@ -194,7 +194,7 @@ namespace PokeCord.SlashCommands
                 if (hasExpShare && expShareCharges == 0)
                 {
                     playerData.PokeMartItems.Remove(expShareKey);
-                    string conMessage = $"{expShareKey} consumed.";
+                    string conMessage = $"{expShareKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{expShareKey} consumed by {username}");
                 }
@@ -202,7 +202,7 @@ namespace PokeCord.SlashCommands
                 if (hasShinyCharm && pokemonData.Shiny)
                 {
                     playerData.PokeMartItems.Remove(shinyCharmKey);
-                    string conMessage = $"{shinyCharmKey} consumed.";
+                    string conMessage = $"{shinyCharmKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{shinyCharmKey} consumed by {username}");
                 }
@@ -218,7 +218,7 @@ namespace PokeCord.SlashCommands
                     // Remove X Speed
                     playerData.PokeMartItems.Remove(xSpeedKey);
                     hasXSpeed = false;
-                    string conMessage = $"{xSpeedKey} consumed.";
+                    string conMessage = $"{xSpeedKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"Removed {xSpeedKey} from {username}");
                 }
