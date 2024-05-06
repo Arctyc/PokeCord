@@ -124,6 +124,15 @@ namespace PokeCord.SlashCommands
             if (notFirstCatch)
             {
                 (elapsed, playerCDT) = GetPlayerCooldown(userId, username, hasXSpeed, xSpeedCharges);
+
+                // Bailout on repeated command
+                if (elapsed < TimeSpan.FromSeconds(5))
+                {
+                    await RespondAsync($"PokeCord experienced a connection error causing discord to issue repeated commands. " +
+                        $"Please wait a few seconds and try again. If you see this message more than once, ping ArctycFox.");
+                    return;
+                }
+
                 if (elapsed < playerCDT)
                 {
                     int timeRemaining = (int)playerCDT.TotalSeconds - (int)elapsed.TotalSeconds;
@@ -140,6 +149,7 @@ namespace PokeCord.SlashCommands
                 Console.WriteLine($"No last command usage by {username} with userID {userId}");
             }
             // Player is not on cooldown
+            UpdatePlayerCooldown(userId, username, lastUsed);
 
             // Generate a new pokemon
             PokeSelector pokeSelector = new PokeSelector();
@@ -266,8 +276,6 @@ namespace PokeCord.SlashCommands
                 
                 // Save the updated scoreboard data
                 await _scoreboard.SaveScoreboardAsync();
-
-                UpdatePlayerCooldown(userId, username, lastUsed);
 
                 // Clean up output variables
                 string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);
