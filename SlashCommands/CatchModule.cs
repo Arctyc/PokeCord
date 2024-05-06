@@ -420,16 +420,19 @@ namespace PokeCord.SlashCommands
             {
                 Console.WriteLine($"** GiveExpToTeamMembers called for {user}");
                 var otherTeamMembers = team.Players.Where(p => p != user);
-                int sharedExp = pokemonExperience / otherTeamMembers.Count(); // Split 1x exp among other team members
-                foreach (var player in otherTeamMembers)
+                if (otherTeamMembers.Any())
                 {
-                    if (_scoreboard.TryGetPlayerData(player, out var playerData))
+                    int sharedExp = pokemonExperience / otherTeamMembers.Count(); // Split 1x exp among other team members
+                    foreach (var player in otherTeamMembers)
                     {
-                        playerData.WeeklyExperience += sharedExp;
-                        _scoreboard.TryUpdatePlayerData(player, playerData, playerData);
-                        Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
+                        if (_scoreboard.TryGetPlayerData(player, out var playerData))
+                        {
+                            playerData.WeeklyExperience += sharedExp;
+                            _scoreboard.TryUpdatePlayerData(player, playerData, playerData);
+                            Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
+                        }
                     }
-                }
+                }                
             }
         }
     }
