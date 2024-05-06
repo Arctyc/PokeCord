@@ -166,6 +166,7 @@ namespace PokeCord.SlashCommands
                 // Consume Amulet Coin
                 if (hasAmuletCoin && amuletCoinCharges > 0)
                 {
+                    Console.WriteLine($"{amuletCoinKey} used by {username}");
                     adjustedPokemonDollarValue *= amuletCoinMultiplier;
                     amuletCoinCharges--;
                     playerData.PokeMartItems[amuletCoinKey]--;
@@ -182,6 +183,7 @@ namespace PokeCord.SlashCommands
                 {
                     if (pokemonExperienceValue < luckyEggMaximumExp)
                     {
+                        Console.WriteLine($"{luckyEggKey} used by {username}");
                         pokemonExperienceValue *= luckyEggMultiplier;
                         luckyEggCharges--;
                         playerData.PokeMartItems[luckyEggKey]--;
@@ -197,6 +199,7 @@ namespace PokeCord.SlashCommands
                 // Consume Exp. Share
                 if (hasExpShare && expShareCharges > 0 && playerData.TeamId > 0)
                 {
+                    Console.WriteLine($"{expShareKey} used by {username}");
                     GiveExpToTeamMembers(userId, playerData.TeamId, pokemonExperienceValue);
                     expShareCharges--;
                     playerData.PokeMartItems[expShareKey]--;
@@ -211,6 +214,7 @@ namespace PokeCord.SlashCommands
                 // Consume Shiny Charm
                 if (hasShinyCharm && pokemonData.Shiny)
                 {
+                    Console.WriteLine($"{shinyCharmKey} used by {username}");
                     playerData.PokeMartItems.Remove(shinyCharmKey);
                     string conMessage = $"{shinyCharmKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
@@ -219,6 +223,7 @@ namespace PokeCord.SlashCommands
                 // Consume X Speed
                 if (hasXSpeed && xSpeedCharges > 0)
                 {
+                    Console.WriteLine($"{xSpeedKey} used by {username}");
                     xSpeedCharges--;
                     playerData.PokeMartItems[xSpeedKey]--; // Remove 1 charge                    
                     Console.WriteLine($"{xSpeedKey} used for {username}. {xSpeedCharges} charges remaining.");
@@ -235,7 +240,9 @@ namespace PokeCord.SlashCommands
 
                 // Check if new
                 var isCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == pokemonData.PokedexId);
+                Console.WriteLine($"{username}'s value for isCaught on {pokemonData.Name}: {isCaught}");
 
+                Console.WriteLine($"Attempting to update playerData object for {username}");
                 // Update the existing playerData instance
                 playerData.Experience += pokemonExperienceValue;// Award overall experience points
                 playerData.WeeklyExperience += pokemonExperienceValue;// Award weekly experience points
@@ -245,8 +252,10 @@ namespace PokeCord.SlashCommands
                 if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; } // Cap player pokemondollars
                 playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                 playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
+                
 
                 // Check for new badges
+                Console.WriteLine($"Adding new badges (if any) for {username}");
                 BadgeManager badgeManager = new BadgeManager();
                 List<Badge> newBadges = badgeManager.UpdateBadgesAsync(playerData, badges, pokemonData);
                 List<string> newBadgeMessages = new List<string>();
@@ -409,6 +418,7 @@ namespace PokeCord.SlashCommands
             var team = _scoreboard.GetTeams().FirstOrDefault(t => t.Id == teamId);
             if (team != null)
             {
+                Console.WriteLine($"** GiveExpToTeamMembers called for {user}");
                 var otherTeamMembers = team.Players.Where(p => p != user);
                 int sharedExp = pokemonExperience / otherTeamMembers.Count(); // Split 1x exp among other team members
                 foreach (var player in otherTeamMembers)
