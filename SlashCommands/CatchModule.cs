@@ -200,9 +200,12 @@ namespace PokeCord.SlashCommands
                 if (hasExpShare && expShareCharges > 0 && playerData.TeamId > 0)
                 {
                     Console.WriteLine($"{expShareKey} used by {username}");
-                    GiveExpToTeamMembers(userId, playerData.TeamId, pokemonExperienceValue);
-                    expShareCharges--;
-                    playerData.PokeMartItems[expShareKey]--;
+                    bool ExpShareWasUsed = GiveExpToTeamMembers(userId, playerData.TeamId, pokemonExperienceValue);
+                    if (ExpShareWasUsed)
+                    {
+                        expShareCharges--;
+                        playerData.PokeMartItems[expShareKey]--;
+                    }                    
                 }
                 if (hasExpShare && expShareCharges == 0)
                 {
@@ -413,8 +416,9 @@ namespace PokeCord.SlashCommands
             }
         }
 
-        private void GiveExpToTeamMembers(ulong user, int teamId, int pokemonExperience)
+        private bool GiveExpToTeamMembers(ulong user, int teamId, int pokemonExperience)
         {
+            bool used = false;
             var team = _scoreboard.GetTeams().FirstOrDefault(t => t.Id == teamId);
             if (team != null)
             {
@@ -422,6 +426,7 @@ namespace PokeCord.SlashCommands
                 var otherTeamMembers = team.Players.Where(p => p != user);
                 if (otherTeamMembers.Any())
                 {
+                    used = true;
                     int sharedExp = pokemonExperience / otherTeamMembers.Count(); // Split 1x exp among other team members
                     foreach (var player in otherTeamMembers)
                     {
@@ -432,8 +437,9 @@ namespace PokeCord.SlashCommands
                             Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
                         }
                     }
-                }                
+                }
             }
+            return used;
         }
     }
 }
