@@ -170,7 +170,6 @@ namespace PokeCord.Helpers
 
                 // Save
                 await _scoreboard.SavePlayerDataAsync(playerData, originalPlayerData);
-                await _scoreboard.SaveScoreboardAsync();
                 return $"{username} has purchased {richItemName}!";
             }
             else
