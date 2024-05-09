@@ -175,10 +175,10 @@ namespace PokeCord.SlashCommands
                 // Consume Amulet Coin
                 if (hasAmuletCoin && amuletCoinCharges > 0)
                 {
-                    Console.WriteLine($"{amuletCoinKey} used by {username}");
                     adjustedPokemonDollarValue *= amuletCoinMultiplier;
                     amuletCoinCharges--;
                     playerData.PokeMartItems[amuletCoinKey]--;
+                    Console.WriteLine($"{amuletCoinKey} used by {username}. {amuletCoinCharges} charges remaining.");
                 }
                 if (hasAmuletCoin && amuletCoinCharges == 0)
                 {
@@ -192,10 +192,10 @@ namespace PokeCord.SlashCommands
                 {
                     if (pokemonExperienceValue < luckyEggMaximumExp)
                     {
-                        Console.WriteLine($"{luckyEggKey} used by {username}");
                         pokemonExperienceValue *= luckyEggMultiplier;
                         luckyEggCharges--;
                         playerData.PokeMartItems[luckyEggKey]--;
+                        Console.WriteLine($"{luckyEggKey} used by {username}. {luckyEggCharges} charges remaining.");
                     }
                 }
                 if (hasLuckyEgg && luckyEggCharges == 0)
@@ -208,13 +208,13 @@ namespace PokeCord.SlashCommands
                 // Consume Exp. Share
                 if (hasExpShare && expShareCharges > 0 && playerData.TeamId > 0)
                 {
-                    Console.WriteLine($"{expShareKey} used by {username}");
                     bool ExpShareWasUsed = GiveExpToTeamMembers(userId, playerData.TeamId, pokemonExperienceValue);
                     if (ExpShareWasUsed)
                     {
                         expShareCharges--;
                         playerData.PokeMartItems[expShareKey]--;
-                    }                    
+                        Console.WriteLine($"{expShareKey} used by {username}. {expShareCharges} charges remaining.");
+                    }
                 }
                 if (hasExpShare && expShareCharges == 0)
                 {
@@ -235,10 +235,9 @@ namespace PokeCord.SlashCommands
                 // Consume X Speed
                 if (hasXSpeed && xSpeedCharges > 0)
                 {
-                    Console.WriteLine($"{xSpeedKey} used by {username}");
                     xSpeedCharges--;
                     playerData.PokeMartItems[xSpeedKey]--; // Remove 1 charge                    
-                    Console.WriteLine($"{xSpeedKey} used for {username}. {xSpeedCharges} charges remaining.");
+                    Console.WriteLine($"{xSpeedKey} used by {username}. {xSpeedCharges} charges remaining.");
                 }
                 if (hasXSpeed && xSpeedCharges == 0) // If this was the last X Speed, remove the key.
                 {
