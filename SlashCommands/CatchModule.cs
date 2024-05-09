@@ -58,6 +58,15 @@ namespace PokeCord.SlashCommands
             List<Badge> badges = _badgeService.GetBadges();
             Console.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {username} used catch");
 
+            // Disallow catches during restock
+            var currentTime = DateTime.UtcNow;
+            var midnightUtc = currentTime.Date;
+            var tolerance = TimeSpan.FromSeconds(5);
+            if (currentTime >= midnightUtc.Subtract(tolerance) && currentTime <= midnightUtc.Add(tolerance))
+            {
+                await RespondAsync($"Catches are disabled during restock. Wait 10 seconds and try again.", ephemeral: true);
+            }
+
             // Get the PlayerData instance from the scoreboard
             PlayerData playerData = new PlayerData();
             if (_scoreboard.TryGetPlayerData(userId, out originalPlayerData))
