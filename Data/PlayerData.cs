@@ -15,7 +15,7 @@ namespace PokeCord.Data
         public List<PokemonData> CaughtPokemon { get; set; }
         public List<PokemonData> WeeklyCaughtPokemon { get; set; }
         public List<Badge> EarnedBadges { get; set; }
-        public Dictionary<string, int> PokeMartItems { get; set; } // New!
+        public Dictionary<string, int> PokeMartItems { get; set; }
 
         public PlayerData()
         {

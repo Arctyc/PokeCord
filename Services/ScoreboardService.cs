@@ -447,6 +447,14 @@ namespace PokeCord.Services
                         playerData.PokeMartItems = new Dictionary<string, int>();
                         countUpdated++;
                     }
+                    // Version 4 => 5
+                    /*
+                    if (playerData.Version == 4)
+                    {
+                        playerData.Version = 5;
+                        countUpdated++;
+                    }
+                    */
                 }
                 Console.WriteLine($"Scoreboard loaded from {_scoreboardFilePath}");
                 if (countUpdated > 0)

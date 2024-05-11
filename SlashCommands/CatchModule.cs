@@ -23,6 +23,7 @@ namespace PokeCord.SlashCommands
         private const int pokemonDollarRatio = 10; // % to divide base exp by for awarding pokemon dollars
         private const int currencyCap = 5000; // Maximum amount of pokemondollars a player can have
 
+        public const string premierBallKey = "Premier Balls";
         public const string amuletCoinKey = "Amulet Coin";
         public const int amuletCoinMultiplier = 2;
         public const string expShareKey = "Exp. Share";
@@ -106,8 +107,11 @@ namespace PokeCord.SlashCommands
                 }
             }
 
+            // Check for premier balls
+            bool hasPremierBalls = playerData.PokeMartItems.TryGetValue(premierBallKey, out int premierBalls);
+
             // Check for enough Pokeballs
-            if (playerData.Pokeballs <= 0)
+            if (playerData.Pokeballs <= 0 && premierBalls <= 0)
             {
                 // Get time until next restock
                 TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
@@ -254,17 +258,28 @@ namespace PokeCord.SlashCommands
                 var isCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == pokemonData.PokedexId);
                 Console.WriteLine($"{username}'s value for isCaught on {pokemonData.Name}: {isCaught}");
 
-                Console.WriteLine($"Attempting to update playerData object for {username}");
+                if (playerData.Pokeballs >= 1)
+                {
+                    playerData.Pokeballs--;
+                    Console.WriteLine($"{username} used a Poke Ball");
+                }
+                else if (hasPremierBalls && premierBalls >= 1)
+                {
+                    playerData.PokeMartItems[premierBallKey]--;
+                    Console.WriteLine($"{username} used a Premier Ball");
+                }
+
                 // Update the existing playerData instance
                 playerData.Experience += pokemonExperienceValue;// Award overall experience points
                 playerData.WeeklyExperience += pokemonExperienceValue;// Award weekly experience points
-                playerData.Pokeballs -= 1; // subtract one pokeball from user's inventory
-                if (pokemonData.Shiny) { playerData.Pokeballs += 10; } // Add 10 Pokeballs for shiny
                 playerData.PokemonDollars += adjustedPokemonDollarValue; // award pokemon dollars
                 if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; } // Cap player pokemondollars
                 playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                 playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
-                
+
+
+                // Add balls for shiny
+                if (pokemonData.Shiny) { playerData.PokeMartItems[premierBallKey] += 10; } // Add 10 Premier Balls for shiny
 
                 // Check for new badges
                 Console.WriteLine($"Adding new badges (if any) for {username}");
@@ -277,7 +292,7 @@ namespace PokeCord.SlashCommands
                     {
                         // Add badges to playerData
                         playerData.EarnedBadges.Add(badge);
-                        playerData.Pokeballs += badge.BonusPokeballs;
+                        playerData.PokeMartItems[premierBallKey] += badge.BonusPokeballs;
 
                         string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Poké Balls!\n" +
                                                  $"{badge.Description}";
