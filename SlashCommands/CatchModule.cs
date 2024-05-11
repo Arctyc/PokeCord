@@ -65,6 +65,7 @@ namespace PokeCord.SlashCommands
             if (currentTime >= midnightUtc.Subtract(tolerance) && currentTime <= midnightUtc.Add(tolerance))
             {
                 await RespondAsync($"Catches are disabled during restock. Wait 10 seconds and try again.", ephemeral: true);
+                return;
             }
 
             // Get the PlayerData instance from the scoreboard
