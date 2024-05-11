@@ -88,6 +88,7 @@ namespace PokeCord.SlashCommands
                 if (playerData.CaughtPokemon.Any())
                 {
                     PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
+                    int bestExp = (int)bestPokemon.BaseExperience;
 
                     // Set lifetime average exp string
                     lifetimeAverageExp = playerData.Experience / playerData.CaughtPokemon.Count;
@@ -112,12 +113,14 @@ namespace PokeCord.SlashCommands
                     int totalShiny = playerData.CaughtPokemon.Count(pokemon => pokemon.Shiny); // Count total shiny pokemon
                     string richCatches = catches.ToString("N0");
                     string richShiny = totalShiny.ToString("N0");
+                    string richBestPokemonExp = bestExp.ToString("N0");
                     // Format Discord reply
                     string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} has caught {richCatches} Pokémon ({richShiny} shiny) totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
                                      $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
-                                     $"Weekly Experience: {richCaughtExperience} ({richShareExperience}). Weekly Average Exp: {caughtAverageExp} ({shareAverageExp})\n" +
+                                     $"Weekly Experience: {richCaughtExperience}{(richCaughtExperience != richShareExperience ? $" ({richShareExperience})" : "" )}. " +
+                                     $"Weekly Average Exp: {caughtAverageExp}{(caughtAverageExp != shareAverageExp ? $" ({shareAverageExp})" : "")}\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                     $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
+                                     $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {richBestPokemonExp} exp!";
 
                     Embed[] embeds = new Embed[]
                         {
