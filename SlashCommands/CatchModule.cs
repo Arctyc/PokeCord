@@ -109,6 +109,7 @@ namespace PokeCord.SlashCommands
 
             // Check for premier balls
             bool hasPremierBalls = playerData.PokeMartItems.TryGetValue(premierBallKey, out int premierBalls);
+            if (!hasPremierBalls) { playerData.PokeMartItems[premierBallKey] = 0; };
 
             // Check for enough Pokeballs
             if (playerData.Pokeballs <= 0 && premierBalls <= 0)
@@ -294,7 +295,7 @@ namespace PokeCord.SlashCommands
                         playerData.EarnedBadges.Add(badge);
                         playerData.PokeMartItems[premierBallKey] += badge.BonusPokeballs;
 
-                        string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Poké Balls!\n" +
+                        string newBadgeMessage = $"{username} has acquired the {badge.Name}! +{badge.BonusPokeballs} Premier Balls!\n" +
                                                  $"{badge.Description}";
                         newBadgeMessages.Add(newBadgeMessage);
                     }
@@ -331,7 +332,7 @@ namespace PokeCord.SlashCommands
                 // Format Discord output
                 string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} caught {(startsWithVowel ? "an" : "a")} " +
                                  $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richPokemonName}!{(isCaught ? "" : " 🆕")}" +
-                                 $"{(pokemonData.Shiny ? " +10 Poké Balls!" : "")}\n" +
+                                 $"{(pokemonData.Shiny ? " +10 Premier Balls!" : "")}\n" +
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
                 Embed[] embeds = new Embed[]
