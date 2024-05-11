@@ -46,7 +46,6 @@ namespace PokeCord.SlashCommands
             {
                 int averageExp = 0;
                 string leaderName = leaders[i].UserName;
-                //FIX: Only count WeeklyCaughtPokemon exp for averaging, instead of weeklyexp which includes exp share
                 int leaderWeeklyExp = leaders[i].WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0);
                 string leaderExp = leaderWeeklyExp.ToString("N0");
                 if (leaderWeeklyExp <= 0)

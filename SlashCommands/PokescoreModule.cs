@@ -65,15 +65,20 @@ namespace PokeCord.SlashCommands
                 {
                     lifetimeRankString= (lifetimeRank + 1).ToString();
                 }
+
+                int caughtExperience = playerData.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0);
+
                 // Format ints as numerical string
                 string lifetimeExperience = playerData.Experience.ToString("N0");
-                string weeklyExperience = playerData.WeeklyExperience.ToString("N0");
+                string richCaughtExperience = playerData.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0).ToString("N0");
+                string richShareExperience = playerData.WeeklyExperience.ToString("N0");
                 string pokemonDollars = playerData.PokemonDollars.ToString("N0");
                 // Initialize and set output variables
                 string playerTeam = "";
                 List<PokemonData> caughtPokemon = playerData.CaughtPokemon;
                 int catches = caughtPokemon.Count;
-                int weeklyAverageExp = 0;
+                int caughtAverageExp = 0;
+                int shareAverageExp = 0;
                 int lifetimeAverageExp = 0;
                 
                 // Get all teams
@@ -90,12 +95,13 @@ namespace PokeCord.SlashCommands
                     // Set weekly average exp string
                     if (playerData.WeeklyExperience <= 0 || playerData.WeeklyCaughtPokemon.Count <= 0)
                     {
-                        weeklyAverageExp = 0;
+                        shareAverageExp = 0;
                         weeklyRankString = "∞";
                     }
                     else
                     {
-                        weeklyAverageExp = playerData.WeeklyExperience / playerData.WeeklyCaughtPokemon.Count;
+                        caughtAverageExp = caughtExperience / playerData.WeeklyCaughtPokemon.Count();
+                        shareAverageExp = playerData.WeeklyExperience / playerData.WeeklyCaughtPokemon.Count;
                     }
                     bool onTeam = false;
                     if (playerData.TeamId != -1)
@@ -109,7 +115,7 @@ namespace PokeCord.SlashCommands
                     // Format Discord reply
                     string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} has caught {richCatches} Pokémon ({richShiny} shiny) totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
                                      $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
-                                     $"Weekly Experience: {weeklyExperience}. Weekly Average Exp: {weeklyAverageExp}\n" +
+                                     $"Weekly Experience: {richCaughtExperience} ({richShareExperience}). Weekly Average Exp: {caughtAverageExp} ({shareAverageExp})\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
                                      $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {bestPokemon.BaseExperience} exp!";
 
