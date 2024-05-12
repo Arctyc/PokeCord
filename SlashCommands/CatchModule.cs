@@ -271,6 +271,12 @@ namespace PokeCord.SlashCommands
                     playerData.PokeMartItems[premierBallKey]--;
                     Console.WriteLine($"{username} used a Premier Ball");
                 }
+                else
+                {
+                    await RespondAsync($"Error finding a ball to throw");
+                    Console.WriteLine($"No balls for {username} - Poke: {playerData.Pokeballs} -- Prem: {premierBalls}");
+                    return;
+                }
 
                 // Update the existing playerData instance
                 playerData.Experience += pokemonExperienceValue;// Award overall experience points
