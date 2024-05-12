@@ -377,7 +377,9 @@ namespace PokeCord.SlashCommands
 
         private string AppendPokeballsRemaining(PlayerData playerData)
         {
-            return $"\n{playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")} remaining.";
+            int premierBalls = playerData.PokeMartItems[premierBallKey];
+            return $"\n{playerData.Pokeballs} Poké Ball{(playerData.Pokeballs == 1 ? "" : "s")}" +
+                   $"{(premierBalls > 0 ? $" and {premierBalls} Premier Balls" : "")} remaining. ";
         }
 
         private string AppendNextCatch(ulong userId, string username, bool hasXSpeed, int xSpeedCharges)
