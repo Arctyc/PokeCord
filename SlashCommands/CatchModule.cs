@@ -108,8 +108,9 @@ namespace PokeCord.SlashCommands
             }
 
             // Check for premier balls
-            bool hasPremierBalls = playerData.PokeMartItems.TryGetValue(premierBallKey, out int premierBalls);
-            if (!hasPremierBalls) { playerData.PokeMartItems[premierBallKey] = 0; };
+            bool hasPremierBallsKey = playerData.PokeMartItems.TryGetValue(premierBallKey, out int premierBalls);
+            if (!hasPremierBallsKey) { playerData.PokeMartItems[premierBallKey] = 0; };
+            bool hasPremierBalls = premierBalls > 0;
 
             // Check for enough Pokeballs
             if (playerData.Pokeballs <= 0 && premierBalls <= 0)
@@ -259,12 +260,13 @@ namespace PokeCord.SlashCommands
                 var isCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == pokemonData.PokedexId);
                 Console.WriteLine($"{username}'s value for isCaught on {pokemonData.Name}: {isCaught}");
 
+                // Subtract balls
                 if (playerData.Pokeballs >= 1)
                 {
                     playerData.Pokeballs--;
                     Console.WriteLine($"{username} used a Poke Ball");
                 }
-                else if (hasPremierBalls && premierBalls >= 1)
+                else if (hasPremierBalls)
                 {
                     playerData.PokeMartItems[premierBallKey]--;
                     Console.WriteLine($"{username} used a Premier Ball");
