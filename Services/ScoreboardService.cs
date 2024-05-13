@@ -290,7 +290,17 @@ namespace PokeCord.Services
 
         public List<PlayerData> GetWeeklyLeaderboard()
         {
-            return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0)).ToList();
+            // Make a list of all players ordered by weekly caught pokemon experience
+            var leaders = _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0)).ToList();
+            foreach (var player in leaders)
+            {
+                // Remove players with no weekly experience
+                if (player.WeeklyExperience == 0)
+                {
+                    leaders.Remove(player);
+                }
+            }
+            return leaders;
         }
 
         public async void AddTeam(Team team)
