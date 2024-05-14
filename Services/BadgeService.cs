@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using PokeCord.Data;
 using System.Collections.Concurrent;
 
@@ -32,8 +33,8 @@ namespace PokeCord.Services
             {
                 try
                 {
-                    string jsonData = File.ReadAllText(filePath);
-                    List<Badge> badges = JsonConvert.DeserializeObject<List<Badge>>(jsonData);
+                    using var stream = File.OpenRead(filePath);
+                    List<Badge> badges = JsonSerializer.Deserialize<List<Badge>>(stream);
 
                     // Handle badge mismatch
                     foreach (Badge badge in badges)
