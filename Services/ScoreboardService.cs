@@ -1,14 +1,11 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Newtonsoft.Json;
+//using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using PokeCord.Data;
 using PokeCord.Helpers;
 using System.Collections.Concurrent;
-using System.Threading.Channels;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using PokeApiNet;
-using PokeCord.SlashCommands;
 
 namespace PokeCord.Services
 {
@@ -370,8 +367,8 @@ namespace PokeCord.Services
 
             try
             {
-                string jsonData = File.ReadAllText(filePath);
-                loadedTeamScoreboard = JsonConvert.DeserializeObject<List<Team>>(jsonData);
+                await using var stream = File.OpenRead(_teamScoreboardFilePath);
+                loadedTeamScoreboard = await JsonSerializer.DeserializeAsync<List<Team>>(stream);
 
                 // Handle Team.cs version mismatch
                 // Version 1 => 2
@@ -380,6 +377,7 @@ namespace PokeCord.Services
                 {
                 }
                 */
+
                 _teamScoreboard = loadedTeamScoreboard;
                 return;
             }
@@ -395,15 +393,10 @@ namespace PokeCord.Services
 
         public async Task SaveTeamScoreboardAsync()
         {
-            string filePath = _teamScoreboardFilePath;
-
             try
             {
-                // Serialize the team scoreboard to JSON string
-                string jsonData = JsonConvert.SerializeObject(_teamScoreboard);
-
-                // Write the JSON string to the file asynchronously
-                await File.WriteAllTextAsync(filePath, jsonData);
+                await using var stream = File.Create(_teamScoreboardFilePath);
+                await JsonSerializer.SerializeAsync(stream, _teamScoreboard);
                 Console.WriteLine("Team scoreboard data saved successfully.");
             }
             catch (Exception ex)
@@ -424,8 +417,10 @@ namespace PokeCord.Services
 
             try
             {
-                string jsonData = await File.ReadAllTextAsync(_scoreboardFilePath);
-                _scoreboard = JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, PlayerData>>(jsonData);
+                await using var stream = File.OpenRead(_scoreboardFilePath);
+                _scoreboard = await JsonSerializer.DeserializeAsync<ConcurrentDictionary<ulong, PlayerData>>(stream);
+                Console.WriteLine($"Scoreboard loaded from {_scoreboardFilePath}");
+
                 int countUpdated = 0;
                 // Handle playerData version mismatch
                 foreach (var playerData in _scoreboard.Values)
@@ -466,7 +461,6 @@ namespace PokeCord.Services
                     }
                     */
                 }
-                Console.WriteLine($"Scoreboard loaded from {_scoreboardFilePath}");
                 if (countUpdated > 0)
                 {
                     await SaveScoreboardAsync();
@@ -482,10 +476,10 @@ namespace PokeCord.Services
 
         public async Task SaveScoreboardAsync()
         {
-            string jsonData = JsonConvert.SerializeObject(_scoreboard);
             try
             {
-                await File.WriteAllTextAsync(_scoreboardFilePath, jsonData);
+                await using var stream = File.Create(_scoreboardFilePath);
+                await JsonSerializer.SerializeAsync(stream, _scoreboard);
                 Console.WriteLine("Scoreboard data saved successfully.");
             }
             catch (Exception ex)
