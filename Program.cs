@@ -35,8 +35,8 @@ namespace PokeCord
         public static async Task Main()
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-            //var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
 
             _client.Ready += ClientReady;
             _client.Log += LogAsync;
