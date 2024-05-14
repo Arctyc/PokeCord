@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-//using Newtonsoft.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using PokeCord.Data;
 using PokeCord.Helpers;
 using System.Collections.Concurrent;
