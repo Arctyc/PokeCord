@@ -122,7 +122,7 @@ namespace PokeCord.SlashCommands
 
                 await RespondAsync($"Sorry, you're out of Poké Balls for now. " +
                     $"The Poké Mart will automatically send you up to {ScoreboardService.pokeballRestockAmount} new Poké Balls <t:{cooldownUnixTime}:R>. " +
-                    $"Unfortunately, you will not receive a bonus Premier Ball.");
+                    $"Unfortunately, you will not receive a bonus Premier Ball.", ephemeral: true);
                 return;
             }
 
