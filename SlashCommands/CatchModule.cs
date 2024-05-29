@@ -189,7 +189,6 @@ namespace PokeCord.SlashCommands
 
                     // Check if new
                     var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
-                    Console.WriteLine($"{username}'s value for isCaught on {eventPokemonData.Name}: {eventIsCaught}");
 
                     // Update the existing playerData instance
                     playerData.Experience += eventPokemonExperienceValue;// Award overall experience points
@@ -488,7 +487,7 @@ namespace PokeCord.SlashCommands
                 TimeSpan playerCDT = _standardCooldownTime;
 
                 // Check if player has X Speed
-                if (hasXSpeed)
+                if (hasXSpeed && xSpeedCharges < 10)
                 {
                     Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
                     playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown

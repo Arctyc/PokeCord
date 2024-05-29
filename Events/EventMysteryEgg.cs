@@ -27,7 +27,7 @@ namespace PokeCord.Events
 
         public (bool, string) CheckEgg(PlayerData playerData)
         {
-            Console.Write("Checking for Mystery Egg Event updates...");
+            Console.Write("Checking for Mystery Egg Event updates...\n");
             // Check if player already has an egg
             // Return true if the egg is hatched on this catch
             bool hasEgg = playerData.PokeMartItems.TryGetValue(itemKey, out int EggProgress);

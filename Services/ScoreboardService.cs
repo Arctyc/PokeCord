@@ -73,7 +73,7 @@ namespace PokeCord.Services
             // Update the actual scoreboard atomically
             await Task.Run(() => _scoreboard = new ConcurrentDictionary<ulong, PlayerData>(playerDataList.ToDictionary(p => p.UserId, p => p)));
 
-            Console.WriteLine("Pokeballs have been reset for all players!");
+            Console.WriteLine("\n***Pokeballs have been reset for all players!");
 
             // Save the updated scoreboard
             await SaveScoreboardAsync();
@@ -82,7 +82,7 @@ namespace PokeCord.Services
         // TODO: Move Weekly Teams Competition event methods to a unique class
         public async Task StartWeeklyTeamsEventAsync(DiscordSocketClient client)
         {
-            Console.WriteLine("*** The weekly event has started *** Time: " + DateTime.UtcNow.ToString());
+            Console.WriteLine("\n*** The weekly event has started *** Time: " + DateTime.UtcNow.ToString());
 
             // Call method to reset teams
             await ResetTeamsAsync(null);
