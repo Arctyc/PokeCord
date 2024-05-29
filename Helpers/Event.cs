@@ -9,12 +9,7 @@ namespace PokeCord.Helpers
 
         }
 
-        public void Scavenger()
-        {
-
-        }
-
-        public void MysteryEgg()
+        public void HandleCurrentEvent()
         {
 
         }

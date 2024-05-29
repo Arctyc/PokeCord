@@ -3,10 +3,10 @@ using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using PokeApiNet;
 using PokeCord.Data;
+using PokeCord.Events;
 using PokeCord.Helpers;
 using PokeCord.Services;
 using System.Collections.Concurrent;
-using System.Timers;
 
 
 namespace PokeCord.SlashCommands
@@ -159,7 +159,7 @@ namespace PokeCord.SlashCommands
                                        ephemeral: true);
                     return;
                 }
-            }            
+            }
             else
             {
                 Console.WriteLine($"No last command usage by {username} with userID {userId}");
@@ -171,9 +171,48 @@ namespace PokeCord.SlashCommands
             PokeSelector pokeSelector = new PokeSelector();
             PokemonData pokemonData = await pokeSelector.GetRandomPokemon(_pokeApiClient, playerData);
 
+            // Check for event conditions
+            EventMysteryEgg eventMysteryEgg = new EventMysteryEgg();
+            (bool doHatch, string eventMessage) = eventMysteryEgg.CheckEgg(playerData);
+
+            PokemonData eventPokemonData = null;
+
+            if (doHatch)
+            {
+                eventPokemonData = await pokeSelector.GetEventPokemon(_pokeApiClient, playerData);
+                if (eventPokemonData != null)
+                {
+                    Console.WriteLine($"{username} hatched a {(pokemonData.Shiny ? "shiny " : "")}{eventPokemonData.Name} #{eventPokemonData.PokedexId}");
+
+                    // Assign Exp
+                    int eventPokemonExperienceValue = (int)eventPokemonData.BaseExperience;
+
+                    // Check if new
+                    var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
+                    Console.WriteLine($"{username}'s value for isCaught on {eventPokemonData.Name}: {eventIsCaught}");
+
+                    // Update the existing playerData instance
+                    playerData.Experience += eventPokemonExperienceValue;// Award overall experience points
+                    playerData.WeeklyExperience += eventPokemonExperienceValue;// Award weekly experience points
+                    playerData.CaughtPokemon.Add(eventPokemonData); // Add the pokemon to the player's list of caught pokemon
+                    playerData.WeeklyCaughtPokemon.Add(eventPokemonData); // Add the pokemon to the player's weekly list of caught pokemon
+
+                    // Update Scoreboard in memory
+                    if (_scoreboard.TryUpdatePlayerData(userId, playerData, originalPlayerData))
+                    {
+                        Console.WriteLine($"Hatch written to scoreboard for {username}'s {eventPokemonData.Name}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to write hatch to scoreboard for {username}'s {eventPokemonData.Name}");
+                    }
+                }
+            }
+
             if (pokemonData != null)
             {
                 Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
+                // Assign Exp & dollars
                 int pokemonExperienceValue = (int)pokemonData.BaseExperience;
                 int pokemonDollarValue = pokemonExperienceValue / pokemonDollarRatio;
                 int adjustedPokemonDollarValue = pokemonDollarValue;
@@ -193,7 +232,7 @@ namespace PokeCord.SlashCommands
                     string conMessage = $"{amuletCoinKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{amuletCoinKey} consumed by {username}");
-                }             
+                }
                 // Consume Lucky Egg
                 if (hasLuckyEgg && luckyEggCharges > 0)
                 {
@@ -286,7 +325,6 @@ namespace PokeCord.SlashCommands
                 playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                 playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
 
-
                 // Add balls for shiny
                 if (pokemonData.Shiny) { playerData.PokeMartItems[premierBallKey] += 10; } // Add 10 Premier Balls for shiny
 
@@ -318,7 +356,7 @@ namespace PokeCord.SlashCommands
                 {
                     Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                 }
-                
+
                 // Save the updated scoreboard data
                 await _scoreboard.SaveScoreboardAsync();
 
@@ -343,12 +381,37 @@ namespace PokeCord.SlashCommands
                                  $"{(pokemonData.Shiny ? " +10 Premier Balls!" : "")}\n" +
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
-                Embed[] embeds = new Embed[]
+
+                Embed[] embeds = doHatch ? new Embed[]
                 {
-                            new EmbedBuilder()
-                            .WithImageUrl(pokemonData.ImageUrl)
-                            .Build()
+                new EmbedBuilder()
+                    .WithImageUrl(pokemonData.ImageUrl)
+                    .Build(),
+                new EmbedBuilder()
+                    .WithImageUrl(eventPokemonData.ImageUrl)
+                    .Build()
+                } : new Embed[]
+                {
+                new EmbedBuilder()
+                    .WithImageUrl(pokemonData.ImageUrl)
+                    .Build()
                 };
+
+                // Append Event Message
+                if (eventMessage != string.Empty)
+                {
+                    // Append base message
+                    message += "\n" + eventMessage;
+                    // Append Hatch message
+                    if (doHatch)
+                    {
+                        string richEventPokemonName = CleanOutput.FixPokemonName(eventPokemonData.Name);
+                        bool eventStartsWithVowel = "aeiouAEIOU".Contains(richEventPokemonName[0]);
+                        message += $" It's {(eventStartsWithVowel ? "an" : "a")} " +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richEventPokemonName}!{(isCaught ? "" : " 🆕")}" +
+                                 $" +{eventPokemonData.BaseExperience} Exp.";
+                    }
+                }
 
                 // Append additional messages
                 if (newBadgeMessages.Count > 0)

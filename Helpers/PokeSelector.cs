@@ -7,19 +7,19 @@ namespace PokeCord.Helpers
     public class PokeSelector
     {
         //TODO: Collect a range of alternate forms (10001-10277) that have artwork, give them a chance to be caught
-        /*
-        private readonly int _minPokemonIdStandard = 1;
-        private readonly int _maxPokemonIdStandard = 1025;
 
-        private readonly double _upperRangeProbability = 0.05; // 5% chance of selecting alternate form
-        */
+        private readonly int _minPokemonIdSpecial= 10001;
+        private readonly int _maxPokemonIdSpecial = 10277;
+
+        //private readonly double _upperRangeProbability = 0.05; // 5% chance of selecting alternate form
+
         private readonly int _maxPokemonId = 1025; // Highest Pokemon ID to be requested on PokeApi
         private readonly int _shinyRatio = 256; // Chance of catching a shiny
         private readonly int _charmShinyRatio = 128; // Chance of catching a shiny with shiny charm item
 
         private const int shinyExpMultiplier = 4; // Amount to multiply base exp by if shiny
 
-        private int defaultExperience = new Random().Next(75, 126); // exp to be used in the case that there is no base exp provided
+        private int defaultExperience = 150; //new Random().Next(125, 176); // exp to be used in the case that there is no base exp provided
 
         public PokeSelector()
         {
@@ -39,6 +39,53 @@ namespace PokeCord.Helpers
 
             bool shiny = shinyCheck == playerShinyRatio;
             Console.WriteLine($"PokeSelector Values - PokemonID: {randomId}, Shiny Roll: {shinyCheck}/{playerShinyRatio}");
+
+            Pokemon pokemon = await pokeApiClient.GetResourceAsync<Pokemon>(randomId);
+
+            if (pokemon != null)
+            {
+                // Assign experience and avoid null with default.
+                int experience = pokemon.BaseExperience ?? defaultExperience;
+                pokemon.Name = char.ToUpper(pokemon.Name[0]) + pokemon.Name.Substring(1);
+
+                string? imageUrl;
+                if (!shiny)
+                {
+                    // Assign default image
+                    imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
+                }
+                else
+                {
+                    // Assign shiny image
+                    imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
+                    experience *= shinyExpMultiplier; // Add shiny exp
+                }
+                return new PokemonData
+                {
+                    PokedexId = pokemon.Id,
+                    Name = pokemon.Name,
+                    ImageUrl = imageUrl,
+                    BaseExperience = experience,
+                    Timestamp = DateTime.UtcNow,
+                    Shiny = shiny
+                };
+            }
+            else
+            {
+                Console.WriteLine($"Error fetching data for Pokemon ID: {randomId}");
+                return null;
+            }
+        }
+
+        public async Task<PokemonData> GetEventPokemon(PokeApiClient pokeApiClient, PlayerData playerData)
+        {
+            int playerShinyRatio = _shinyRatio;
+            //CSPRNG Random
+            int randomId = RandomNumberGenerator.GetInt32(_minPokemonIdSpecial, _maxPokemonIdSpecial + 1);
+            int shinyCheck = RandomNumberGenerator.GetInt32(1, playerShinyRatio + 1);
+
+            bool shiny = shinyCheck == playerShinyRatio;
+            Console.WriteLine($"*EGG* PokeSelector Values - PokemonID: {randomId}, Shiny Roll: {shinyCheck}/{playerShinyRatio}");
 
             Pokemon pokemon = await pokeApiClient.GetResourceAsync<Pokemon>(randomId);
 
