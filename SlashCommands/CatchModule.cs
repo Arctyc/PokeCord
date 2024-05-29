@@ -457,7 +457,7 @@ namespace PokeCord.SlashCommands
             (TimeSpan elapsed, TimeSpan playerCDT) = GetPlayerCooldown(userId, username, hasXSpeed, xSpeedCharges);
             int timeRemaining = (int)playerCDT.TotalSeconds - (int)elapsed.TotalSeconds;
             var cooldownUnixTime = (long)DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            return $" Next catch <t:{cooldownUnixTime}:R>.";
+            return $"Next catch <t:{cooldownUnixTime}:R>.";
         }
 
         private void UpdatePlayerCooldown(ulong userId, string username, DateTime lastUsed)
