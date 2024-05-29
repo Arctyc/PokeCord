@@ -63,7 +63,7 @@ namespace PokeCord.Events
         public string AddEgg(PlayerData playerData)
         {
             // Only add during event time
-            bool isEventDates = currentDate > startDate && currentDate < endDate;
+            bool isEventDates = currentDate >= startDate && currentDate < endDate;
             if (isEventDates)
             {
                 Console.WriteLine("Added Mystery Egg.");
