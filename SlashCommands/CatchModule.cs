@@ -3,10 +3,10 @@ using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using PokeApiNet;
 using PokeCord.Data;
+using PokeCord.Events;
 using PokeCord.Helpers;
 using PokeCord.Services;
 using System.Collections.Concurrent;
-using System.Timers;
 
 
 namespace PokeCord.SlashCommands
@@ -108,8 +108,9 @@ namespace PokeCord.SlashCommands
             }
 
             // Check for premier balls
-            bool hasPremierBalls = playerData.PokeMartItems.TryGetValue(premierBallKey, out int premierBalls);
-            if (!hasPremierBalls) { playerData.PokeMartItems[premierBallKey] = 0; };
+            bool hasPremierBallsKey = playerData.PokeMartItems.TryGetValue(premierBallKey, out int premierBalls);
+            if (!hasPremierBallsKey) { playerData.PokeMartItems[premierBallKey] = 0; };
+            bool hasPremierBalls = premierBalls > 0;
 
             // Check for enough Pokeballs
             if (playerData.Pokeballs <= 0 && premierBalls <= 0)
@@ -121,7 +122,7 @@ namespace PokeCord.SlashCommands
 
                 await RespondAsync($"Sorry, you're out of Poké Balls for now. " +
                     $"The Poké Mart will automatically send you up to {ScoreboardService.pokeballRestockAmount} new Poké Balls <t:{cooldownUnixTime}:R>. " +
-                    $"Unfortunately, you will not receive a bonus Premier Ball.");
+                    $"Unfortunately, you will not receive a bonus Premier Ball.", ephemeral: true);
                 return;
             }
 
@@ -158,7 +159,7 @@ namespace PokeCord.SlashCommands
                                        ephemeral: true);
                     return;
                 }
-            }            
+            }
             else
             {
                 Console.WriteLine($"No last command usage by {username} with userID {userId}");
@@ -170,9 +171,47 @@ namespace PokeCord.SlashCommands
             PokeSelector pokeSelector = new PokeSelector();
             PokemonData pokemonData = await pokeSelector.GetRandomPokemon(_pokeApiClient, playerData);
 
+            // Check for event conditions
+            EventMysteryEgg eventMysteryEgg = new EventMysteryEgg();
+            (bool doHatch, string eventMessage) = eventMysteryEgg.CheckEgg(playerData);
+
+            PokemonData eventPokemonData = null;
+
+            if (doHatch)
+            {
+                eventPokemonData = await pokeSelector.GetEventPokemon(_pokeApiClient, playerData);
+                if (eventPokemonData != null)
+                {
+                    Console.WriteLine($"{username} hatched a {(pokemonData.Shiny ? "shiny " : "")}{eventPokemonData.Name} #{eventPokemonData.PokedexId}");
+
+                    // Assign Exp
+                    int eventPokemonExperienceValue = (int)eventPokemonData.BaseExperience;
+
+                    // Check if new
+                    var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
+
+                    // Update the existing playerData instance
+                    playerData.Experience += eventPokemonExperienceValue;// Award overall experience points
+                    playerData.WeeklyExperience += eventPokemonExperienceValue;// Award weekly experience points
+                    playerData.CaughtPokemon.Add(eventPokemonData); // Add the pokemon to the player's list of caught pokemon
+                    playerData.WeeklyCaughtPokemon.Add(eventPokemonData); // Add the pokemon to the player's weekly list of caught pokemon
+
+                    // Update Scoreboard in memory
+                    if (_scoreboard.TryUpdatePlayerData(userId, playerData, originalPlayerData))
+                    {
+                        Console.WriteLine($"Hatch written to scoreboard for {username}'s {eventPokemonData.Name}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to write hatch to scoreboard for {username}'s {eventPokemonData.Name}");
+                    }
+                }
+            }
+
             if (pokemonData != null)
             {
                 Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
+                // Assign Exp & dollars
                 int pokemonExperienceValue = (int)pokemonData.BaseExperience;
                 int pokemonDollarValue = pokemonExperienceValue / pokemonDollarRatio;
                 int adjustedPokemonDollarValue = pokemonDollarValue;
@@ -192,7 +231,7 @@ namespace PokeCord.SlashCommands
                     string conMessage = $"{amuletCoinKey} consumed. 💔";
                     consumptionMessages.Add(conMessage);
                     Console.WriteLine($"{amuletCoinKey} consumed by {username}");
-                }             
+                }
                 // Consume Lucky Egg
                 if (hasLuckyEgg && luckyEggCharges > 0)
                 {
@@ -259,15 +298,22 @@ namespace PokeCord.SlashCommands
                 var isCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == pokemonData.PokedexId);
                 Console.WriteLine($"{username}'s value for isCaught on {pokemonData.Name}: {isCaught}");
 
+                // Subtract balls
                 if (playerData.Pokeballs >= 1)
                 {
                     playerData.Pokeballs--;
                     Console.WriteLine($"{username} used a Poke Ball");
                 }
-                else if (hasPremierBalls && premierBalls >= 1)
+                else if (hasPremierBalls)
                 {
                     playerData.PokeMartItems[premierBallKey]--;
                     Console.WriteLine($"{username} used a Premier Ball");
+                }
+                else
+                {
+                    await RespondAsync($"Error finding a ball to throw");
+                    Console.WriteLine($"No balls for {username} - Poke: {playerData.Pokeballs} -- Prem: {premierBalls}");
+                    return;
                 }
 
                 // Update the existing playerData instance
@@ -277,7 +323,6 @@ namespace PokeCord.SlashCommands
                 if (playerData.PokemonDollars > currencyCap) { playerData.PokemonDollars = currencyCap; } // Cap player pokemondollars
                 playerData.CaughtPokemon.Add(pokemonData); // Add the pokemon to the player's list of caught pokemon
                 playerData.WeeklyCaughtPokemon.Add(pokemonData); // Add the pokemon to the player's weekly list of caught pokemon
-
 
                 // Add balls for shiny
                 if (pokemonData.Shiny) { playerData.PokeMartItems[premierBallKey] += 10; } // Add 10 Premier Balls for shiny
@@ -310,7 +355,7 @@ namespace PokeCord.SlashCommands
                 {
                     Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                 }
-                
+
                 // Save the updated scoreboard data
                 await _scoreboard.SaveScoreboardAsync();
 
@@ -335,12 +380,37 @@ namespace PokeCord.SlashCommands
                                  $"{(pokemonData.Shiny ? " +10 Premier Balls!" : "")}\n" +
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
-                Embed[] embeds = new Embed[]
+
+                Embed[] embeds = doHatch ? new Embed[]
                 {
-                            new EmbedBuilder()
-                            .WithImageUrl(pokemonData.ImageUrl)
-                            .Build()
+                new EmbedBuilder()
+                    .WithImageUrl(pokemonData.ImageUrl)
+                    .Build(),
+                new EmbedBuilder()
+                    .WithImageUrl(eventPokemonData.ImageUrl)
+                    .Build()
+                } : new Embed[]
+                {
+                new EmbedBuilder()
+                    .WithImageUrl(pokemonData.ImageUrl)
+                    .Build()
                 };
+
+                // Append Event Message
+                if (eventMessage != string.Empty)
+                {
+                    // Append base message
+                    message += "\n" + eventMessage;
+                    // Append Hatch message
+                    if (doHatch)
+                    {
+                        string richEventPokemonName = CleanOutput.FixPokemonName(eventPokemonData.Name);
+                        bool eventStartsWithVowel = "aeiouAEIOU".Contains(richEventPokemonName[0]);
+                        message += $" It's {(eventStartsWithVowel ? "an" : "a")} " +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richEventPokemonName}!{(isCaught ? "" : " 🆕")}" +
+                                 $" +{eventPokemonData.BaseExperience} Exp.";
+                    }
+                }
 
                 // Append additional messages
                 if (newBadgeMessages.Count > 0)
@@ -387,7 +457,7 @@ namespace PokeCord.SlashCommands
             (TimeSpan elapsed, TimeSpan playerCDT) = GetPlayerCooldown(userId, username, hasXSpeed, xSpeedCharges);
             int timeRemaining = (int)playerCDT.TotalSeconds - (int)elapsed.TotalSeconds;
             var cooldownUnixTime = (long)DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            return $" Next catch <t:{cooldownUnixTime}:R>.";
+            return $"Next catch <t:{cooldownUnixTime}:R>.";
         }
 
         private void UpdatePlayerCooldown(ulong userId, string username, DateTime lastUsed)
@@ -417,7 +487,7 @@ namespace PokeCord.SlashCommands
                 TimeSpan playerCDT = _standardCooldownTime;
 
                 // Check if player has X Speed
-                if (hasXSpeed)
+                if (hasXSpeed && xSpeedCharges < 10)
                 {
                     Console.WriteLine($"{username} has {xSpeedCharges} {xSpeedKey} charges.");
                     playerCDT = _xSpeedCooldownTime; // Set player to the X Speed cooldown

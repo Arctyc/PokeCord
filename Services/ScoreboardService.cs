@@ -1,14 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Newtonsoft.Json;
+using System.Text.Json;
 using PokeCord.Data;
 using PokeCord.Helpers;
 using System.Collections.Concurrent;
-using System.Threading.Channels;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using PokeApiNet;
-using PokeCord.SlashCommands;
 
 namespace PokeCord.Services
 {
@@ -78,7 +73,7 @@ namespace PokeCord.Services
             // Update the actual scoreboard atomically
             await Task.Run(() => _scoreboard = new ConcurrentDictionary<ulong, PlayerData>(playerDataList.ToDictionary(p => p.UserId, p => p)));
 
-            Console.WriteLine("Pokeballs have been reset for all players!");
+            Console.WriteLine("\n***Pokeballs have been reset for all players!");
 
             // Save the updated scoreboard
             await SaveScoreboardAsync();
@@ -87,7 +82,7 @@ namespace PokeCord.Services
         // TODO: Move Weekly Teams Competition event methods to a unique class
         public async Task StartWeeklyTeamsEventAsync(DiscordSocketClient client)
         {
-            Console.WriteLine("*** The weekly event has started *** Time: " + DateTime.UtcNow.ToString());
+            Console.WriteLine("\n*** The weekly event has started *** Time: " + DateTime.UtcNow.ToString());
 
             // Call method to reset teams
             await ResetTeamsAsync(null);
@@ -290,7 +285,17 @@ namespace PokeCord.Services
 
         public List<PlayerData> GetWeeklyLeaderboard()
         {
-            return _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0)).ToList();
+            // Make a list of all players ordered by weekly caught pokemon experience
+            var leaders = _scoreboard.Values.ToList().OrderByDescending(p => p.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0)).ToList();
+            foreach (var player in leaders)
+            {
+                // Remove players with no weekly experience
+                if (player.WeeklyExperience == 0)
+                {
+                    leaders.Remove(player);
+                }
+            }
+            return leaders;
         }
 
         public async void AddTeam(Team team)
@@ -360,8 +365,8 @@ namespace PokeCord.Services
 
             try
             {
-                string jsonData = File.ReadAllText(filePath);
-                loadedTeamScoreboard = JsonConvert.DeserializeObject<List<Team>>(jsonData);
+                await using var stream = File.OpenRead(_teamScoreboardFilePath);
+                loadedTeamScoreboard = await JsonSerializer.DeserializeAsync<List<Team>>(stream);
 
                 // Handle Team.cs version mismatch
                 // Version 1 => 2
@@ -370,6 +375,7 @@ namespace PokeCord.Services
                 {
                 }
                 */
+
                 _teamScoreboard = loadedTeamScoreboard;
                 return;
             }
@@ -385,15 +391,10 @@ namespace PokeCord.Services
 
         public async Task SaveTeamScoreboardAsync()
         {
-            string filePath = _teamScoreboardFilePath;
-
             try
             {
-                // Serialize the team scoreboard to JSON string
-                string jsonData = JsonConvert.SerializeObject(_teamScoreboard);
-
-                // Write the JSON string to the file asynchronously
-                await File.WriteAllTextAsync(filePath, jsonData);
+                await using var stream = File.Create(_teamScoreboardFilePath);
+                await JsonSerializer.SerializeAsync(stream, _teamScoreboard);
                 Console.WriteLine("Team scoreboard data saved successfully.");
             }
             catch (Exception ex)
@@ -414,8 +415,10 @@ namespace PokeCord.Services
 
             try
             {
-                string jsonData = await File.ReadAllTextAsync(_scoreboardFilePath);
-                _scoreboard = JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, PlayerData>>(jsonData);
+                await using var stream = File.OpenRead(_scoreboardFilePath);
+                _scoreboard = await JsonSerializer.DeserializeAsync<ConcurrentDictionary<ulong, PlayerData>>(stream);
+                Console.WriteLine($"Scoreboard loaded from {_scoreboardFilePath}");
+
                 int countUpdated = 0;
                 // Handle playerData version mismatch
                 foreach (var playerData in _scoreboard.Values)
@@ -456,7 +459,6 @@ namespace PokeCord.Services
                     }
                     */
                 }
-                Console.WriteLine($"Scoreboard loaded from {_scoreboardFilePath}");
                 if (countUpdated > 0)
                 {
                     await SaveScoreboardAsync();
@@ -472,10 +474,10 @@ namespace PokeCord.Services
 
         public async Task SaveScoreboardAsync()
         {
-            string jsonData = JsonConvert.SerializeObject(_scoreboard);
             try
             {
-                await File.WriteAllTextAsync(_scoreboardFilePath, jsonData);
+                await using var stream = File.Create(_scoreboardFilePath);
+                await JsonSerializer.SerializeAsync(stream, _scoreboard);
                 Console.WriteLine("Scoreboard data saved successfully.");
             }
             catch (Exception ex)
