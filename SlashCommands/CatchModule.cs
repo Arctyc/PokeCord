@@ -296,7 +296,6 @@ namespace PokeCord.SlashCommands
 
                 // Check if new
                 var isCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == pokemonData.PokedexId);
-                Console.WriteLine($"{username}'s value for isCaught on {pokemonData.Name}: {isCaught}");
 
                 // Subtract balls
                 if (playerData.Pokeballs >= 1)
@@ -405,9 +404,10 @@ namespace PokeCord.SlashCommands
                     if (doHatch)
                     {
                         string richEventPokemonName = CleanOutput.FixPokemonName(eventPokemonData.Name);
+                        var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
                         bool eventStartsWithVowel = "aeiouAEIOU".Contains(richEventPokemonName[0]);
                         message += $" It's {(eventStartsWithVowel ? "an" : "a")} " +
-                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richEventPokemonName}!{(isCaught ? "" : " 🆕")}" +
+                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richEventPokemonName}!{(eventIsCaught ? "" : " 🆕")}" +
                                  $" +{eventPokemonData.BaseExperience} Exp.";
                     }
                 }
