@@ -407,7 +407,7 @@ namespace PokeCord.SlashCommands
                         var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
                         bool eventStartsWithVowel = "aeiouAEIOU".Contains(richEventPokemonName[0]);
                         message += $" It's {(eventStartsWithVowel ? "an" : "a")} " +
-                                 $"{(pokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richEventPokemonName}!{(eventIsCaught ? "" : " 🆕")}" +
+                                 $"{(eventPokemonData.Shiny ? ":sparkles:SHINY:sparkles: " : "")}{richEventPokemonName}!{(eventIsCaught ? "" : " 🆕")}" +
                                  $" +{eventPokemonData.BaseExperience} Exp.";
                     }
                 }
