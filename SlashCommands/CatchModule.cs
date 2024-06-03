@@ -173,11 +173,11 @@ namespace PokeCord.SlashCommands
 
             // Check for event conditions
             EventMysteryEgg eventMysteryEgg = new EventMysteryEgg();
-            (bool doHatch, string eventMessage) = eventMysteryEgg.CheckEgg(playerData);
+            (bool eggIsHatching, string eventMessage) = eventMysteryEgg.CheckEgg(playerData);
 
             PokemonData eventPokemonData = null;
 
-            if (doHatch)
+            if (eggIsHatching)
             {
                 eventPokemonData = await pokeSelector.GetEventPokemon(_pokeApiClient, playerData);
                 if (eventPokemonData != null)
@@ -380,7 +380,7 @@ namespace PokeCord.SlashCommands
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
 
-                Embed[] embeds = doHatch && eventPokemonData.ImageUrl != null ? new Embed[]
+                Embed[] embeds = eggIsHatching && eventPokemonData.ImageUrl != null ? new Embed[]
                 {
                 new EmbedBuilder()
                     .WithImageUrl(pokemonData.ImageUrl)
@@ -401,7 +401,7 @@ namespace PokeCord.SlashCommands
                     // Append base message
                     message += "\n" + eventMessage;
                     // Append Hatch message
-                    if (doHatch)
+                    if (eggIsHatching)
                     {
                         string richEventPokemonName = CleanOutput.FixPokemonName(eventPokemonData.Name);
                         var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
