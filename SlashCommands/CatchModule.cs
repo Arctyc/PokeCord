@@ -380,7 +380,7 @@ namespace PokeCord.SlashCommands
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
 
-                Embed[] embeds = doHatch ? new Embed[]
+                Embed[] embeds = doHatch && eventPokemonData.ImageUrl != null ? new Embed[]
                 {
                 new EmbedBuilder()
                     .WithImageUrl(pokemonData.ImageUrl)
