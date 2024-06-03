@@ -34,7 +34,6 @@ namespace PokeCord.Events
             string message = string.Empty;
             if (hasEgg)
             {
-                Console.WriteLine(" User has Mystery Egg.\n");
                 playerData.PokeMartItems[itemKey] -= 1;
                 EggProgress -= 1;
                 switch (EggProgress)
