@@ -41,7 +41,9 @@ namespace PokeCord.SlashCommands
             if (playerData != null)
             {
                 // Get all players
+                Console.WriteLine("Before GetWeeklyLeaderboard");
                 List<PlayerData> weeklyLeaders = scoreboardService.GetWeeklyLeaderboard();
+                Console.WriteLine("Before GetLifetimeLeaderboard");
                 List<PlayerData> lifetimeLeaders = scoreboardService.GetLifetimeLeaderboard();
 
                 // Get player's rank
@@ -65,7 +67,6 @@ namespace PokeCord.SlashCommands
                 {
                     lifetimeRankString= (lifetimeRank + 1).ToString();
                 }
-
                 int caughtExperience = playerData.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0);
 
                 // Format ints as numerical string
@@ -116,7 +117,7 @@ namespace PokeCord.SlashCommands
                     string richBestPokemonExp = bestExp.ToString("N0");
                     // Format Discord reply
                     string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} has caught {richCatches} Pokémon ({richShiny} shiny) totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
-                                     $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
+                                     //FIX $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
                                      $"Weekly Experience: {richCaughtExperience}{(richCaughtExperience != richShareExperience ? $" ({richShareExperience})" : "" )}. " +
                                      $"Weekly Average Exp: {caughtAverageExp}{(caughtAverageExp != shareAverageExp ? $" ({shareAverageExp})" : "")}\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
