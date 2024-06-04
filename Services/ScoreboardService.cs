@@ -290,19 +290,16 @@ namespace PokeCord.Services
             var leadersToRemove = new List<PlayerData>();
             foreach (var player in leaders)
             {
-                Console.WriteLine($"checking " + player.UserName);
                 // Remove players with no weekly experience
                 if (player.WeeklyExperience == 0)
                 {
                     leadersToRemove.Add(player);
-                    Console.WriteLine($"removed {player.UserName}");
                 }
             }
             foreach (var player in leadersToRemove)
             {
                 leaders.Remove(player);
             }
-            Console.WriteLine("Returning leaders list...");
             return leaders;
         }
 

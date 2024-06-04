@@ -41,9 +41,7 @@ namespace PokeCord.SlashCommands
             if (playerData != null)
             {
                 // Get all players
-                Console.WriteLine("Before GetWeeklyLeaderboard");
                 List<PlayerData> weeklyLeaders = scoreboardService.GetWeeklyLeaderboard();
-                Console.WriteLine("Before GetLifetimeLeaderboard");
                 List<PlayerData> lifetimeLeaders = scoreboardService.GetLifetimeLeaderboard();
 
                 // Get player's rank
