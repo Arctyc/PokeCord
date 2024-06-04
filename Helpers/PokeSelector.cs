@@ -107,6 +107,11 @@ namespace PokeCord.Helpers
                     imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontShiny;
                     experience *= shinyExpMultiplier; // Add shiny exp
                 }
+                // Default image
+                if (imageUrl == null)
+                {
+                    imageUrl = "https://imgur.com/M66swhe";
+                }
                 return new PokemonData
                 {
                     PokedexId = pokemon.Id,
