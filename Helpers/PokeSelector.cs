@@ -6,34 +6,27 @@ namespace PokeCord.Helpers
 {
     public class PokeSelector
     {
-        // Highest and lowest Pokemon ID for special Pokemon
-        private readonly int _minPokemonIdSpecial = 10001;
+        private readonly int _maxPokemonId = 1025; // Standard Pokemon Max ID
+
+        private readonly int _minPokemonIdSpecial = 10001; // Range of Special Pokemon IDs
         private readonly int _maxPokemonIdSpecial = 10277;
+        
+        private readonly int _shinyRatio = 256; // Chance of catching a shiny
+        private readonly int _charmShinyRatio = 128; // Chance of catching a shiny with Shiny Charm
 
-        // Highest Pokemon ID to be requested on PokeApi
-        private readonly int _maxPokemonId = 1025;
-
-        // Chance of catching a shiny
-        private readonly int _shinyRatio = 256;
-
-        // Chance of catching a shiny with shiny charm item
-        private readonly int _charmShinyRatio = 128;
-
-        // Amount to multiply base exp by if shiny
-        private const int shinyExpMultiplier = 4;
-
-        // Default experience to be used in the case that there is no base exp provided
-        private const int defaultExperience = 150;
+        private const int shinyExpMultiplier = 4; // Amount to multiply base exp by if shiny
+        
+        private const int defaultExperience = 150; // Default experience to be used in the case that there is no base exp provided
 
         public PokeSelector()
         {
         }
 
-        // Get a random Pokemon
+        // Get a random standard Pokemon
         public async Task<PokemonData> GetRandomPokemon(PokeApiClient pokeApiClient, PlayerData playerData)
         {
             int playerShinyRatio = GetPlayerShinyRatio(playerData);
-            int randomId = GetRandomId(1, _maxPokemonId + 1);
+            int randomId = GenerateRandomId(1, _maxPokemonId + 1);
             return await GetPokemon(pokeApiClient, randomId, playerShinyRatio);
         }
 
@@ -41,7 +34,7 @@ namespace PokeCord.Helpers
         public async Task<PokemonData> GetEventPokemon(PokeApiClient pokeApiClient, PlayerData playerData)
         {
             int playerShinyRatio = GetPlayerShinyRatio(playerData);
-            int randomId = GetRandomId(_minPokemonIdSpecial, _maxPokemonIdSpecial + 1);
+            int randomId = GenerateRandomId(_minPokemonIdSpecial, _maxPokemonIdSpecial + 1);
             return await GetPokemon(pokeApiClient, randomId, playerShinyRatio);
         }
 
@@ -57,8 +50,8 @@ namespace PokeCord.Helpers
             return playerData.PokeMartItems.TryGetValue("Shiny Charm", out _);
         }
 
-        // Get a random Pokemon ID
-        private int GetRandomId(int min, int max)
+        // Generate a random Pokemon ID
+        private int GenerateRandomId(int min, int max)
         {
             return RandomNumberGenerator.GetInt32(min, max);
         }
@@ -74,14 +67,15 @@ namespace PokeCord.Helpers
 
             if (pokemon != null)
             {
-                // Assign experience and avoid null with default.
+                // Assign experience
                 int experience = pokemon.BaseExperience ?? defaultExperience;
                 pokemon.Name = char.ToUpper(pokemon.Name[0]) + pokemon.Name.Substring(1);
 
                 string? imageUrl;
+
                 if (!shiny)
                 {
-                    // Assign default image
+                    // Assign standard image
                     imageUrl = pokemon.Sprites.Other.OfficialArtwork.FrontDefault;
                 }
                 else
@@ -93,7 +87,7 @@ namespace PokeCord.Helpers
                 // Default image
                 if (imageUrl == null)
                 {
-                    imageUrl = "https://imgur.com/M66swhe";
+                    imageUrl = "https://i.imgur.com/M66swhe.jpeg";
                 }
                 return new PokemonData
                 {
@@ -113,7 +107,7 @@ namespace PokeCord.Helpers
         }
     }
 
-    // Simple data structure for Pokemon information
+    // Data structure for Pokemon information
     public class PokemonData
     {
         public int PokedexId { get; set; }
