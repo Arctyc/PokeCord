@@ -13,7 +13,7 @@ namespace PokeCord.Helpers
     public class Pokemart
     {
         private readonly IServiceProvider _services = Program.GetServices();
-        private readonly ScoreboardService _scoreboard;
+        private readonly PlayerDataService _playerDataService;
         // Poke Mart Menu
         public const int CostPokeballs = 500;
         public const int AmountPokeballs = 10;
@@ -30,7 +30,7 @@ namespace PokeCord.Helpers
 
         public Pokemart()
         {
-            _scoreboard = _services.GetRequiredService<ScoreboardService>();
+            _playerDataService = _services.GetRequiredService<PlayerDataService>();
         }
         public async Task<String> GetMenu()
         {
@@ -48,7 +48,8 @@ namespace PokeCord.Helpers
             string username = context.User.GlobalName;
             ulong userId = context.User.Id;
             string message = string.Empty;
-            if (_scoreboard.TryGetPlayerData(userId, out var playerData))
+            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData != null)
             {
                 message += $"You have {playerData.PokemonDollars} Pokémon Dollars and the following items:\n";
                 foreach(var key in playerData.PokeMartItems)
@@ -68,9 +69,9 @@ namespace PokeCord.Helpers
             string username = context.User.GlobalName;
             ulong userId = context.User.Id;
             // Get player data
-            if (_scoreboard.TryGetPlayerData(userId, out PlayerData originalPlayerData))
+            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData != null)
             {
-                PlayerData playerData = originalPlayerData;
                 // Check player for funds
                 if (playerData.PokemonDollars < CostPokeballs)
                 {
@@ -81,8 +82,8 @@ namespace PokeCord.Helpers
                     playerData.PokemonDollars -= CostPokeballs;
                     playerData.Pokeballs += AmountPokeballs;
                 }
-                // Save
-                await _scoreboard.SavePlayerDataAsync(playerData, originalPlayerData);
+                // Update player data
+                await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
                 message = $"{username} has purchased {AmountPokeballs} Poké Balls!";
             }
             else
@@ -146,11 +147,9 @@ namespace PokeCord.Helpers
         {
             string username = context.User.GlobalName;
             ulong userId = context.User.Id;
-            PlayerData originalPlayerData = new PlayerData();
-            if (_scoreboard.TryGetPlayerData(userId, out originalPlayerData))
+            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData != null)
             {
-                PlayerData playerData = originalPlayerData;
-
                 // Check if player already has item
                 playerData.PokeMartItems.TryGetValue(itemKey, out int onHand);
                 if (onHand > 0)
@@ -169,7 +168,7 @@ namespace PokeCord.Helpers
                 playerData.PokeMartItems[itemKey] = itemCharges;
 
                 // Save
-                await _scoreboard.SavePlayerDataAsync(playerData, originalPlayerData);
+                await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
                 return $"{username} has purchased {richItemName}!";
             }
             else

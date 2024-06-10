@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using PokeCord.Data;
 using PokeCord.Helpers;
 using PokeCord.Services;
@@ -10,14 +11,16 @@ namespace PokeCord.SlashCommands
 {
     public class TeamJoinModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboardService;
+        private readonly PlayerDataService _playerDataService;
+        private readonly TeamChampionshipService _teamChampionshipService;
         public const int teamJoinCost = TeamCreateModule.teamCreateCost; // Set team join cost to equal team create cost
         public const int teamCap = 4; // Maximum number of players per team
 
         public TeamJoinModule(IServiceProvider services)
         {
             Console.Write("Loaded command: teamjoin\n");
-            scoreboardService = services.GetRequiredService<ScoreboardService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -38,11 +41,8 @@ namespace PokeCord.SlashCommands
             }
 
             // Get player data
-            PlayerData playerData = new PlayerData();
-            if (scoreboardService.TryGetPlayerData(userId, out playerData))
-            {
-            }
-            else
+            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData == null)
             {
                 // PlayerData does not exist for this userId
                 Console.WriteLine($"PlayerData found for {username} {userId}");
@@ -51,7 +51,7 @@ namespace PokeCord.SlashCommands
             }
 
             // Get all teams
-            List<Team> allTeams = scoreboardService.GetTeams();
+            List<Team> allTeams = await _teamChampionshipService.GetTeamsAsync();
 
             // Make sure teamToJoin is one of the teams
             if (!allTeams.Any(t => t.Name == teamToJoin))
@@ -74,7 +74,7 @@ namespace PokeCord.SlashCommands
             // Check player is not already on a team
             if (playerData.TeamId != -1)
             {
-                Team? existingTeam = scoreboardService.GetTeams().FirstOrDefault(t => t.Id == playerData.TeamId);
+                Team? existingTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId);
                 if (existingTeam != null)
                 {
                     await RespondAsync($"You are already on Team {existingTeam.Name}!");
@@ -83,7 +83,7 @@ namespace PokeCord.SlashCommands
                 {
                     // The player's TeamId is not -1, but the team no longer exists in the scoreboard
                     playerData.TeamId = -1;
-                    await scoreboardService.SaveScoreboardAsync();
+                    await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
                     await RespondAsync($"PlayerData team ID error. Try again, if you see this message twice, contact @ArctycFox");
                 }
                 return;
@@ -105,18 +105,26 @@ namespace PokeCord.SlashCommands
             }
 
             // Join Team
-            await scoreboardService.TryAddPlayerToTeamAsync(userId, team.Id);
+            bool success = await _teamChampionshipService.TryAddPlayerToTeamAsync(userId, team);
+            if (success)
+            {
+                // Adjust playerData
+                playerData.PokemonDollars -= teamJoinCost;
+                playerData.TeamId = team.Id;
 
-            // Adjust playerData
-            playerData.PokemonDollars -= teamJoinCost;
-            playerData.TeamId = team.Id;
+                // Save data
+                await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
 
-            // Save data
-            await scoreboardService.SaveTeamScoreboardAsync();
-            await scoreboardService.SaveScoreboardAsync();
-
-            // Reply in Discord
-            await RespondAsync($"{username} is now a member of Team {teamToJoin}");
+                // Reply in Discord
+                await RespondAsync($"{username} is now a member of Team {team.Name}");
+            }
+            else
+            {
+                // Unable to add player to team
+                Console.WriteLine($"Unable to add {username} to team {teamToJoin}.");
+                await RespondAsync($"There was an error joining Team {teamToJoin}.");
+                return;
+            }            
         }
     }
 }

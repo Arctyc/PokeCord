@@ -12,7 +12,7 @@ namespace PokeCord.Events
     internal class EventMysteryEgg
     {
         private readonly IServiceProvider _services = Program.GetServices();
-        private readonly ScoreboardService _scoreboard;
+        private readonly PlayerDataService _scoreboard;
 
         DateTime startDate = new DateTime(2024, 6, 3);
         DateTime endDate = new DateTime(2024, 6, 10);
@@ -22,7 +22,7 @@ namespace PokeCord.Events
         public const int itemCharges = 3;
         public EventMysteryEgg()
         {
-            _scoreboard = _services.GetRequiredService<ScoreboardService>();
+            _scoreboard = _services.GetRequiredService<PlayerDataService>();
         }
 
         public (bool, string) CheckEgg(PlayerData playerData)

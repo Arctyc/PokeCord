@@ -10,14 +10,16 @@ namespace PokeCord.SlashCommands
 {
     public class PokescoreModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboardService;
-        private readonly BadgeService badgeService;
+        private readonly PlayerDataService _playerDataService;
+        private readonly TeamChampionshipService _teamChampionshipService;
+        private readonly BadgeService _badgeService;
 
         public PokescoreModule(IServiceProvider services)
         {
             Console.Write("Loaded command: pokescore\n");
-            scoreboardService = services.GetRequiredService<ScoreboardService>();
-            badgeService = services.GetRequiredService<BadgeService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
+            _badgeService = services.GetRequiredService<BadgeService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -27,13 +29,12 @@ namespace PokeCord.SlashCommands
         {
             string username = Context.User.GlobalName;
             ulong userId = Context.User.Id;
-            List<Badge> badges = badgeService.GetBadges();
+            List<Badge> badges = _badgeService.GetBadges();
             Console.WriteLine($"{username} used pokescore");
 
             // Get the PlayerData instance from the scoreboard
-            PlayerData playerData = new PlayerData();
-
-            if (scoreboardService.TryGetPlayerData(userId, out playerData))
+            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData != null)
             {
                 Console.WriteLine($"PlayerData found for {username} {userId}");
             }
@@ -41,8 +42,8 @@ namespace PokeCord.SlashCommands
             if (playerData != null)
             {
                 // Get all players
-                List<PlayerData> weeklyLeaders = scoreboardService.GetWeeklyLeaderboard();
-                List<PlayerData> lifetimeLeaders = scoreboardService.GetLifetimeLeaderboard();
+                List<PlayerData> weeklyLeaders = await _playerDataService.GetWeeklyLeaderboardAsync();
+                List<PlayerData> lifetimeLeaders = await _playerDataService.GetLifetimeLeaderboardAsync();
 
                 // Get player's rank
                 int weeklyRank = weeklyLeaders.IndexOf(playerData);
@@ -81,7 +82,7 @@ namespace PokeCord.SlashCommands
                 int lifetimeAverageExp = 0;
                 
                 // Get all teams
-                List<Team> allTeams = scoreboardService.GetTeams();
+                List<Team> allTeams = await _teamChampionshipService.GetTeamsAsync();
 
                 // Build output
                 if (playerData.CaughtPokemon.Any())

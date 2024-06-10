@@ -9,11 +9,13 @@ namespace PokeCord.SlashCommands
 {
     public class PoketeamsModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboardService;
+        private readonly PlayerDataService _playerDataService;
+        private readonly TeamChampionshipService _teamChampionshipService;
         public PoketeamsModule(IServiceProvider services)
         {
             Console.Write("Loaded command: poketeams\n");
-            scoreboardService = services.GetRequiredService<ScoreboardService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -27,7 +29,7 @@ namespace PokeCord.SlashCommands
             // Formatted message (list of teams with score, ordered descending for output
             string viewMessage = "";
 
-            List<Team> teams = scoreboardService.GetTeams();
+            List<Team> teams = await _teamChampionshipService.GetTeamsAsync();
             if (teams.Count == 0)
             {
                 viewMessage = $"There are no teams yet. Use /teamcreate to start one!";
@@ -42,7 +44,8 @@ namespace PokeCord.SlashCommands
                     List<String> members = new List<string>();
                     foreach (ulong player in teams[i].Players)
                     {
-                        if (scoreboardService.TryGetPlayerData(player, out var playerData))
+                        PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(player);
+                        if (playerData != null)
                         {
                             members.Add(playerData.UserName);
                         }

@@ -8,14 +8,14 @@ namespace PokeCord.SlashCommands
 {
     public class PokebadgesModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboardService;
-        private readonly BadgeService badgeService;
+        private readonly PlayerDataService _playerDataService;
+        private readonly BadgeService _badgeService;
 
         public PokebadgesModule(IServiceProvider services)
         {
             Console.Write("Loaded command: pokebadges\n");
-            scoreboardService = services.GetRequiredService<ScoreboardService>();
-            badgeService = services.GetRequiredService<BadgeService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _badgeService = services.GetRequiredService<BadgeService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -24,13 +24,13 @@ namespace PokeCord.SlashCommands
         public async Task PokebadgesCommand()
         {
             string badgeCountMessage;
-            List<Badge> badges = badgeService.GetBadges();
+            List<Badge> badges = _badgeService.GetBadges();
 
             ulong userId = Context.User.Id;
             string username = Context.User.GlobalName;
 
-            PlayerData playerData = new PlayerData();
-            if (scoreboardService.TryGetPlayerData(userId, out playerData))
+            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData != null)
             {
                 Console.WriteLine($"PlayerData found for {username} {userId}");
             }

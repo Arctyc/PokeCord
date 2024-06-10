@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using PokeCord.Data;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace PokeCord.Services
 {
@@ -10,7 +11,7 @@ namespace PokeCord.Services
         private static List<Badge> _badges;
 
         public BadgeService()
-        {            
+        {
         }
 
         public List<Badge> GetBadges()
@@ -59,6 +60,7 @@ namespace PokeCord.Services
         }
 
         // Remove duplicate badges
+        /* Mine
         public static ConcurrentDictionary<ulong, PlayerData> RemoveDuplicateBadges(ConcurrentDictionary<ulong, PlayerData> scoreboard)
         {
             ConcurrentDictionary<ulong, PlayerData> newScoreboard = new ConcurrentDictionary<ulong, PlayerData>();
@@ -100,6 +102,39 @@ namespace PokeCord.Services
                 }
             }
             return newScoreboard;
+        }*/
+
+        // DA AI's
+        public static ConcurrentDictionary<ulong, PlayerData> RemoveDuplicateBadges(ConcurrentDictionary<ulong, PlayerData> scoreboard)
+        {
+            Debug.Assert(scoreboard != null && scoreboard.Count > 0);
+
+            foreach (var kvp in scoreboard)
+            {
+                ulong userId = kvp.Key;
+                PlayerData playerData = kvp.Value;
+
+                Debug.Assert(playerData != null && playerData.EarnedBadges != null);
+
+                HashSet<Badge> uniqueBadges = new HashSet<Badge>();
+
+                foreach (var badge in playerData.EarnedBadges)
+                {
+                    if (uniqueBadges.Add(badge))
+                    {
+                        // Badge is unique, do nothing
+                        Console.WriteLine($"Added unique badge {badge.Name} to Earned Badges.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{badge.Name} was not unqiue.");
+                    }
+                }
+
+                playerData.EarnedBadges = uniqueBadges.ToList();
+            }
+
+            return scoreboard;
         }
 
     }

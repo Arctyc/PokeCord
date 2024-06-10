@@ -1,24 +1,29 @@
 ﻿using Discord;
 using Discord.Interactions;
+using PokeCord.Data;
 
 namespace PokeCord.Services
 {
     public class TeamAutocompleter : AutocompleteHandler
     {
-        private readonly ScoreboardService scoreboardService;
+        private readonly TeamChampionshipService _teamChampionService;
 
-        public TeamAutocompleter(ScoreboardService scoreboardService)
+        public TeamAutocompleter(TeamChampionshipService teamChampionshipService)
         {
-            this.scoreboardService = scoreboardService;
+            _teamChampionService = teamChampionshipService;
         }
 
-        public override Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context, IAutocompleteInteraction interaction,
-        IParameterInfo parameter, IServiceProvider services)
+        public override async Task<AutocompletionResult> GenerateSuggestionsAsync(IInteractionContext context, IAutocompleteInteraction interaction,
+            IParameterInfo parameter, IServiceProvider services)
         {
-            var teams = scoreboardService.GetTeams()
-                .Select(x => x.Name)
-                .Select(x => new AutocompleteResult(x, x));
-            return Task.FromResult(AutocompletionResult.FromSuccess(teams));
+            // Await the Task to get the actual List<Team>
+            List<Team> teams = await _teamChampionService.GetTeamsAsync();
+
+            // Convert each team name to AutocompleteResult
+            var suggestions = teams.Select(x => new AutocompleteResult(x.Name, x.Name));
+
+            // Return the AutocompletionResult
+            return AutocompletionResult.FromSuccess(suggestions);
         }
     }
 }
