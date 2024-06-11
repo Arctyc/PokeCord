@@ -75,7 +75,17 @@ namespace PokeCord.Services
         // Get player from MongoDB
         public async Task<PlayerData> TryGetPlayerDataAsync(ulong userId)
         {
-            return await _playerDataCollection.Find(p => p.UserId == userId).FirstOrDefaultAsync();
+            try
+            {
+                PlayerData playerData = await _playerDataCollection.Find(p => p.UserId == userId).FirstOrDefaultAsync();
+                return playerData;
+            }
+            catch (MongoException ex)
+            {
+                Console.WriteLine($"Error getting playerdata {ex.Message}");
+                return null;
+            }
+            
         }
 
         // Set all player's pokeballs to restock amount in MongoDB

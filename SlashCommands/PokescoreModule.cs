@@ -116,7 +116,7 @@ namespace PokeCord.SlashCommands
                     string richBestPokemonExp = bestExp.ToString("N0");
                     // Format Discord reply
                     string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} has caught {richCatches} Pokémon ({richShiny} shiny) totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
-                                     //FIX $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
+                                     $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
                                      $"Weekly Experience: {richCaughtExperience}{(richCaughtExperience != richShareExperience ? $" ({richShareExperience})" : "" )}. " +
                                      $"Weekly Average Exp: {caughtAverageExp}{(caughtAverageExp != shareAverageExp ? $" ({shareAverageExp})" : "")}\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
