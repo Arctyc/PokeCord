@@ -27,7 +27,7 @@ namespace PokeCord.SlashCommands
                     await RespondAsync(await pokemart.GetUserItems(Context), ephemeral: true);
                     return;
                 case "Menu":
-                    await RespondAsync(await pokemart.GetMenu(), ephemeral: true);
+                    await RespondAsync(pokemart.GetMenu(), ephemeral: true);
                     return;
                 case "Poké Balls":
                     message = await pokemart.PurchasePokeballs(Context, pokemartItem);

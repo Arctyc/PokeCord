@@ -50,7 +50,6 @@ namespace PokeCord.Data
                 {
                     newBadges.Add(badge);
                 }
-
             }
             //pass data back
             return newBadges;

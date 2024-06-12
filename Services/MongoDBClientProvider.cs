@@ -7,27 +7,30 @@ public class MongoDBClientProvider
 {
     private readonly IMongoClient _client;
     private readonly IMongoDatabase _database;
-    private readonly IMongoCollection<PlayerData> _playerDataCollection;
+    private readonly IMongoCollection<PlayerData> _playerDataCollection; // For testing
 
-    public MongoDBClientProvider(string connectionString, string databaseName, string certificatePath)
+    public MongoDBClientProvider(string connectionString, string databaseName)
     {
         var settings = MongoClientSettings.FromConnectionString(connectionString);
         settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-        settings.UseTls = true;
-        settings.SslSettings = new SslSettings
-        {
-            ClientCertificates = new List<X509Certificate>()
-            {
-                new X509Certificate2(certificatePath)
-            }
-        };
+        //settings.UseTls = true;
 
         _client = new MongoClient(settings);
         _database = _client.GetDatabase(databaseName);
-        _playerDataCollection = _database.GetCollection<PlayerData>("PlayerData");
-        var somedata = _playerDataCollection.Find(new BsonDocument()).ToListAsync();
-        Console.WriteLine($"DATABASE: {somedata.Result}");
-}
+
+
+        // Test connection
+        _playerDataCollection = _database.GetCollection<PlayerData>("PlayerData");        
+        try
+        {
+            var pingData = _database.RunCommand<BsonDocument>(new BsonDocument("ping", 1));
+            Console.WriteLine($"Connected to MongoDB: {pingData}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"*****NOT CONNECTED to MongoDB: " + ex.Message );
+        }
+    }
 
     public IMongoDatabase GetDatabase()
     {

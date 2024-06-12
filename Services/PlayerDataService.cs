@@ -25,19 +25,22 @@ namespace PokeCord.Services
         public async Task<bool> TryAddPlayerDataAsync(ulong userId, PlayerData playerData)
         {
             var existingPlayerData = await _playerDataCollection.Find(p => p.UserId == userId).FirstOrDefaultAsync();
-            if (existingPlayerData == null)
+            if (existingPlayerData != null)
             {
-                try
-                {
-                    await _playerDataCollection.InsertOneAsync(playerData);
-                    return true;
-                }
-                catch (MongoException ex)
-                {
-                    Console.WriteLine($"Failure to create new player:" + ex.Message);
-                }               
+                Console.WriteLine($"Player data for userId: {userId} already exists.");
+                return false;
             }
-            return false;
+
+            try
+            {
+                await _playerDataCollection.InsertOneAsync(playerData); // Insert new player data
+                return true;
+            }
+            catch (MongoException ex)
+            {
+                Console.WriteLine($"Failure to create new player:" + ex.Message);
+                return false;
+            }
         }
 
         // Update player in MongoDB
@@ -85,11 +88,10 @@ namespace PokeCord.Services
                 Console.WriteLine($"Error getting playerdata {ex.Message}");
                 return null;
             }
-            
         }
 
         // Set all player's pokeballs to restock amount in MongoDB
-        public async Task RestockPokeballsAsync(object state)
+        public async Task RestockPokeballsAsync(object? state)
         {
             var filter = Builders<PlayerData>.Filter.Lt(p => p.Pokeballs, pokeballRestockAmount);
             var update = Builders<PlayerData>.Update.Set(p => p.Pokeballs, pokeballRestockAmount);

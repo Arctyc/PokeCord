@@ -23,6 +23,7 @@ namespace PokeCord.SlashCommands
         {
             Console.Write("Loaded command: teamcreate\n");
             _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -48,7 +49,7 @@ namespace PokeCord.SlashCommands
             }
 
             // Get player data
-            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
             if (playerData == null)
             {
                 // PlayerData does not exist for this userId
@@ -105,7 +106,7 @@ namespace PokeCord.SlashCommands
             };
 
             // Add team to list in memory
-            _teamChampionshipService.TryAddTeamAsync(team); // Saved to file in service
+            await _teamChampionshipService.TryAddTeamAsync(team); // Saved to file in service
 
             // Adjust playerData
             playerData.PokemonDollars -= teamCreateCost;

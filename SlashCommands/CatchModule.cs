@@ -177,7 +177,7 @@ namespace PokeCord.SlashCommands
             EventMysteryEgg eventMysteryEgg = new EventMysteryEgg();
             (bool eggIsHatching, string eventMessage) = eventMysteryEgg.CheckEgg(playerData);
 
-            PokemonData eventPokemonData = null;
+            PokemonData eventPokemonData = null!;
 
             if (eggIsHatching)
             {
@@ -187,7 +187,7 @@ namespace PokeCord.SlashCommands
                     Console.WriteLine($"{username} hatched a {(pokemonData.Shiny ? "shiny " : "")}{eventPokemonData.Name} #{eventPokemonData.PokedexId}");
 
                     // Assign Exp
-                    int eventPokemonExperienceValue = (int)eventPokemonData.BaseExperience;
+                    int eventPokemonExperienceValue = (int)(eventPokemonData.BaseExperience ?? 0);
 
                     // Check if new
                     var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
@@ -214,7 +214,7 @@ namespace PokeCord.SlashCommands
             {
                 Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
                 // Assign Exp & dollars
-                int pokemonExperienceValue = (int)pokemonData.BaseExperience;
+                int pokemonExperienceValue = (int)(pokemonData.BaseExperience ?? 0);
                 int pokemonDollarValue = pokemonExperienceValue / pokemonDollarRatio;
                 int adjustedPokemonDollarValue = pokemonDollarValue;
 
@@ -373,7 +373,8 @@ namespace PokeCord.SlashCommands
                 if (playerData.TeamId != -1)
                 {
                     onTeam = true;
-                    playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
+                    Team? team = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId);
+                    playerTeam = team?.Name ?? "HOW ARE YOU ON A TEAM WITH NO NAME!?!?"; // Avoiding null reference warning.
                 }
 
                 // Format Discord output
@@ -383,7 +384,7 @@ namespace PokeCord.SlashCommands
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
 
-                Embed[] embeds = eggIsHatching && eventPokemonData.ImageUrl != null ? new Embed[]
+                Embed[] embeds = eggIsHatching && eventPokemonData?.ImageUrl != null ? new Embed[]
                 {
                 new EmbedBuilder()
                     .WithImageUrl(pokemonData.ImageUrl)
@@ -406,6 +407,7 @@ namespace PokeCord.SlashCommands
                     // Append Hatch message
                     if (eggIsHatching)
                     {
+                        if (eventPokemonData == null) { throw new NullReferenceException("Event Pokemon Data was null!"); }
                         string richEventPokemonName = CleanOutput.FixPokemonName(eventPokemonData.Name);
                         var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
                         bool eventStartsWithVowel = "aeiouAEIOU".Contains(richEventPokemonName[0]);
@@ -536,11 +538,18 @@ namespace PokeCord.SlashCommands
                     foreach (var player in otherTeamMembers)
                     {
                         // Get existing playerData
-                        PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(player);
-                        // Try to update the player exp
-                        playerData.WeeklyExperience += sharedExp;
-                        await _playerDataService.TryUpdatePlayerDataAsync(player, playerData);
-                        Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
+                        try
+                        {
+                            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(player);
+                            if (playerData != null)
+                            {
+                                // Try to update the player exp
+                                playerData.WeeklyExperience += sharedExp;
+                                await _playerDataService.TryUpdatePlayerDataAsync(player, playerData);
+                                Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
+                            }
+                        }
+                        catch (Exception ex) { Console.WriteLine($"Error giving Exp to team member(s)" + ex.Message); }                                              
                     }
 
                     // If any failed, try again

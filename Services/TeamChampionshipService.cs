@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using PokeCord.Data;
 using PokeCord.Helpers;
@@ -19,8 +20,10 @@ namespace PokeCord.Services
         public const int currencyCap = 5000; // Max amount of pokemon dollars a player can have
 
         private readonly IMongoCollection<Team> _teamChampionshipCollection;
-        public TeamChampionshipService(MongoDBClientProvider mongoDBClient)
+        public TeamChampionshipService(MongoDBClientProvider mongoDBClient, IServiceProvider services)
         {
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+
             var database = mongoDBClient.GetDatabase();
             _teamChampionshipCollection = database.GetCollection<Team>("TeamChampionship");
         }
@@ -50,7 +53,7 @@ namespace PokeCord.Services
             return await _teamChampionshipCollection.Find(_ => true).SortByDescending(t => t.TeamExperience).ToListAsync();
         }
 
-        public async Task ResetTeamsAsync(object state)
+        public async Task ResetTeamsAsync(object? state)
         {
             // Clear all records from TeamChampionship collection
             await _teamChampionshipCollection.DeleteManyAsync(Builders<Team>.Filter.Empty);
@@ -211,7 +214,7 @@ namespace PokeCord.Services
                 {
                     try
                     {
-                        PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(playerId);
+                        PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(playerId);
                         if (playerData != null)
                         {
                             // Add pokemondollars in the amount of the team reward divided evenly amongst the team members

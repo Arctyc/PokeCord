@@ -34,16 +34,6 @@ namespace PokeCord
             Console.WriteLine("Interactions setup in CommandHandler.cs");
         }
 
-        public async Task InitializeAsync()
-        {
-            _client.Ready += ReadyAsync;
-        }
-
-        private async Task ReadyAsync()
-        {
-            Console.WriteLine("ReadyAsync called in CommandHandler.cs");
-        }
-
         private async Task HandleInteraction(SocketInteraction interaction)
         {
             try
@@ -86,6 +76,7 @@ namespace PokeCord
                     case InteractionCommandError.UnmetPrecondition:
                         // implement
                         Console.WriteLine($"Unhandled error in CommandHandler.HandleInteractionExecute: {result.Error}");
+                        await Task.Delay(1); // To get rid of annoying async without await warning
                         break;
                     default:
                         break;

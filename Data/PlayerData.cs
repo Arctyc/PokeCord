@@ -19,8 +19,11 @@ namespace PokeCord.Data
 
         public PlayerData()
         {
+            UserName = string.Empty;
             CaughtPokemon = new List<PokemonData>();
+            WeeklyCaughtPokemon = new List<PokemonData>();
             EarnedBadges = new List<Badge>();
+            PokeMartItems = new Dictionary<string, int>();
         }
         public PlayerData(ulong userId, string userName, int experience, int weeklyExperience, int pokeballs, int pokemonDollars)
         {
@@ -31,7 +34,9 @@ namespace PokeCord.Data
             Pokeballs = pokeballs;
             PokemonDollars = pokemonDollars;
             CaughtPokemon = new List<PokemonData>();
+            WeeklyCaughtPokemon = new List<PokemonData>();
             EarnedBadges = new List<Badge>();
+            PokeMartItems = new Dictionary<string, int>();
         }
     }
 }

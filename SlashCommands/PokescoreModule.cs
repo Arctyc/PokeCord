@@ -33,7 +33,7 @@ namespace PokeCord.SlashCommands
             Console.WriteLine($"{username} used pokescore");
 
             // Get the PlayerData instance from the scoreboard
-            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
             if (playerData != null)
             {
                 Console.WriteLine($"PlayerData found for {username} {userId}");
@@ -87,8 +87,8 @@ namespace PokeCord.SlashCommands
                 // Build output
                 if (playerData.CaughtPokemon.Any())
                 {
-                    PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
-                    int bestExp = (int)bestPokemon.BaseExperience;
+                    PokemonData? bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
+                    int bestExp = (int)(bestPokemon?.BaseExperience ?? 0);
 
                     // Set lifetime average exp string
                     lifetimeAverageExp = playerData.Experience / playerData.CaughtPokemon.Count;
@@ -108,7 +108,8 @@ namespace PokeCord.SlashCommands
                     if (playerData.TeamId != -1)
                     {
                         onTeam = true;
-                        playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
+                        Team? team = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId);
+                        playerTeam = team?.Name ?? "How are you on a team with no name!?!?"; // Avoiding null error
                     }
                     int totalShiny = playerData.CaughtPokemon.Count(pokemon => pokemon.Shiny); // Count total shiny pokemon
                     string richCatches = catches.ToString("N0");

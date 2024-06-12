@@ -16,19 +16,19 @@ namespace PokeCord
     public class Program
     {
         private static DiscordSocketClient _client = new DiscordSocketClient();
-        private static InteractionService _interactionService;
+        private static InteractionService _interactionService = null!;
         private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
 
-        private static IServiceProvider _services { get; set; }
-        private static IConfiguration _configuration;
-        private static Timer _pokeballResetTimer;
-        private static Timer _weeklyStartTimer;
-        private static Timer _weeklyEndTimer;
+        private static IServiceProvider _services { get; set; } = null!;
+        private static IConfiguration _configuration = null!;
+        private static Timer _pokeballResetTimer = null!;
+        private static Timer _weeklyStartTimer = null!;
+        private static Timer _weeklyEndTimer = null!;
         private const int standardCooldownSeconds = 120;
         private const int xSpeedCooldownSeconds = 10;
         //Testing
-        private static Timer _quickStartTimer;
-        private static Timer _quickEndTimer;
+        //private static Timer _quickStartTimer;
+        //private static Timer _quickEndTimer;
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
@@ -134,10 +134,10 @@ namespace PokeCord
         private static IServiceProvider ConfigureServices()
         {
             // Mongo Connection Data
-            var connectionString = Environment.GetEnvironmentVariable("MongoDBConnectionString");
+            var connectionString = Environment.GetEnvironmentVariable("MongoDBConnectionString") ?? 
+                throw new InvalidOperationException("MongoDB connection string not found in environment variables.");
             //var databaseName = "PokeCordDB";
             var databaseName = "PokeCordTestingDB";
-            var certificatePath = "MongoX509.pem";
 
             return new ServiceCollection()
                 //Discord.NET
@@ -146,7 +146,7 @@ namespace PokeCord
                 .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), _interactionServiceConfig))
                 .AddSingleton<InteractionService>()
                 //MongoDB
-                .AddSingleton(new MongoDBClientProvider(connectionString, databaseName, certificatePath))
+                .AddSingleton(new MongoDBClientProvider(connectionString, databaseName))
                 //PokeCord
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<PokeApiClient>()

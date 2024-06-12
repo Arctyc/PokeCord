@@ -32,7 +32,7 @@ namespace PokeCord.Helpers
         {
             _playerDataService = _services.GetRequiredService<PlayerDataService>();
         }
-        public async Task<String> GetMenu()
+        public string GetMenu()
         {
             return $"Poké Balls: {AmountPokeballs} for P{CostPokeballs}\n" +
                    $"Amulet Coin - 2x Pokémon Dollars from catches: {AmountAmuletCoin} charges for P{CostAmuletCoin}\n" +
@@ -48,7 +48,7 @@ namespace PokeCord.Helpers
             string username = context.User.GlobalName;
             ulong userId = context.User.Id;
             string message = string.Empty;
-            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
             if (playerData != null)
             {
                 message += $"You have {playerData.PokemonDollars} Pokémon Dollars and the following items:\n";
@@ -69,7 +69,7 @@ namespace PokeCord.Helpers
             string username = context.User.GlobalName;
             ulong userId = context.User.Id;
             // Get player data
-            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
             if (playerData != null)
             {
                 // Check player for funds
@@ -147,7 +147,7 @@ namespace PokeCord.Helpers
         {
             string username = context.User.GlobalName;
             ulong userId = context.User.Id;
-            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
             if (playerData != null)
             {
                 // Check if player already has item
