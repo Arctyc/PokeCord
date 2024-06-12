@@ -24,7 +24,7 @@ namespace PokeCord.Services
         // Add player to MongoDB
         public async Task<bool> TryAddPlayerDataAsync(ulong userId, PlayerData playerData)
         {
-            var existingPlayerData = await _playerDataCollection.Find(p => p.UserId == userId).FirstOrDefaultAsync();
+            var existingPlayerData = await _playerDataCollection.Find(p => p._id == userId).FirstOrDefaultAsync();
             if (existingPlayerData != null)
             {
                 Console.WriteLine($"Player data for userId: {userId} already exists.");
@@ -48,7 +48,7 @@ namespace PokeCord.Services
         {
             try
             {
-                var result = await _playerDataCollection.ReplaceOneAsync(p => p.UserId == userId, playerData);
+                var result = await _playerDataCollection.ReplaceOneAsync(p => p._id == userId, playerData);
                 return result.ModifiedCount > 0;
             }
             catch (MongoException ex)
@@ -80,7 +80,7 @@ namespace PokeCord.Services
         {
             try
             {
-                PlayerData playerData = await _playerDataCollection.Find(p => p.UserId == userId).FirstOrDefaultAsync();
+                PlayerData playerData = await _playerDataCollection.Find(p => p._id == userId).FirstOrDefaultAsync();
                 return playerData;
             }
             catch (MongoException ex)
@@ -88,6 +88,7 @@ namespace PokeCord.Services
                 Console.WriteLine($"Error getting playerdata {ex.Message}");
                 return null;
             }
+            
         }
 
         // Set all player's pokeballs to restock amount in MongoDB

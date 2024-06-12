@@ -46,7 +46,7 @@ namespace PokeCord.SlashCommands
                 List<PlayerData> lifetimeLeaders = await _playerDataService.GetLifetimeLeaderboardAsync();
 
                 // Get player's rank
-                int weeklyRank = weeklyLeaders.IndexOf(playerData);
+                int weeklyRank = weeklyLeaders.IndexOf(playerData); //FIX: Not finding by "playerData", need to remedy. weeklyLeaders[0] is the player.
                 int lifetimeRank = lifetimeLeaders.IndexOf(playerData);
                 string weeklyRankString;
                 string lifetimeRankString;

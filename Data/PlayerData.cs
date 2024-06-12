@@ -5,7 +5,7 @@ namespace PokeCord.Data
     public class PlayerData
     {
         public int Version { get; set; } = 4;
-        public ulong UserId { get; set; }
+        public ulong _id { get; set; }
         public string UserName { get; set; }
         public int Experience { get; set; }
         public int WeeklyExperience { get; set; }
@@ -27,7 +27,7 @@ namespace PokeCord.Data
         }
         public PlayerData(ulong userId, string userName, int experience, int weeklyExperience, int pokeballs, int pokemonDollars)
         {
-            UserId = userId;
+            _id = userId;
             UserName = userName;
             Experience = experience;
             WeeklyExperience = weeklyExperience;

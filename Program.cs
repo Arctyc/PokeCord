@@ -15,6 +15,9 @@ namespace PokeCord
 {
     public class Program
     {
+        //WARNING: Set this to false when pushing to main
+        public static bool testingMode = true;
+
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService = null!;
         private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
@@ -38,8 +41,8 @@ namespace PokeCord
         public static async Task Main()
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
-            //var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-            var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            if (testingMode) { token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN"); }        
 
             _client.Ready += ClientReady;
             _client.Log += LogAsync;
@@ -136,8 +139,8 @@ namespace PokeCord
             // Mongo Connection Data
             var connectionString = Environment.GetEnvironmentVariable("MongoDBConnectionString") ?? 
                 throw new InvalidOperationException("MongoDB connection string not found in environment variables.");
-            //var databaseName = "PokeCordDB";
-            var databaseName = "PokeCordTestingDB";
+            var databaseName = "PokeCordDB";
+            if (testingMode) { databaseName = "PokeCordTestingDB"; }
 
             return new ServiceCollection()
                 //Discord.NET

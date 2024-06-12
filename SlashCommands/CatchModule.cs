@@ -84,7 +84,7 @@ namespace PokeCord.SlashCommands
                 // TODO: Update this with new player data each version. Current version: 4
                 playerData = new PlayerData
                 {
-                    UserId = userId,
+                    _id = userId,
                     UserName = username,
                     Experience = 0,
                     WeeklyExperience = 0,
