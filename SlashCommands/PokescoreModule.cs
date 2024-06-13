@@ -42,8 +42,11 @@ namespace PokeCord.SlashCommands
             if (playerData != null)
             {
                 // Get all players
+                Console.WriteLine($"Before...");
                 List<PlayerData> weeklyLeaders = await _playerDataService.GetWeeklyLeaderboardAsync();
+                Console.WriteLine($"Between...");
                 List<PlayerData> lifetimeLeaders = await _playerDataService.GetLifetimeLeaderboardAsync();
+                Console.WriteLine($"After.");
 
                 // Get player's rank
                 int weeklyRank = weeklyLeaders.IndexOf(playerData); //FIX: Not finding by "playerData", need to remedy. weeklyLeaders[0] is the player.
@@ -121,7 +124,7 @@ namespace PokeCord.SlashCommands
                                      $"Weekly Experience: {richCaughtExperience}{(richCaughtExperience != richShareExperience ? $" ({richShareExperience})" : "" )}. " +
                                      $"Weekly Average Exp: {caughtAverageExp}{(caughtAverageExp != shareAverageExp ? $" ({shareAverageExp})" : "")}\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                     $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {richBestPokemonExp} exp!";
+                                     $"{CleanOutput.RichifyPokemonName(bestPokemon.Name)} worth {richBestPokemonExp} exp!";
 
                     Embed[] embeds = new Embed[]
                         {

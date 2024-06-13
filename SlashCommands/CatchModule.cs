@@ -57,7 +57,6 @@ namespace PokeCord.SlashCommands
             ulong userId = Context.User.Id;
             int xSpeedCharges = -1; // Initialize to a negative number, updated later if player has X Speed
 
-            //FIX: NEED ANYMORE? PlayerData originalPlayerData = new PlayerData();
             List<Badge> badges = _badgeService.GetBadges();
             Console.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {username} used catch");
 
@@ -362,7 +361,7 @@ namespace PokeCord.SlashCommands
                 }
 
                 // Clean up output variables
-                string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);
+                string richPokemonName = CleanOutput.RichifyPokemonName(pokemonData.Name);
                 bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
                 if (pokemonData.Shiny) { startsWithVowel = false; }
 
@@ -408,7 +407,7 @@ namespace PokeCord.SlashCommands
                     if (eggIsHatching)
                     {
                         if (eventPokemonData == null) { throw new NullReferenceException("Event Pokemon Data was null!"); }
-                        string richEventPokemonName = CleanOutput.FixPokemonName(eventPokemonData.Name);
+                        string richEventPokemonName = CleanOutput.RichifyPokemonName(eventPokemonData.Name);
                         var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
                         bool eventStartsWithVowel = "aeiouAEIOU".Contains(richEventPokemonName[0]);
                         message += $" It's {(eventStartsWithVowel ? "an" : "a")} " +

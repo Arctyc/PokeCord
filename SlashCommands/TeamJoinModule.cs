@@ -13,7 +13,7 @@ namespace PokeCord.SlashCommands
     {
         private readonly PlayerDataService _playerDataService;
         private readonly TeamChampionshipService _teamChampionshipService;
-        public const int teamJoinCost = TeamCreateModule.teamCreateCost; // Set team join cost to equal team create cost
+        public const int teamJoinCost = TeamChampionshipService.teamCreateCost; // Set team join cost to equal team create cost
         public const int teamCap = 4; // Maximum number of players per team
 
         public TeamJoinModule(IServiceProvider services)
@@ -52,6 +52,8 @@ namespace PokeCord.SlashCommands
 
             // Get all teams
             List<Team> allTeams = await _teamChampionshipService.GetTeamsAsync();
+            // Create a blank team to fill with data
+            Team? team = new Team();
 
             // Make sure teamToJoin is one of the teams
             if (!allTeams.Any(t => t.Name == teamToJoin))
@@ -62,31 +64,37 @@ namespace PokeCord.SlashCommands
             }
 
             // Get team data
-            Team team = allTeams.FirstOrDefault(t => t.Name == teamToJoin);
-            Console.WriteLine($"{username} is triyng to join Team {team.Name}. Team ID: {team.Id}. User is on team: {playerData.TeamId}");
-            if (team == null)
+            try
             {
-                Console.WriteLine($"Could not find team data for {teamToJoin}");
+                // Locate a matching team in the database
+                team = allTeams.FirstOrDefault(t => t.Name == teamToJoin) ??
+                            throw new NullReferenceException($"Error attempting to locate Team {teamToJoin}");
+            }
+            catch (NullReferenceException ex)
+            {
+                Console.WriteLine(ex.Message);
                 await RespondAsync($"Could not find team data for {teamToJoin}. Arctyc screwed something up.");
                 return;
             }
 
-            // Check player is not already on a team
+            // Make sure player is not already on a team
             if (playerData.TeamId != -1)
             {
                 Team? existingTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId);
                 if (existingTeam != null)
                 {
                     await RespondAsync($"You are already on Team {existingTeam.Name}!");
+                    return;
                 }
                 else
                 {
-                    // The player's TeamId is not -1, but the team no longer exists in the scoreboard
+                    // The player's TeamId is not -1, but the team no longer exists in the TeamChampionship collection
                     playerData.TeamId = -1;
                     await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
-                    await RespondAsync($"PlayerData team ID error. Try again, if you see this message twice, contact @ArctycFox");
+                    await RespondAsync($"It appears you were on a team that no longer exists. " +
+                        $"You've been removed from said ghost team. Please try joining a team again.");
+                    return;
                 }
-                return;
             }
 
             // Check that player can afford to join a team
@@ -112,17 +120,18 @@ namespace PokeCord.SlashCommands
                 playerData.PokemonDollars -= teamJoinCost;
                 playerData.TeamId = team.Id;
 
-                // Save data
+                // Update in database
                 await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
 
                 // Reply in Discord
                 await RespondAsync($"{username} is now a member of Team {team.Name}");
+                return;
             }
             else
             {
                 // Unable to add player to team
                 Console.WriteLine($"Unable to add {username} to team {teamToJoin}.");
-                await RespondAsync($"There was an error joining Team {teamToJoin}.");
+                await RespondAsync($"There was a database error while trying to add {username} to Team {teamToJoin}.");
                 return;
             }            
         }

@@ -17,6 +17,7 @@ namespace PokeCord.Services
         //private const ulong testingPokeCordChannel = 1223317230431895673;
         private const ulong pokecordChannel = felicityPokeCordChannel;
 
+        public const int teamCreateCost = 500; // Cost to create/join a team
         public const int currencyCap = 5000; // Max amount of pokemon dollars a player can have
 
         private readonly IMongoCollection<Team> _teamChampionshipCollection;
@@ -45,7 +46,7 @@ namespace PokeCord.Services
             team.Players.Add(userId);
             // Update team object
             var result = await _teamChampionshipCollection.ReplaceOneAsync(t => t.Id == team.Id, team);
-            return result.ModifiedCount > 0;
+            return result.ModifiedCount > 0; // True if player was added to team, else false
         }
 
         public async Task<List<Team>> GetTeamsAsync()
@@ -104,8 +105,9 @@ namespace PokeCord.Services
             List<Team> teams = await GetTeamsAsync();
             int numTeams = teams.Count;
             int totalPlayers = teams.SelectMany(t => t.Players).Distinct().Count();
-            int totalReward = totalPlayers * 500;
+            int totalReward = totalPlayers * teamCreateCost;
 
+            // Retrieve the Discord output message
             string message = GetEndWeeklyCompetitionHeader(numTeams);
 
             // Distribute the rewards to the top teams
@@ -114,15 +116,16 @@ namespace PokeCord.Services
                 message += await DistributeRewardsToTeams(teams, totalReward);
             }
 
-            // Make announcement
+            // Send announcement message to Discord
             await channel.SendMessageAsync(message);
         }
 
         private string GetEndWeeklyCompetitionHeader(int numTeams)
         {
-            return numTeams == 0
+            return numTeams == 0 // If there were no teams created, return:
                 ? "\nAttention Trainers! The weekly Team Championship has ended!\n" +
                   "There were no teams created during this event, or something went horribly wrong."
+                  // else return:
                 : "\nAttention Trainers! The weekly Team Championship has ended! The results are...\n";
         }
 
@@ -130,6 +133,7 @@ namespace PokeCord.Services
         {
             string message = string.Empty;
 
+            // Calculate reward for each team
             for (int i = 0; i < Math.Min(teams.Count, 3); i++)
             {
                 Team team = teams[i];
@@ -139,9 +143,11 @@ namespace PokeCord.Services
                 await UpdatePlayerScores(team, teamReward);
             }
 
+            // Send notification of rewards to Discord
             return message;
         }
 
+        // Calculate the reward for each team
         private int GetTeamReward(int teamRank, int numTeams, int totalReward)
         {
             if (numTeams == 1)
@@ -173,6 +179,7 @@ namespace PokeCord.Services
             }
         }
 
+        // Generate a message to notify of rewards in Discord
         private async Task<string> GetTeamResultMessageAsync(int rank, Team team, int teamReward)
         {
             string teamExp = team.TeamExperience.ToString("N0");
@@ -193,12 +200,14 @@ namespace PokeCord.Services
                 }
             }
 
+            // Splice the list and build a full message.
             string membersList = string.Join(", ", teamMemberNames);
             return $"{rank}. Team {team.Name}: {teamExp} exp.\n" +
                    $"Trainers: {membersList}\n" +
                    $"Each member of this team is awarded {(teamReward / team.Players.Count).ToString("N0")} Pokémon Dollars!\n\n";
         }
 
+        // Update database with added player rewards
         private async Task UpdatePlayerScores(Team team, int teamReward)
         {
             int maxRetries = 3;

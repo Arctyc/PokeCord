@@ -2,7 +2,7 @@
 {
     public class CleanOutput
     {
-        public static string FixPokemonName(string pokemonName)
+        public static string RichifyPokemonName(string pokemonName)
         {
             if (pokemonName.IndexOf('-') != -1)
             {

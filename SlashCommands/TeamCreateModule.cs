@@ -16,7 +16,7 @@ namespace PokeCord.SlashCommands
     {
         private readonly PlayerDataService _playerDataService;
         private readonly TeamChampionshipService _teamChampionshipService;
-        public const int teamCreateCost = 500; // Cost in poke dollars to create a team
+        private const int teamCreateCost = TeamChampionshipService.teamCreateCost;
         private const int maxTeamNameLength = 24;
 
         public TeamCreateModule(IServiceProvider services)

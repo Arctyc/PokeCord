@@ -3,13 +3,10 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
-using MongoDB.Driver.Core.Configuration;
 using PokeApiNet;
 using PokeCord.Services;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 
 namespace PokeCord
 {
@@ -132,13 +129,15 @@ namespace PokeCord
             var givepokeballsCommand = new SlashCommandBuilder()
             */
 
+            //FIX: REMOVE AFTER ONE RUN
+            Console.WriteLine($"Attempting to push JSON data to MongoDB...");
+            await playerDataService.ConvertSaveDataToMongo();
+
         }
 
         private static IServiceProvider ConfigureServices()
         {
-            // Mongo Connection Data
-            var connectionString = Environment.GetEnvironmentVariable("MongoDBConnectionString") ?? 
-                throw new InvalidOperationException("MongoDB connection string not found in environment variables.");
+            var connectionString = "mongodb://localhost:27017";
             var databaseName = "PokeCordDB";
             if (testingMode) { databaseName = "PokeCordTestingDB"; }
 
