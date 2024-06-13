@@ -42,15 +42,12 @@ namespace PokeCord.SlashCommands
             if (playerData != null)
             {
                 // Get all players
-                Console.WriteLine($"Before...");
                 List<PlayerData> weeklyLeaders = await _playerDataService.GetWeeklyLeaderboardAsync();
-                Console.WriteLine($"Between...");
                 List<PlayerData> lifetimeLeaders = await _playerDataService.GetLifetimeLeaderboardAsync();
-                Console.WriteLine($"After.");
 
                 // Get player's rank
-                int weeklyRank = weeklyLeaders.IndexOf(playerData); //FIX: Not finding by "playerData", need to remedy. weeklyLeaders[0] is the player.
-                int lifetimeRank = lifetimeLeaders.IndexOf(playerData);
+                int weeklyRank = weeklyLeaders.FindIndex(p => p._id == userId);
+                int lifetimeRank = lifetimeLeaders.FindIndex(p => p._id == userId);
                 string weeklyRankString;
                 string lifetimeRankString;
                 if (weeklyRank == -1)
