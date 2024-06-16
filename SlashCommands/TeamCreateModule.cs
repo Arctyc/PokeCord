@@ -35,11 +35,11 @@ namespace PokeCord.SlashCommands
             string username = Context.User.GlobalName;
 
             // Refuse if after WeeklyTimerEnd or before WeeklyTimerStart
-            if (DateTime.Now.DayOfWeek.ToString() == "Sunday")
+            /*if (DateTime.Now.DayOfWeek.ToString() == "Sunday")
             {
                 await RespondAsync("The next weekly Team Championship will open on Monday at 12:00 AM UTC.");
                 return;
-            }
+            }*/
 
             // Refuse if team name is too long
             if (newTeamName.Length > maxTeamNameLength)

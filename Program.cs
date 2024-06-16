@@ -13,7 +13,7 @@ namespace PokeCord
     public class Program
     {
         //WARNING: Set this to false when pushing to main
-        public static bool testingMode = false;
+        public static bool testingMode = true;
 
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService = null!;
@@ -128,11 +128,6 @@ namespace PokeCord
             /*
             var givepokeballsCommand = new SlashCommandBuilder()
             */
-
-            //FIX: REMOVE AFTER ONE RUN
-            Console.WriteLine($"Attempting to push JSON data to MongoDB...");
-            await playerDataService.ConvertSaveDataToMongo();
-
         }
 
         private static IServiceProvider ConfigureServices()
