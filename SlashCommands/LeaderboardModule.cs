@@ -7,12 +7,14 @@ namespace PokeCord.SlashCommands
 {
     public class LeaderboardModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboardService;
+        private readonly PlayerDataService _playerDataService;
+        private readonly TeamChampionshipService _teamChampionshipService;
 
         public LeaderboardModule(IServiceProvider services)
         {
             Console.Write("Loaded command: pokeleaderboard\n");
-            scoreboardService = services.GetRequiredService<ScoreboardService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -33,7 +35,7 @@ namespace PokeCord.SlashCommands
             }
 
             // Get a sorted list of players
-            var leaders = scoreboardService.GetWeeklyLeaderboard();
+            var leaders = await _playerDataService.GetWeeklyLeaderboardAsync();
 
             // Add a message line for each of the top 10
             List<string> leaderMessages = new List<string>();

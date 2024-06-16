@@ -14,14 +14,16 @@ namespace PokeCord.SlashCommands
 {
     public class TeamCreateModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboardService;
-        public const int teamCreateCost = 500; // Cost in poke dollars to create a team
+        private readonly PlayerDataService _playerDataService;
+        private readonly TeamChampionshipService _teamChampionshipService;
+        private const int teamCreateCost = TeamChampionshipService.teamCreateCost;
         private const int maxTeamNameLength = 24;
 
         public TeamCreateModule(IServiceProvider services)
         {
             Console.Write("Loaded command: teamcreate\n");
-            scoreboardService = services.GetRequiredService<ScoreboardService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -47,11 +49,8 @@ namespace PokeCord.SlashCommands
             }
 
             // Get player data
-            PlayerData playerData = new PlayerData();
-            if (scoreboardService.TryGetPlayerData(userId, out playerData))
-            {
-            }
-            else
+            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData == null)
             {
                 // PlayerData does not exist for this userId
                 Console.WriteLine($"PlayerData found for {username} {userId}");
@@ -62,7 +61,9 @@ namespace PokeCord.SlashCommands
             // Check player is not already on a team
             if (playerData.TeamId != -1)
             {
-                Team? existingTeam = scoreboardService.GetTeams().FirstOrDefault(t => t.Id == playerData.TeamId);
+
+                List<Team> allTeams = await _teamChampionshipService.GetTeamsAsync();
+                Team? existingTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId);
                 if (existingTeam != null)
                 {
                     await RespondAsync($"You are already on Team {existingTeam.Name}");
@@ -71,7 +72,7 @@ namespace PokeCord.SlashCommands
                 {
                     // The player's TeamId is not -1, but the team no longer exists in the scoreboard
                     playerData.TeamId = -1;
-                    await scoreboardService.SaveScoreboardAsync();
+                    await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
                     await RespondAsync($"PlayerData team ID error. Try again, if you see this message twice, contact @ArctycFox");
                 }
                 return;
@@ -86,7 +87,7 @@ namespace PokeCord.SlashCommands
             }
 
             // Check if team exists
-            List<Team> existingTeams = scoreboardService.GetTeams();
+            List<Team> existingTeams = await _teamChampionshipService.GetTeamsAsync();
             if (existingTeams.Any(t => t.Name == newTeamName))
             {
                 await RespondAsync($"Team {newTeamName} already exists! Did you mean to use /teamjoin?");
@@ -105,15 +106,15 @@ namespace PokeCord.SlashCommands
             };
 
             // Add team to list in memory
-            scoreboardService.AddTeam(team); // Saved to file in service
+            await _teamChampionshipService.TryAddTeamAsync(team); // Saved to file in service
 
             // Adjust playerData
             playerData.PokemonDollars -= teamCreateCost;
             playerData.TeamId = team.Id;
 
             // Save data
-            await scoreboardService.SaveTeamScoreboardAsync();
-            await scoreboardService.SaveScoreboardAsync();
+            await _teamChampionshipService.TryAddTeamAsync(team);
+            await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData);
 
             // Respond in Discord
             await RespondAsync($"Congratulations, {username}! You are the new leader of Team {newTeamName}");

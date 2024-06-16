@@ -7,25 +7,28 @@ using PokeApiNet;
 using PokeCord.Services;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 
 namespace PokeCord
 {
     public class Program
     {
+        //WARNING: Set this to false when pushing to main
+        public static bool testingMode = false;
+
         private static DiscordSocketClient _client = new DiscordSocketClient();
-        private static InteractionService _interactionService;
+        private static InteractionService _interactionService = null!;
         private static readonly InteractionServiceConfig _interactionServiceConfig = new InteractionServiceConfig();
-        private static IServiceProvider _services { get; set; }
-        private static IConfiguration _configuration;
-        private static Timer _pokeballResetTimer;
-        private static Timer _weeklyStartTimer;
-        private static Timer _weeklyEndTimer;
+
+        private static IServiceProvider _services { get; set; } = null!;
+        private static IConfiguration _configuration = null!;
+        private static Timer _pokeballResetTimer = null!;
+        private static Timer _weeklyStartTimer = null!;
+        private static Timer _weeklyEndTimer = null!;
         private const int standardCooldownSeconds = 120;
         private const int xSpeedCooldownSeconds = 10;
         //Testing
-        private static Timer _quickStartTimer;
-        private static Timer _quickEndTimer;
+        //private static Timer _quickStartTimer;
+        //private static Timer _quickEndTimer;
 
         //Cooldown data structure
         public static readonly ConcurrentDictionary<ulong, DateTime> _lastCommandUsage = new ConcurrentDictionary<ulong, DateTime>();
@@ -36,7 +39,7 @@ namespace PokeCord
         {
             // FETCH ENVIRONMENT VARIABLE TOKEN
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-            //var token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN");
+            if (testingMode) { token = Environment.GetEnvironmentVariable("DISCORD_TESTING_TOKEN"); }        
 
             _client.Ready += ClientReady;
             _client.Log += LogAsync;
@@ -69,9 +72,8 @@ namespace PokeCord
                 await _interactionService.ExecuteCommandAsync(context, _services);
             };
 
-            var scoreboardService = _services.GetRequiredService<ScoreboardService>();
-            await scoreboardService.LoadScoreboardAsync();
-            await scoreboardService.LoadTeamScoreboardAsync();
+            var playerDataService = _services.GetRequiredService<PlayerDataService>();
+            var teamChampionshipService = _services.GetRequiredService<TeamChampionshipService>();
 
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             await _interactionService.RegisterCommandsGloballyAsync();
@@ -80,7 +82,7 @@ namespace PokeCord
             // -- Daily Restock -- KEEP IN program.cs
             // Calculate the time remaining until the next pokeball restock
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
-            _pokeballResetTimer = new Timer(async (e) => await scoreboardService.RestockPokeballsAsync(null), null, delay, TimeSpan.FromDays(1));
+            _pokeballResetTimer = new Timer(async (e) => await playerDataService.RestockPokeballsAsync(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
 
             // -- Weekly Reset --
@@ -93,7 +95,7 @@ namespace PokeCord
                 weeklyStartDelay = weeklyStartDelay.Add(TimeSpan.FromDays(7)); // Add 7 days
             }
 
-            _weeklyStartTimer = new Timer(async (e) => await scoreboardService.StartWeeklyTeamsEventAsync(_client), null, weeklyStartDelay, TimeSpan.FromDays(7));
+            _weeklyStartTimer = new Timer(async (e) => await teamChampionshipService.StartWeeklyTeamsEventAsync(_client), null, weeklyStartDelay, TimeSpan.FromDays(7));
             Console.WriteLine("Time until Weekly Start Timer: " + weeklyStartDelay);
 
             // Weekly End Timer
@@ -104,7 +106,7 @@ namespace PokeCord
             {
                 weeklyEndDelay = weeklyEndDelay.Add(TimeSpan.FromDays(7)); // Add 7 days
             }
-            _weeklyEndTimer = new Timer(async (e) => await scoreboardService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
+            _weeklyEndTimer = new Timer(async (e) => await teamChampionshipService.EndWeeklyTeamsEventAsync(_client), null, weeklyEndDelay, TimeSpan.FromDays(7));
             Console.WriteLine("Time until Weekly End Timer: " + weeklyEndDelay);
 
             /*
@@ -127,20 +129,31 @@ namespace PokeCord
             var givepokeballsCommand = new SlashCommandBuilder()
             */
 
+            //FIX: REMOVE AFTER ONE RUN
+            Console.WriteLine($"Attempting to push JSON data to MongoDB...");
+            await playerDataService.ConvertSaveDataToMongo();
+
         }
 
         private static IServiceProvider ConfigureServices()
         {
+            var connectionString = "mongodb://localhost:27017";
+            var databaseName = "PokeCordDB";
+            if (testingMode) { databaseName = "PokeCordTestingDB"; }
+
             return new ServiceCollection()
                 //Discord.NET
                 .AddSingleton(_configuration)
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), _interactionServiceConfig))
                 .AddSingleton<InteractionService>()
+                //MongoDB
+                .AddSingleton(new MongoDBClientProvider(connectionString, databaseName))
                 //PokeCord
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<PokeApiClient>()
-                .AddTransient<ScoreboardService>()
+                .AddTransient<PlayerDataService>()
+                .AddTransient<TeamChampionshipService>()
                 .AddTransient<BadgeService>()
                 .AddSingleton<TeamAutocompleter>()
                 //Build Collection

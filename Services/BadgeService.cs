@@ -1,16 +1,17 @@
 ﻿using System.Text.Json;
 using PokeCord.Data;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace PokeCord.Services
 {
     public class BadgeService
     {
         // Badge data structure
-        private static List<Badge> _badges;
+        private static List<Badge>? _badges;
 
         public BadgeService()
-        {            
+        {
         }
 
         public List<Badge> GetBadges()
@@ -33,7 +34,7 @@ namespace PokeCord.Services
                 try
                 {
                     using var stream = File.OpenRead(filePath);
-                    List<Badge> badges = JsonSerializer.Deserialize<List<Badge>>(stream);
+                    List<Badge> badges = JsonSerializer.Deserialize<List<Badge>>(stream) ?? new List<Badge>();
 
                     // Handle badge mismatch
                     foreach (Badge badge in badges)
@@ -59,48 +60,36 @@ namespace PokeCord.Services
         }
 
         // Remove duplicate badges
+        /* - Probably unnecessary. Remove when sure not needed.
         public static ConcurrentDictionary<ulong, PlayerData> RemoveDuplicateBadges(ConcurrentDictionary<ulong, PlayerData> scoreboard)
         {
-            ConcurrentDictionary<ulong, PlayerData> newScoreboard = new ConcurrentDictionary<ulong, PlayerData>();
+            Debug.Assert(scoreboard != null && scoreboard.Count > 0);
 
             foreach (var kvp in scoreboard)
             {
                 ulong userId = kvp.Key;
                 PlayerData playerData = kvp.Value;
 
-                // Rebuild each playerData object
-                PlayerData newPlayerData = new PlayerData
-                {
-                    Version = playerData.Version,
-                    UserId = playerData.UserId,
-                    UserName = playerData.UserName,
-                    Experience = playerData.Experience,
-                    Pokeballs = playerData.Pokeballs,
-                    CaughtPokemon = playerData.CaughtPokemon,
-                    EarnedBadges = new List<Badge>()
-                };
+                Debug.Assert(playerData != null && playerData.EarnedBadges != null);
 
-                HashSet<int> uniqueBadgeIds = new HashSet<int>();
+                HashSet<Badge> uniqueBadges = new HashSet<Badge>();
 
                 foreach (var badge in playerData.EarnedBadges)
                 {
-                    if (!uniqueBadgeIds.Contains(badge.Id))
+                    if (uniqueBadges.Add(badge))
                     {
-                        // Badge is unique, add it to the new EarnedBadges list
-                        newPlayerData.EarnedBadges.Add(badge);
-                        uniqueBadgeIds.Add(badge.Id);
+                        // Badge is unique, do nothing
+                        Console.WriteLine($"Added unique badge {badge.Name} to Earned Badges.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{badge.Name} was not unqiue.");
                     }
                 }
-                if (newScoreboard.TryAdd(userId, newPlayerData))
-                {
-                }
-                else
-                {
-                    Console.WriteLine($"Unable to remove duplicate badges for {newPlayerData.UserName}. Data lost?");
-                }
-            }
-            return newScoreboard;
-        }
 
+                playerData.EarnedBadges = uniqueBadges.ToList();
+            }
+            return scoreboard;
+        }*/
     }
 }

@@ -13,7 +13,8 @@ namespace PokeCord.SlashCommands
 {
     public class CatchModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService _scoreboard;
+        private readonly PlayerDataService _playerDataService;
+        private readonly TeamChampionshipService _teamChampionshipService;
         private readonly BadgeService _badgeService;
         private readonly PokeApiClient _pokeApiClient;
 
@@ -41,7 +42,8 @@ namespace PokeCord.SlashCommands
         public CatchModule(IServiceProvider services)
         {
             Console.Write("\n----------Loaded command: catch\n");
-            _scoreboard = services.GetRequiredService<ScoreboardService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
             _badgeService = services.GetRequiredService<BadgeService>();
             _pokeApiClient = services.GetRequiredService<PokeApiClient>();
         }
@@ -55,7 +57,6 @@ namespace PokeCord.SlashCommands
             ulong userId = Context.User.Id;
             int xSpeedCharges = -1; // Initialize to a negative number, updated later if player has X Speed
 
-            PlayerData originalPlayerData = new PlayerData();
             List<Badge> badges = _badgeService.GetBadges();
             Console.WriteLine($"[{DateTime.UtcNow.ToString("HH:mm:ss")}] {username} used catch");
 
@@ -70,11 +71,10 @@ namespace PokeCord.SlashCommands
             }
 
             // Get the PlayerData instance from the scoreboard
-            PlayerData playerData = new PlayerData();
-            if (_scoreboard.TryGetPlayerData(userId, out originalPlayerData))
+            PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData != null)
             {
                 // PlayerData exists for this userId
-                playerData = originalPlayerData;
                 Console.WriteLine($"Got PlayerData for {username}");
             }
             else
@@ -83,27 +83,28 @@ namespace PokeCord.SlashCommands
                 // TODO: Update this with new player data each version. Current version: 4
                 playerData = new PlayerData
                 {
-                    UserId = userId,
+                    _id = userId,
                     UserName = username,
                     Experience = 0,
                     WeeklyExperience = 0,
                     TeamId = -1,
-                    Pokeballs = ScoreboardService.pokeballRestockAmount,
+                    Pokeballs = PlayerDataService.pokeballRestockAmount,
                     CaughtPokemon = new List<PokemonData>(),
                     WeeklyCaughtPokemon = new List<PokemonData>(),
                     EarnedBadges = new List<Badge>(),
                     PokeMartItems = new Dictionary<string, int>() // New
 
                 };
-                if (_scoreboard.TryAddPlayerData(userId, playerData))
+                // Add playerdata
+                if (await _playerDataService.TryAddPlayerDataAsync(userId, playerData))
                 {
-                    originalPlayerData = playerData;
                     Console.WriteLine($"New PlayerData for {username} created with userId {userId}");
                 }
                 else
                 {
                     Console.WriteLine($"Unable to create PlayerData for {username} with userId {userId}");
                     await RespondAsync($"Something went wrong setting up your trainer profile.");
+                    return;
                 }
             }
 
@@ -121,7 +122,7 @@ namespace PokeCord.SlashCommands
                 var cooldownUnixTime = (long)(DateTime.UtcNow.AddSeconds(timeRemaining).Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
 
                 await RespondAsync($"Sorry, you're out of Poké Balls for now. " +
-                    $"The Poké Mart will automatically send you up to {ScoreboardService.pokeballRestockAmount} new Poké Balls <t:{cooldownUnixTime}:R>. " +
+                    $"The Poké Mart will automatically send you up to {PlayerDataService.pokeballRestockAmount} new Poké Balls <t:{cooldownUnixTime}:R>. " +
                     $"Unfortunately, you will not receive a bonus Premier Ball.", ephemeral: true);
                 return;
             }
@@ -175,7 +176,7 @@ namespace PokeCord.SlashCommands
             EventMysteryEgg eventMysteryEgg = new EventMysteryEgg();
             (bool eggIsHatching, string eventMessage) = eventMysteryEgg.CheckEgg(playerData);
 
-            PokemonData eventPokemonData = null;
+            PokemonData eventPokemonData = null!;
 
             if (eggIsHatching)
             {
@@ -185,7 +186,7 @@ namespace PokeCord.SlashCommands
                     Console.WriteLine($"{username} hatched a {(pokemonData.Shiny ? "shiny " : "")}{eventPokemonData.Name} #{eventPokemonData.PokedexId}");
 
                     // Assign Exp
-                    int eventPokemonExperienceValue = (int)eventPokemonData.BaseExperience;
+                    int eventPokemonExperienceValue = (int)(eventPokemonData.BaseExperience ?? 0);
 
                     // Check if new
                     var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
@@ -197,7 +198,7 @@ namespace PokeCord.SlashCommands
                     playerData.WeeklyCaughtPokemon.Add(eventPokemonData); // Add the pokemon to the player's weekly list of caught pokemon
 
                     // Update Scoreboard in memory
-                    if (_scoreboard.TryUpdatePlayerData(userId, playerData, originalPlayerData))
+                    if (await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData))
                     {
                         Console.WriteLine($"Hatch written to scoreboard for {username}'s {eventPokemonData.Name}");
                     }
@@ -212,7 +213,7 @@ namespace PokeCord.SlashCommands
             {
                 Console.WriteLine($"{username} caught a {(pokemonData.Shiny ? "shiny " : "")}{pokemonData.Name} #{pokemonData.PokedexId}");
                 // Assign Exp & dollars
-                int pokemonExperienceValue = (int)pokemonData.BaseExperience;
+                int pokemonExperienceValue = (int)(pokemonData.BaseExperience ?? 0);
                 int pokemonDollarValue = pokemonExperienceValue / pokemonDollarRatio;
                 int adjustedPokemonDollarValue = pokemonDollarValue;
 
@@ -253,12 +254,16 @@ namespace PokeCord.SlashCommands
                 // Consume Exp. Share
                 if (hasExpShare && expShareCharges > 0 && playerData.TeamId > 0)
                 {
-                    bool ExpShareWasUsed = GiveExpToTeamMembers(userId, playerData.TeamId, pokemonExperienceValue);
+                    bool ExpShareWasUsed = await GiveExpToTeamMembersAsync(userId, playerData.TeamId, pokemonExperienceValue);
                     if (ExpShareWasUsed)
                     {
                         expShareCharges--;
                         playerData.PokeMartItems[expShareKey]--;
                         Console.WriteLine($"{expShareKey} used by {username}. {expShareCharges} charges remaining.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to give EXP to {username}'s team members. Amount: {pokemonExperienceValue}");
                     }
                 }
                 if (hasExpShare && expShareCharges == 0)
@@ -346,7 +351,7 @@ namespace PokeCord.SlashCommands
                 }
 
                 // Update Scoreboard in memory
-                if (_scoreboard.TryUpdatePlayerData(userId, playerData, originalPlayerData))
+                if (await _playerDataService.TryUpdatePlayerDataAsync(userId, playerData))
                 {
                     Console.WriteLine($"Catch written to scoreboard for {username}'s {pokemonData.Name}");
                 }
@@ -355,22 +360,20 @@ namespace PokeCord.SlashCommands
                     Console.WriteLine($"Failed to write catch to scoreboard for {username}'s {pokemonData.Name}");
                 }
 
-                // Save the updated scoreboard data
-                await _scoreboard.SaveScoreboardAsync();
-
                 // Clean up output variables
-                string richPokemonName = CleanOutput.FixPokemonName(pokemonData.Name);
+                string richPokemonName = CleanOutput.RichifyPokemonName(pokemonData.Name);
                 bool startsWithVowel = "aeiouAEIOU".Contains(richPokemonName[0]);
                 if (pokemonData.Shiny) { startsWithVowel = false; }
 
                 // Get team name if player is on team
-                List<Team> allTeams = _scoreboard.GetTeams();
+                List<Team> allTeams = await _teamChampionshipService.GetTeamsAsync();
                 bool onTeam = false;
                 string playerTeam = "";
                 if (playerData.TeamId != -1)
                 {
                     onTeam = true;
-                    playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
+                    Team? team = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId);
+                    playerTeam = team?.Name ?? "HOW ARE YOU ON A TEAM WITH NO NAME!?!?"; // Avoiding null reference warning.
                 }
 
                 // Format Discord output
@@ -380,7 +383,7 @@ namespace PokeCord.SlashCommands
                                  $"+{pokemonExperienceValue} {(pokemonExperienceValue != pokemonData.BaseExperience ? $"({pokemonData.BaseExperience} x2) " : "")}Exp. " +
                                  $"+{adjustedPokemonDollarValue} {(adjustedPokemonDollarValue != pokemonDollarValue ? $"({pokemonDollarValue} x2) " : "")}Pokémon Dollars.";
 
-                Embed[] embeds = eggIsHatching && eventPokemonData.ImageUrl != null ? new Embed[]
+                Embed[] embeds = eggIsHatching && eventPokemonData?.ImageUrl != null ? new Embed[]
                 {
                 new EmbedBuilder()
                     .WithImageUrl(pokemonData.ImageUrl)
@@ -403,7 +406,8 @@ namespace PokeCord.SlashCommands
                     // Append Hatch message
                     if (eggIsHatching)
                     {
-                        string richEventPokemonName = CleanOutput.FixPokemonName(eventPokemonData.Name);
+                        if (eventPokemonData == null) { throw new NullReferenceException("Event Pokemon Data was null!"); }
+                        string richEventPokemonName = CleanOutput.RichifyPokemonName(eventPokemonData.Name);
                         var eventIsCaught = playerData.CaughtPokemon.Any(p => p.PokedexId == eventPokemonData.PokedexId);
                         bool eventStartsWithVowel = "aeiouAEIOU".Contains(richEventPokemonName[0]);
                         message += $" It's {(eventStartsWithVowel ? "an" : "a")} " +
@@ -513,30 +517,44 @@ namespace PokeCord.SlashCommands
             }
         }
 
-        private bool GiveExpToTeamMembers(ulong user, int teamId, int pokemonExperience)
+        private async Task<bool> GiveExpToTeamMembersAsync(ulong user, int teamId, int pokemonExperience)
         {
-            bool used = false;
-            var team = _scoreboard.GetTeams().FirstOrDefault(t => t.Id == teamId);
+            bool operationCompleted = false;
+
+            // Await-Get the list of teams
+            var teams = await _teamChampionshipService.GetTeamsAsync();
+            // Find the team that matches the ID
+            var team = teams.FirstOrDefault(t => t.Id == teamId);
+
             if (team != null)
             {
                 Console.WriteLine($"** GiveExpToTeamMembers called for {user}");
                 var otherTeamMembers = team.Players.Where(p => p != user);
                 if (otherTeamMembers.Any())
                 {
-                    used = true;
+                    operationCompleted = true;
                     int sharedExp = pokemonExperience / otherTeamMembers.Count(); // Split 1x exp among other team members
                     foreach (var player in otherTeamMembers)
                     {
-                        if (_scoreboard.TryGetPlayerData(player, out var playerData))
+                        // Get existing playerData
+                        try
                         {
-                            playerData.WeeklyExperience += sharedExp;
-                            _scoreboard.TryUpdatePlayerData(player, playerData, playerData);
-                            Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
+                            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(player);
+                            if (playerData != null)
+                            {
+                                // Try to update the player exp
+                                playerData.WeeklyExperience += sharedExp;
+                                await _playerDataService.TryUpdatePlayerDataAsync(player, playerData);
+                                Console.WriteLine($"Added {sharedExp} Exp to {playerData.UserName} due to {expShareKey}");
+                            }
                         }
+                        catch (Exception ex) { Console.WriteLine($"Error giving Exp to team member(s)" + ex.Message); }                                              
                     }
+
+                    // If any failed, try again
                 }
             }
-            return used;
+            return operationCompleted;
         }
     }
 }

@@ -10,14 +10,16 @@ namespace PokeCord.SlashCommands
 {
     public class PokescoreModule : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ScoreboardService scoreboardService;
-        private readonly BadgeService badgeService;
+        private readonly PlayerDataService _playerDataService;
+        private readonly TeamChampionshipService _teamChampionshipService;
+        private readonly BadgeService _badgeService;
 
         public PokescoreModule(IServiceProvider services)
         {
             Console.Write("Loaded command: pokescore\n");
-            scoreboardService = services.GetRequiredService<ScoreboardService>();
-            badgeService = services.GetRequiredService<BadgeService>();
+            _playerDataService = services.GetRequiredService<PlayerDataService>();
+            _teamChampionshipService = services.GetRequiredService<TeamChampionshipService>();
+            _badgeService = services.GetRequiredService<BadgeService>();
         }
 
         [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
@@ -27,13 +29,12 @@ namespace PokeCord.SlashCommands
         {
             string username = Context.User.GlobalName;
             ulong userId = Context.User.Id;
-            List<Badge> badges = badgeService.GetBadges();
+            List<Badge> badges = _badgeService.GetBadges();
             Console.WriteLine($"{username} used pokescore");
 
             // Get the PlayerData instance from the scoreboard
-            PlayerData playerData = new PlayerData();
-
-            if (scoreboardService.TryGetPlayerData(userId, out playerData))
+            PlayerData? playerData = await _playerDataService.TryGetPlayerDataAsync(userId);
+            if (playerData != null)
             {
                 Console.WriteLine($"PlayerData found for {username} {userId}");
             }
@@ -41,12 +42,12 @@ namespace PokeCord.SlashCommands
             if (playerData != null)
             {
                 // Get all players
-                List<PlayerData> weeklyLeaders = scoreboardService.GetWeeklyLeaderboard();
-                List<PlayerData> lifetimeLeaders = scoreboardService.GetLifetimeLeaderboard();
+                List<PlayerData> weeklyLeaders = await _playerDataService.GetWeeklyLeaderboardAsync();
+                List<PlayerData> lifetimeLeaders = await _playerDataService.GetLifetimeLeaderboardAsync();
 
                 // Get player's rank
-                int weeklyRank = weeklyLeaders.IndexOf(playerData);
-                int lifetimeRank = lifetimeLeaders.IndexOf(playerData);
+                int weeklyRank = weeklyLeaders.FindIndex(p => p._id == userId);
+                int lifetimeRank = lifetimeLeaders.FindIndex(p => p._id == userId);
                 string weeklyRankString;
                 string lifetimeRankString;
                 if (weeklyRank == -1)
@@ -81,13 +82,13 @@ namespace PokeCord.SlashCommands
                 int lifetimeAverageExp = 0;
                 
                 // Get all teams
-                List<Team> allTeams = scoreboardService.GetTeams();
+                List<Team> allTeams = await _teamChampionshipService.GetTeamsAsync();
 
                 // Build output
                 if (playerData.CaughtPokemon.Any())
                 {
-                    PokemonData bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
-                    int bestExp = (int)bestPokemon.BaseExperience;
+                    PokemonData? bestPokemon = caughtPokemon.OrderByDescending(p => p.BaseExperience).FirstOrDefault();
+                    int bestExp = (int)(bestPokemon?.BaseExperience ?? 0);
 
                     // Set lifetime average exp string
                     lifetimeAverageExp = playerData.Experience / playerData.CaughtPokemon.Count;
@@ -107,7 +108,8 @@ namespace PokeCord.SlashCommands
                     if (playerData.TeamId != -1)
                     {
                         onTeam = true;
-                        playerTeam = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId).Name;
+                        Team? team = allTeams.FirstOrDefault(t => t.Id == playerData.TeamId);
+                        playerTeam = team?.Name ?? "How are you on a team with no name!?!?"; // Avoiding null error
                     }
                     int totalShiny = playerData.CaughtPokemon.Count(pokemon => pokemon.Shiny); // Count total shiny pokemon
                     string richCatches = catches.ToString("N0");
@@ -115,11 +117,11 @@ namespace PokeCord.SlashCommands
                     string richBestPokemonExp = bestExp.ToString("N0");
                     // Format Discord reply
                     string message = $"{(onTeam ? $"[Team {playerTeam}] {username}" : $"{username}")} has caught {richCatches} Pokémon ({richShiny} shiny) totalling {lifetimeExperience} exp. Average exp: {lifetimeAverageExp}\n" +
-                                     //FIX $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
+                                     $"Weekly Rank: {weeklyRankString}. Lifetime Rank: {lifetimeRankString}\n" +
                                      $"Weekly Experience: {richCaughtExperience}{(richCaughtExperience != richShareExperience ? $" ({richShareExperience})" : "" )}. " +
                                      $"Weekly Average Exp: {caughtAverageExp}{(caughtAverageExp != shareAverageExp ? $" ({shareAverageExp})" : "")}\n" +
                                      $"Their best catch was this {(bestPokemon.Shiny ? ":sparkles:SHINY:sparkles: " : "")}" +
-                                     $"{CleanOutput.FixPokemonName(bestPokemon.Name)} worth {richBestPokemonExp} exp!";
+                                     $"{CleanOutput.RichifyPokemonName(bestPokemon.Name)} worth {richBestPokemonExp} exp!";
 
                     Embed[] embeds = new Embed[]
                         {
