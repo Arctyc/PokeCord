@@ -13,7 +13,7 @@ namespace PokeCord
     public class Program
     {
         //WARNING: Set this to false when pushing to main
-        public static bool testingMode = true;
+        public static bool testingMode = false;
 
         private static DiscordSocketClient _client = new DiscordSocketClient();
         private static InteractionService _interactionService = null!;
