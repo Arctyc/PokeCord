@@ -2,24 +2,6 @@
 
 namespace PokeCord.Data
 {
-    //FIX: Remove this class once data is on MongoDB
-    public class OldPlayerData
-    {
-        public int Version { get; set; } = 4;
-        public ulong UserId { get; set; }
-        public string UserName { get; set; }
-        public int Experience { get; set; }
-        public int WeeklyExperience { get; set; }
-        public int TeamId { get; set; } = -1;
-        public int Pokeballs { get; set; }
-        public int PokemonDollars { get; set; }
-        public List<PokemonData> CaughtPokemon { get; set; }
-        public List<PokemonData> WeeklyCaughtPokemon { get; set; }
-        public List<Badge> EarnedBadges { get; set; }
-        public Dictionary<string, int> PokeMartItems { get; set; }
-    }
-    // End remove this class ^
-
     public class PlayerData
     {
         public int Version { get; set; } = 4; // Update when changes are made to class structure

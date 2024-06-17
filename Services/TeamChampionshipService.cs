@@ -59,8 +59,10 @@ namespace PokeCord.Services
             // Clear all records from TeamChampionship collection
             await _teamChampionshipCollection.DeleteManyAsync(Builders<Team>.Filter.Empty);
 
-            // Update all players setting TeamId to -1
-            var updateDefinition = Builders<PlayerData>.Update.Set(p => p.TeamId, -1);
+            // Update all players
+            var updateDefinition = Builders<PlayerData>.Update
+                .Set(p => p.TeamId, -1) // Set team ID to -1 to indicate no team
+                .Set(p => p.WeeklyCaughtPokemon, new List<PokemonData>()); // Clear the list of weekly caught pokemon while retaining the field
             await _playerDataService.TryUpdatePlayersAsync(updateDefinition);
 
             Console.WriteLine("Teams have been reset at UTC: " + DateTime.UtcNow.ToString());
