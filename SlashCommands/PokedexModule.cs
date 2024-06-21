@@ -29,7 +29,9 @@ namespace PokeCord.SlashCommands
             // Get pokedex list
             Pokedex pokedex = new Pokedex();
             List<PokemonData> userPokedex = await pokedex.GetUserPokedexAsync(playerData);
-            Console.WriteLine($"{playerData.UserName} has {userPokedex.Count} of 1025 Pokémon");
+
+            // Get a count of shiny
+            int shinyCount = userPokedex.Count(s => s.Shiny);
 
             // Json output for testing
             /*
@@ -39,7 +41,7 @@ namespace PokeCord.SlashCommands
             Console.WriteLine($"Player Pokedex saved as {fileName}");
             */
 
-            await RespondAsync($"{playerData.UserName} has caught {userPokedex.Count}/1025 Pokémon!");
+            await RespondAsync($"{playerData.UserName} has caught {userPokedex.Count}/1025 Pokémon ({shinyCount} shiny)!");
         }
     }
 }
