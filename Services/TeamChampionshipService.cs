@@ -140,7 +140,7 @@ namespace PokeCord.Services
             {
                 Team team = teams[i];
                 int teamReward = GetTeamReward(i, teams.Count, totalReward);
-                message += GetTeamResultMessageAsync(i + 1, team, teamReward);
+                message += await GetTeamResultMessageAsync(i + 1, team, teamReward);
 
                 await UpdatePlayerScores(team, teamReward);
             }

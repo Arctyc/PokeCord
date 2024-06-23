@@ -95,12 +95,42 @@ namespace PokeCord.Services
         // Set all player's pokeballs to restock amount in MongoDB
         public async Task RestockPokeballsAsync(object? state)
         {
-            var filter = Builders<PlayerData>.Filter.Lt(p => p.Pokeballs, pokeballRestockAmount);
-            var update = Builders<PlayerData>.Update.Set(p => p.Pokeballs, pokeballRestockAmount);
-            await _playerDataCollection.UpdateManyAsync(filter, update);
+            
+            try
+            {
+                await Task.Delay(2000);// 2-second delay to avoid conflicts with database operation timing
 
-            Console.WriteLine("\n***Pokeballs have been reset for all players!");
+                var filter = Builders<PlayerData>.Filter.Lt(p => p.Pokeballs, pokeballRestockAmount);
+                var update = Builders<PlayerData>.Update.Set(p => p.Pokeballs, pokeballRestockAmount);
+
+                // Execute the update
+                var updateResult = await _playerDataCollection.UpdateManyAsync(filter, update);
+
+                // Check if the operation was acknowledged by the server
+                if (!updateResult.IsAcknowledged)
+                {
+                    Console.WriteLine($"{DateTime.Now} ***Pokeball restock operation was not acknowledged by the server.***");
+                    return;
+                }
+
+                // Check if all matched documents were modified
+                if (updateResult.MatchedCount == updateResult.ModifiedCount)
+                {
+                    Console.WriteLine($"{DateTime.Now} ***Pokeballs have been reset for all players!***");
+                }
+                else
+                {
+                    Console.WriteLine($"{DateTime.Now} ***Not all pokeball restock updates were successful.***");
+                    Console.WriteLine($"Matched Count: {updateResult.MatchedCount}");
+                    Console.WriteLine($"Modified Count: {updateResult.ModifiedCount}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.Now} ***An error occurred during the update operation: {ex.Message}***");
+            }
         }
+
 
         // Get list of players sorted by experience from MongoDB
         public async Task<List<PlayerData>> GetLifetimeLeaderboardAsync()
