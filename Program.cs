@@ -84,10 +84,11 @@ namespace PokeCord
             TimeSpan delay = TimeSpan.FromHours(24) - DateTime.Now.TimeOfDay;
             _pokeballResetTimer = new Timer(async (e) => await playerDataService.RestockPokeballsAsync(null), null, delay, TimeSpan.FromDays(1));
             Console.WriteLine("Time until Pokeball reset: " + delay);
-            
-            //*** Force update
-            await playerDataService.RestockPokeballsAsync(null);
-            //***
+
+            if (testingMode)//*** Force pokeball update
+            {
+               await playerDataService.RestockPokeballsAsync(null);
+            }
 
             // -- Weekly Reset --
             // Weekly Start Timer
