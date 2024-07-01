@@ -147,7 +147,9 @@ namespace PokeCord.Services
             List<PlayerData> players = await _playerDataCollection.Find(_ => true).ToListAsync();
             Console.WriteLine($"Got Weekly Leaderboard");
             return players
-                .Where(p => p.WeeklyExperience > 0)
+                //.Where(p => p.WeeklyExperience > 0)
+                //TODO: Uncommented the line above, and remove the line below
+                .Where(p => p.WeeklyCaughtPokemon.Sum(pokemon => pokemon.BaseExperience ?? 0) > 0)
                 .OrderByDescending(p => p.WeeklyCaughtPokemon.Sum(pokemon => pokemon.BaseExperience ?? 0))
                 .ToList();
         }

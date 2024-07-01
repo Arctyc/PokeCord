@@ -58,7 +58,9 @@ namespace PokeCord.Services
                 foreach (var player in team.Players)
                 {
                     PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(player);
-                    team.TeamExperience += playerData.WeeklyExperience;
+                    //TODO: Reset this to:
+                    //team.TeamExperience += playerData.WeeklyExperience;
+                    team.TeamExperience += playerData.WeeklyCaughtPokemon.Sum(p => p.BaseExperience ?? 0);
                 }
                 teamsWithExperience.Add(team);
             }
@@ -73,7 +75,8 @@ namespace PokeCord.Services
             // Update all players
             var updateDefinition = Builders<PlayerData>.Update
                 .Set(p => p.TeamId, -1) // Set team ID to -1 to indicate no team
-                .Set(p => p.WeeklyCaughtPokemon, new List<PokemonData>()); // Clear the list of weekly caught pokemon while retaining the field
+                .Set(p => p.WeeklyCaughtPokemon, new List<PokemonData>()) // Clear the list of weekly caught pokemon while retaining the field
+                .Set(p => p.WeeklyExperience, 0);
             await _playerDataService.TryUpdatePlayersAsync(updateDefinition);
 
             Console.WriteLine("Teams have been reset at UTC: " + DateTime.UtcNow.ToString());
