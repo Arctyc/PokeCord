@@ -51,7 +51,18 @@ namespace PokeCord.Services
 
         public async Task<List<Team>> GetTeamsAsync()
         {
-            return await _teamChampionshipCollection.Find(_ => true).SortByDescending(t => t.TeamExperience).ToListAsync();
+            List<Team> teams = await _teamChampionshipCollection.Find(_ => true).ToListAsync();
+            List<Team> teamsWithExperience = new List<Team>();
+            foreach(var team in teams)
+            {
+                foreach (var player in team.Players)
+                {
+                    PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(player);
+                    team.TeamExperience += playerData.WeeklyExperience;
+                }
+                teamsWithExperience.Add(team);
+            }
+            return teamsWithExperience.OrderByDescending(t => t.TeamExperience).ToList();
         }
 
         public async Task ResetTeamsAsync(object? state)
