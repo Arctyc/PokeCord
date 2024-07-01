@@ -55,6 +55,7 @@ namespace PokeCord.Services
             List<Team> teamsWithExperience = new List<Team>();
             foreach(var team in teams)
             {
+                team.TeamExperience = 0;
                 foreach (var player in team.Players)
                 {
                     PlayerData playerData = await _playerDataService.TryGetPlayerDataAsync(player);
